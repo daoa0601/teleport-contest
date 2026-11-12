@@ -50,7 +50,7 @@ import type { GameObject } from './object_types.js';
 import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LEASH, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, POT_OIL, TIN, WORM_TOOTH } from './object_data.js';
 import { makePlural, withIndefiniteArticle, ownedObjectName, verbForSubject, objectCombatName, objectDescription, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle, ownedObjectAction, definiteObjectAction, definiteName, objectNameIsPlural } from './objnam.js';
 import { objectTypeKnown, oinit } from './o_init.js';
-import { billForObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition, setShopResidency, fixShopDamage, dopay } from './shk.js';
+import { billForObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition, fixShopDamage, dopay } from './shk.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { callObjectType, displayColorName, displayLiquidName, monsterName, objectMonsterName, randomDisplayMonsterName } from './do_name.js';
 import type { ObjectCallResult } from './do_name.js';
@@ -65,7 +65,7 @@ import { cansee, canseeFromHero, vision_note_blocker_change, vision_recalc, visi
 import {
     finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster,
     sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters,
-    purgeDeadMonsters, restoreMonsterShape,
+    purgeDeadMonsters,
     finishHeroMonsterKill,
     zombieForm,
 } from './mon.js';
@@ -94,7 +94,7 @@ import { getLine, showMultiSelectWindow } from './windows.js';
 import type { CountedSelection, MultiSelectSection } from './windows.js';
 import { isBimanualObject, isPick } from './object_properties.js';
 import { possessiveName, upstart } from './hacklib.js';
-import { heroCanReachFloor, engravingAt, make_grave, rewindEngravingsForSave, restoreEngravings } from './engrave.js';
+import { heroCanReachFloor, engravingAt, make_grave, rewindEngravingsForSave } from './engrave.js';
 import { beginLevitatingArtifactDrop } from './artifact.js';
 import { hitFloorWithObject, breakObjectAtLocation } from './dothrow.js';
 import { shipObject, containerImpactDamage, deliverMigratingObjects, impactDrop } from './dokick.js';
@@ -185,23 +185,20 @@ import {
 import { resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { maybeResetPick } from './lock.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
-import { runDueTimers, restoreLevelTimers, objectTimers, scheduleObjectTimer, burnAwayHeroSlime } from './timeout.js';
-import { restoreLevelChains, restoreMonsterCover, restoreMonsterWormHeads } from './restore.js';
-import { hideMonsterOnRestore } from './mon.js';
-import { restoreLevelPetHistory, restoreObjectPetHistory } from './restore.js';
-import { restoreLevelLightSources } from './light.js';
+import { runDueTimers, objectTimers, scheduleObjectTimer, burnAwayHeroSlime } from './timeout.js';
+import { getlev } from './restore.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { bot, checkGoldSymbol } from './botl.js';
-import { restoreLevelRegions, updateHeroRegions } from './region.js';
-import { fumaroles, movebubbles, restore_waterlevel } from './mkmaze.js';
+import { updateHeroRegions } from './region.js';
+import { fumaroles, movebubbles } from './mkmaze.js';
 import { recordAchievement, recordDungeonEntryAchievements } from './insight.js';
 import {
     displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest,
 } from './quest.js';
 import { resurrectWizard } from './wizard.js';
 import {
-    deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, collectLevelFollowers,
+    deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, collectLevelFollowers,
 } from './dog.js';
 import { deliverSpecialLevelMessages } from './questpgr.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -2062,46 +2059,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         ? Math.min(reached, destinationDepth.dlevel)
         : Math.max(reached, destinationDepth.dlevel);
     if (cached) {
-        game.program_state.in_getlev = true;
-        try {
-            game.level = cached.level;
-            game.billObjects = cached.billObjects ?? [];
-            restoreEngravings(cached.level);
-            cached.stairs = restoreLevelChains(cached.level, cached.stairs);
-            game.stairs = cached.stairs;
-            game._activeSpecialLevel = cached.activeSpecialLevel || null;
-            // save_adjust_levelflags()/rest_adjust_levelflags() preserve the
-            // remaining stasis duration while its level is stored off-map.
-            if (cached.level.flags.stasis_until !== undefined)
-                cached.level.flags.stasis_until += game.moves - cached.savedAt;
-            restoreLevelTimers(game);
-            // C getlev() (do.c:1711) restores each resident before
-            // separately arriving monsters.  Births append in the port,
-            // whereas C prepends to fmon.
-            const elapsed = game.moves - cached.savedAt;
-            restoreLevelPetHistory(cached.level, elapsed);
-            restoreObjectPetHistory(cached.billObjects ?? [], elapsed);
-            restoreMonsterWormHeads(cached.level);
-            for (const monster of cached.level.monsters.slice().reverse()) {
-                setShopResidency(monster, false, game);
-                await restoreMonsterCover(monster, game);
-                if (elapsed > 0) await catchUpMonster(monster, elapsed, game);
-                await restoreMonsterShape(monster, game);
-                if (game.program_state.gameover) break;
-                if (elapsed > 0 && elapsed > rnd(10))
-                    await hideMonsterOnRestore(monster, game);
-            }
-            await restoreLevelRegions(game, game.moves - cached.savedAt);
-            // getlev() redraws saved bubbles before goto_level() moves them.
-            restore_waterlevel();
-            // C getlev() reloads the level's saved light sources onto the
-            // front of light_base (restore.c:1145), reversed from the
-            // newest-first save order and ahead of the hero's carried
-            // lights that never left the list.
-            restoreLevelLightSources(game);
-        } finally {
-            game.program_state.in_getlev = false;
-        }
+        await getlev({ kind: 'cached', cached });
         if (game.program_state.gameover) return true;
         oinit();
     } else {

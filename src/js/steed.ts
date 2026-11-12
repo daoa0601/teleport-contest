@@ -3,7 +3,7 @@
 import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown, sokobanGuilt } from './trap.js';
 import { OBJ_DESCR } from './o_init.js';
 import { encumber_msg } from './pickup.js';
-import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, LEG, HAND } from './const.js';
+import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, mon_offmap, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, LEG, HAND } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import type { DirectionVector } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -1074,7 +1074,7 @@ export function monsterHasMapPosition(
         _monsterEngulf?: GameState['_monsterEngulf'] } = game,
 ): boolean {
     if (!monster || monster === state.u?.usteed
-        || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) return false;
+        || mon_offmap(monster)) return false;
     const engulf = state._monsterEngulf;
     return !engulf || monster !== (engulf.defenderExposed ? engulf.attacker : engulf.defender);
 }

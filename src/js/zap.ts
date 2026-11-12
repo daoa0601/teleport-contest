@@ -283,6 +283,8 @@ import { fix_wall_spines } from './mkmaze.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass, erosionMatters, simpleArmorName } from './objnam.js';
 import {
 
+    copySavedMonsterTraits,
+
     objectQuantity,
 
     splitObjectStack,
@@ -343,7 +345,7 @@ import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { Trap } from './map_types.js';
 import type { PropertyName } from './property_types.js';
 import {
-    changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance,
+    changeMonsterForm, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance,
     checkMonsterGearNextTurn,
 } from './mon.js';
 
@@ -1975,7 +1977,7 @@ export function restoreMonsterTraits(
         }
     }
 
-    copyRestoredTraits(monster, saved);
+    copyRestoredTraits(monster, copySavedMonsterTraits(saved));
     monster.m_id = created.m_id;
     monster.mx = created.mx;
     monster.my = created.my;
@@ -2022,7 +2024,6 @@ export function restoreMonsterTraits(
     monster.mstun = 0;
     monster.mconf = 0;
     if (monster.edog) {
-        monster.edog = copyPetData(monster.edog);
         monster.mextra = { ...(monster.mextra || {}), edog: monster.edog };
     }
     return monster;
@@ -2941,8 +2942,7 @@ export async function turnObjectWithUndeadMagic(object: GameObject, state: GameS
     const x = event?.location?.x ?? event?.monster?.mx;
     const y = event?.location?.y ?? event?.monster?.my;
     if (event?.monster && cansee(x, y)) {
-        const name = namelessMonsterName(event.monster, { state, article: 'the' });
-        await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is resurrected!`);
+        await announceResurrectedMonster(event.monster, state);
     }
     return true;
 }
@@ -2958,8 +2958,7 @@ async function reviveFloorCorpse(object: GameObject, state: PlayingGameState) {
     let learned = false;
     if (cansee(x, y)) {
         if (canSpotMonster(monster)) {
-            const name = namelessMonsterName(monster, { state, article: 'the' });
-            await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is resurrected!`);
+            await announceResurrectedMonster(monster, state);
             learned = !state.context?.mon_moving || !!state.context.zap_oseen;
         } else {
             const name = monsterHasProperName(species)
@@ -2977,6 +2976,13 @@ async function reviveFloorCorpse(object: GameObject, state: PlayingGameState) {
     }
     if (learned) await exerciseAttribute(A_WIS, true, state);
     return { affected: true, learned };
+}
+
+// Part of C zap.c:bhito(): both object-hit paths use the nameless monster
+// description, including its native article and hallucination handling.
+async function announceResurrectedMonster(monster: Monster, state: GameState): Promise<void> {
+    const name = namelessMonsterName(monster, { state, article: 'the' });
+    await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is resurrected!`);
 }
 
 // C zap.c:bhitpile().

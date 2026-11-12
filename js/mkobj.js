@@ -1,4 +1,4 @@
-// Object creation and species-dependent initialization.
+// Object creation, saved monster traits, and species-dependent initialization.
 // C ref: mkobj.c.
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, VENOM_CLASS, SPBOOK_no_NOVEL, } from './objclass.js';
 import { objectBaseWeight, objectBaseCost, objectMerge, objectUsesKnown, objectMagic, getObjectClassBounds, getObjectDefinition, requireObjectData, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION, BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, POT_BOOZE, POT_SICKNESS, POT_WATER, APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, WAN_FIRE, oc_nutrition, objectPropertyName, } from './object_data.js';
@@ -10,7 +10,7 @@ import { stopHeroOccupation } from './allmain.js';
 import { eating_glob, set_tin_variety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { objectIsVulnerableToErosion } from './trap.js';
-import { eggSpeciesIsDead, hatchableEggSpecies, copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse, isReviver, zombieForm, } from './mon.js';
+import { eggSpeciesIsDead, hatchableEggSpecies, copy_mextra, maybeUnhideAt, undeadToCorpse, isReviver, zombieForm, } from './mon.js';
 import { carryObjEffects } from './invent.js';
 import { attachFigurineTimer } from './timeout.js';
 import { isIceAt } from './dbridge.js';
@@ -19,7 +19,7 @@ import { newsym } from './display.js';
 import { heroCanReachFloor } from './engrave.js';
 import { rn2, rnd, rn1, rne, rnz } from './rng.js';
 import { depth as depth_of_level, level_difficulty, surfaceName, In_quest } from './dungeon.js';
-import { ALTAR, A_NONE, ICE, IRONBARS, Is_airlevel, Is_rogue_level, Is_waterlevel, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND, LARGEST_INT, PLNMSG_OBJ_GLOWS, } from './const.js';
+import { ALTAR, A_NONE, ICE, IRONBARS, Is_airlevel, Is_rogue_level, Is_waterlevel, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, TAINT_AGE, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND, LARGEST_INT, PLNMSG_OBJ_GLOWS, } from './const.js';
 import { isok } from './cmd.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData } from './monster_data.js';
 import { forgetTempleEntry } from './priest.js';
@@ -709,7 +709,7 @@ export function startCorpseTimeout(body, { zombify = false } = {}) {
         delay = riderRevivalTime(body);
     }
     else if (MONSTER_SYMBOL[species] === 46) { // S_TROLL
-        for (let turn = 2; turn <= 50; turn++) {
+        for (let turn = 2; turn <= TAINT_AGE; turn++) {
             if (rn2(TROLL_REVIVE_CHANCE))
                 continue;
             kind = OBJECT_TIMER_KIND.REVIVE_MON;
@@ -867,25 +867,9 @@ export function saveMonsterTraits(monster) {
     saved.mhpmax = Math.max(saved.mhpmax ?? 1, (MONSTER_LEVEL[monster.mnum] ?? 0) + 1);
     saved.mhp = Math.max(0, Math.min(saved.mhp ?? 0, saved.mhpmax));
     saved.mstate = (saved.mstate ?? MON_FLOOR) & ~MON_DETACH;
-    if (monster.edog)
-        saved.edog = copyPetData(monster.edog);
-    if (monster.mextra) {
-        saved.mextra = { ...monster.mextra };
-        if (monster.mextra.edog)
-            saved.mextra.edog = copyPetData(monster.mextra.edog);
-        if (monster.mextra.emin)
-            saved.mextra.emin = { ...monster.mextra.emin };
-        if (monster.mextra.epri)
-            saved.mextra.epri = { ...monster.mextra.epri };
-        if (monster.mextra.eshk)
-            saved.mextra.eshk = copyShopkeeperData(monster.mextra.eshk);
-    }
-    if (monster.eshk)
-        saved.eshk = copyShopkeeperData(monster.eshk);
-    if (monster.emin)
-        saved.emin = { ...monster.emin };
-    if (monster.epri)
-        saved.epri = { ...monster.epri };
+    if (monster.mextra)
+        saved.mextra = {};
+    copy_mextra(saved, monster);
     return saved;
 }
 // C mkobj.c dknowns[] (the class table clear_dknown() consults).
@@ -1324,7 +1308,7 @@ export async function billDummyObject(object, state = game) {
     const dummy = {
         ...object,
         contents: [],
-        oextra: object.oextra ? structuredClone(object.oextra) : null,
+        oextra: object.oextra ? copyObjectExtra(object.oextra) : null,
         where: 'free',
         unpaid: false,
         owornmask: 0,
@@ -1725,9 +1709,21 @@ function setQuantity(object, count) {
     object.quan = object.quantity = count;
     object.owt = objectWeight(object);
 }
+// C mkobj.c:copy_oextra(): the caller clears the copied monster-id link.
+function copyObjectExtra(source) {
+    const copy = { ...source };
+    if (source.omonst)
+        copy.omonst = copySavedMonsterTraits(source.omonst);
+    return copy;
+}
+// C mkobj.c:get_mtraits(): the copy used by montraits() owns its extensions.
+export function copySavedMonsterTraits(source) {
+    const { mextra, edog, emin, epri, eshk, _egd, ...traits } = source;
+    const copy = structuredClone(traits);
+    copy_mextra(copy, source);
+    return copy;
+}
 // C mkobj.c:splitobj(): split one stack into two.
-// Also C mkobj.c:copy_oextra(): inlined here (the split keeps the parent's
-// extensions minus the m-id association).
 export function splitObjectStack(object, count, state = game, objectId = null) {
     const total = objectQuantity(object);
     count = Math.trunc(count);
@@ -1749,7 +1745,7 @@ export function splitObjectStack(object, count, state = game, objectId = null) {
         lua_ref_cnt: 0,
     };
     if (object.oextra) {
-        split.oextra = structuredClone(object.oextra);
+        split.oextra = copyObjectExtra(object.oextra);
         delete split.oextra.omid;
     }
     split.o_id = objectId ?? nextObjectId(object, split, state);

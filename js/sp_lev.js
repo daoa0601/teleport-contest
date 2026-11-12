@@ -5,7 +5,7 @@
 // dig_corridor, wallify_map, location picking, map cleanup and boundary
 // symbols, the Lua level coder and special-level loader, and themed-room
 // map placement.  The des.* binding table lives in lua/des.ts.
-import { stack_object } from './invent.js';
+import { objectAt, stack_object } from './invent.js';
 import { RANDOM_CLASS, GEM_CLASS } from './objclass.js';
 import { objectMerge, EGG, TIN, FIGURINE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE, } from './object_data.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
@@ -14,9 +14,9 @@ import { isRoom } from './map_types.js';
 import { deleteTrap, maketrap, trapAt } from './trap.js';
 import { lookupNovelTitle, setMonsterGivenName, monsterTypeName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
-import { makemon, mkclass, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
+import { makemon, mkclass, propagateMonsterSpecies, setMimicAppearance, setMonsterMalign } from './makemon.js';
 import { ensureMinionData } from './minion.js';
-import { monsterAtPosition, putSaddleOnMonster } from './steed.js';
+import { monsterAtPosition, placeMonsterOnMap, putSaddleOnMonster, removeMonsterFromMapAt } from './steed.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL } from './monster_data.js';
 import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, IS_POOL, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, INVALID_TYPE, MAP_Y_LIM, MATCH_WALL, MAX_TYPE, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_NEUTRAL, AM_CHAOTIC, AM_MASK, AM_SPLEV_CO, AM_SPLEV_NONCO, AM_SPLEV_RANDOM, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GENOD, G_GONE, LEVEL_TIMER_KIND, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM, is_hole, is_pit } from './const.js';
 import { isok } from './cmd.js';
@@ -2309,6 +2309,26 @@ export async function lspo_monster(context, state, inventories, id, x, y) {
     }
     return monster;
 }
+// C sp_lev.c:m_bad_boulder_spot(). Attempt to screen out locations where a
+// mimic-as-boulder shouldn't occur: on a trap, on an existing boulder, or on
+// a closed or locked door.
+function m_bad_boulder_spot(x, y) {
+    const level = requireGameLevel();
+    // avoid trap locations
+    if (trapAt(game, x, y))
+        return true;
+    // try to avoid locations which already have a boulder (this won't
+    // actually work; C gets called before objects have been placed...)
+    if (objectAt(x, y, BOULDER, game))
+        return true;
+    // avoid closed doors
+    const location = level.at(x, y);
+    if (location && IS_DOOR(location.typ)
+        && (location.doormask & (D_CLOSED | D_LOCKED)) !== 0)
+        return true;
+    // spot is ok
+    return false;
+}
 // C sp_lev.c:create_monster()
 // Also C priest.c:mk_roamer(): creation is inlined here; priest.ts:finishSpecialRoamer initializes it
 // Resolve species and location, then apply the requested attributes.
@@ -2414,10 +2434,46 @@ export async function create_monster(context, options) {
             && (MONSTER_SYMBOL[monster.mnum] === S_MIMIC
                 || (ismnum(monster.cham) && appearance.kind === 'monster'))) {
             switch (appearance.kind) {
-                case 'object':
+                case 'object': {
+                    // C sp_lev.c:create_monster() (sp_lev.c:2040-2059) tries to move
+                    // a boulder-mimic off bad spots after giving it its disguise.
+                    // Its guard re-tests m->x, but sp_lev.c:1992 has already
+                    // recorded the placed monster's mx there, and makemon(),
+                    // mk_roamer() and mk_mplayer() place at valid coordinates or
+                    // return null, so m->x is never negative: the pinned C never
+                    // retries, and a randomly placed boulder mimic keeps its
+                    // first spot and disguise even on a trap. Keep the retry
+                    // under the same guard (the placed position) so the port
+                    // never draws the retry's get_location()/set_mimic_sym() RNG
+                    // calls either.
                     monster.m_ap_type = M_AP_OBJECT;
                     monster.mappearance = appearance.type;
+                    let x = monster.mx, y = monster.my;
+                    if (appearance.type === BOULDER && x < 0
+                        && m_bad_boulder_spot(x, y)) {
+                        let retrylimit = 10;
+                        removeMonsterFromMapAt(x, y, game);
+                        do {
+                            // C reseeds from m->x/m->y, which still hold the
+                            // originally placed coordinates.
+                            const spot = await get_location(context, { x: monster.mx, y: monster.my }, DRY);
+                            x = spot.x;
+                            y = spot.y;
+                            if (monsterAtPosition(level, x, y)) {
+                                const nearby = enexto(species, x, y);
+                                if (nearby) {
+                                    x = nearby.x;
+                                    y = nearby.y;
+                                }
+                            }
+                        } while (m_bad_boulder_spot(x, y) && --retrylimit > 0);
+                        await placeMonsterOnMap(monster, x, y);
+                        // if we didn't find a good spot then mimic something else
+                        if (!retrylimit)
+                            await setMimicAppearance(monster);
+                    }
                     break;
+                }
                 case 'monster': {
                     let type = appearance.type;
                     if (monsterIsVampireShifter(monster)) {

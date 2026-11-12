@@ -49,7 +49,7 @@ import { encodeSavedGraph } from './saved_graph.js';
 import type { BonesPayload } from './bones_validation.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shknam.js';
-import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, IS_WALL, IS_STWALL, COULD_SEE, IN_SIGHT, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_stronghold, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, AIR, TRICKED, A_NONE, A_LAWFUL, AM_SHRINE, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, MM_ASLEEP, MM_NOGRP, MM_EPRI, MM_ESHK, MM_IGNOREWATER, MM_NOCOUNTBIRTH, MM_NOMSG, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, HEALTHY_TIN, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, is_hole, is_pit } from './const.js';
+import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, IS_WALL, IS_STWALL, COULD_SEE, IN_SIGHT, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_stronghold, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, AIR, TRICKED, A_NONE, A_LAWFUL, AM_SHRINE, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, MM_ASLEEP, MM_NOGRP, MM_EPRI, MM_ESHK, MM_IGNOREWATER, MM_NOCOUNTBIRTH, MM_NOMSG, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, HEALTHY_TIN, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, is_hole, is_pit, TAINT_AGE } from './const.js';
 import { isok } from './cmd.js';
 import { init_rect, rnd_rect } from './rect.js';
 import { Is_botlevel, depth as depth_of_level, dungeonDepth, inducedAlignment, is_branchlev, ledgerNo, level_difficulty, placeHeroOnLevel, specialLevelAt, u_on_rndspot, canFallThrough, In_quest, In_mines, In_V_tower, In_hell, Invocation_lev } from './dungeon.js';
@@ -64,7 +64,7 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { insideShopRoomAt, addShopDamage, fixShopDamage, deleteObject } from './shk.js';
 import { PM_SOLDIER, antholeMonsterType, do_mkroom, roomHasStair, somex, somey, somexyspace, insideRoom } from './mkroom.js';
 import { bound_digging, generateAstralLevel, generateBigRoom, generateDungeonMazeFile, generateElementalPlane, generateFakeWizardLevel, generateKnoxLevel, generateLuaQuestLevel, generateMedusaLevel, generateMinesEnd, generateMinetown, generateOracleLevel, generateRandomMaze, generateSokobanLevel, generateSpecialAndFixup, generateVladsTowerLevel, generateWizardLevel, isLuaQuestPrototype, mazeFloorPoint, mkportal, place_lregion, setLevelTerrainType, wallification } from './mkmaze.js';
-import { getbones, levelAllowsBones, restoreBonesMonsters } from './bones.js';
+import { getbones, levelAllowsBones } from './bones.js';
 import { makeroguerooms, makerogueghost } from './extralev.js';
 import { restoreLevelRegions } from './region.js';
 import { beginObjectBurn } from './timeout.js';
@@ -208,7 +208,6 @@ export async function mklev(): Promise<void> {
     if (g.program_state.gameover) return;
     g.in_mklev = true;
     await makelevel();
-    await currentLuaLifecycle().runCallbacks(g, 'level_enter');
     await level_finalize_topology();
     g.in_mklev = false;
     // C pairs mklev() with vision_reset() (allmain.c) before anything can
@@ -287,8 +286,7 @@ function clear_level_structures(): void {
     init_rect();
 }
 
-// Part of C mklev.c:makelevel(): the generation driver; placeRoomLevelBranch() already holds the first-line citation.
-// C ref: mklev.c makelevel()
+// C mklev.c:makelevel()
 // Also C mklev.c:themerooms_post_level_generate(): inlined here (the
 // post_level_generate theme call plus whole-level wallification).
 async function makelevel(): Promise<void> {
@@ -317,351 +315,354 @@ async function makelevel(): Promise<void> {
     if (isRogueLevel && g._specialLevelPrototype === 'rogue')
         g._specialLevelPrototype = null;
 
-    // C mklev.c -> mkmaze.c: a named special level chooses its Lua variant.
-    // Lua-owned variants perform the nhlib shuffle and level_init lighting
-    // draw inside the interpreter.  The remaining handwritten variants keep
-    // the equivalent preamble until their scripts replace them.
-    if (g._specialLevelPrototype) {
-        const prototype = g._specialLevelPrototype;
-        const variants = prototype === 'bigrm' ? 13
-            : prototype.startsWith('soko') ? 2
-                : prototype === 'minetn' ? 7
-                    : prototype === 'minend' ? 3
-                        : prototype === 'medusa' ? 4 : 1;
-        const variant = variants > 1 ? rnd(variants) : 1;
-        const luaOwnedSpecial = prototype === 'bigrm'
-            || prototype === 'minend'
-            || prototype === 'minetn'
-            || isLuaQuestPrototype(prototype)
-            || prototype.startsWith('soko')
-            || /^tower[1-3]$/.test(prototype)
-            || prototype === 'oracle'
-            || prototype === 'medusa'
-            || prototype === 'castle'
-            || prototype === 'knox'
-            || prototype === 'fakewiz1'
-            || prototype === 'fakewiz2'
-            || prototype === 'wizard1'
-            || prototype === 'wizard2'
-            || prototype === 'wizard3'
-            || prototype === 'asmodeus'
-            || prototype === 'baalz'
-            || prototype === 'orcus'
-            || prototype === 'juiblex'
-            || prototype === 'valley'
-            || prototype === 'sanctum'
-            || prototype === 'earth'
-            || prototype === 'air'
-            || prototype === 'fire'
-            || prototype === 'water'
-            || prototype === 'astral'
-            || /^tut-[12]$/.test(prototype);
-        const align: NonNullable<ActiveSpecialLevel['align']> = ['law', 'neutral', 'chaos'];
-        if (!luaOwnedSpecial) {
-            for (let i = align.length; i > 1; i--) {
-                const j = rn2(i);
-                const oldAlignment = align[i - 1], selectedAlignment = align[j];
-                if (oldAlignment === undefined || selectedAlignment === undefined)
-                    throw new RangeError('Special-level alignment shuffle index is out of range.');
-                align[i - 1] = selectedAlignment;
-                align[j] = oldAlignment;
+    generation: {
+        // C mklev.c -> mkmaze.c: a named special level chooses its Lua variant.
+        // Lua-owned variants perform the nhlib shuffle and level_init lighting
+        // draw inside the interpreter.  The remaining handwritten variants keep
+        // the equivalent preamble until their scripts replace them.
+        if (g._specialLevelPrototype) {
+            const prototype = g._specialLevelPrototype;
+            const variants = prototype === 'bigrm' ? 13
+                : prototype.startsWith('soko') ? 2
+                    : prototype === 'minetn' ? 7
+                        : prototype === 'minend' ? 3
+                            : prototype === 'medusa' ? 4 : 1;
+            const variant = variants > 1 ? rnd(variants) : 1;
+            const luaOwnedSpecial = prototype === 'bigrm'
+                || prototype === 'minend'
+                || prototype === 'minetn'
+                || isLuaQuestPrototype(prototype)
+                || prototype.startsWith('soko')
+                || /^tower[1-3]$/.test(prototype)
+                || prototype === 'oracle'
+                || prototype === 'medusa'
+                || prototype === 'castle'
+                || prototype === 'knox'
+                || prototype === 'fakewiz1'
+                || prototype === 'fakewiz2'
+                || prototype === 'wizard1'
+                || prototype === 'wizard2'
+                || prototype === 'wizard3'
+                || prototype === 'asmodeus'
+                || prototype === 'baalz'
+                || prototype === 'orcus'
+                || prototype === 'juiblex'
+                || prototype === 'valley'
+                || prototype === 'sanctum'
+                || prototype === 'earth'
+                || prototype === 'air'
+                || prototype === 'fire'
+                || prototype === 'water'
+                || prototype === 'astral'
+                || /^tut-[12]$/.test(prototype);
+            const align: NonNullable<ActiveSpecialLevel['align']> = ['law', 'neutral', 'chaos'];
+            if (!luaOwnedSpecial) {
+                for (let i = align.length; i > 1; i--) {
+                    const j = rn2(i);
+                    const oldAlignment = align[i - 1], selectedAlignment = align[j];
+                    if (oldAlignment === undefined || selectedAlignment === undefined)
+                        throw new RangeError('Special-level alignment shuffle index is out of range.');
+                    align[i - 1] = selectedAlignment;
+                    align[j] = oldAlignment;
+                }
+            }
+            // Room-form scripts do not call des.level_init(); their first
+            // operation is des.room, so no splev_initlev lighting draw belongs
+            // between nhlib's shuffle and build_room().
+            const roomForm = (prototype === 'minetn'
+                && [2, 3, 4, 7].includes(variant))
+                || prototype === 'oracle'
+                || /-fil[ab]$/.test(prototype);
+            // LVLINIT_MAZEGRID ignores its random-light field.  Named Gehennom
+            // fortresses share that initializer with Castle, so classify the
+            // Lua operation rather than special-casing whichever file was ported
+            // first.
+            const mazeGridPrototype = new Set([
+                'castle', 'asmodeus', 'fakewiz1', 'fakewiz2',
+                'orcus', 'wizard1', 'wizard2', 'wizard3',
+            ]);
+            // Juiblex uses LVLINIT_SWAMP with `lit=0`, so its explicit lighting
+            // likewise bypasses BOOL_RANDOM.
+            const fixedLightingPrototype = prototype === 'juiblex'
+                || prototype === 'baalz';
+            const defaultLit = luaOwnedSpecial ? null
+                : roomForm || mazeGridPrototype.has(prototype)
+                    || fixedLightingPrototype
+                    ? false : !!rn2(2);
+            g._activeSpecialLevel = {
+                prototype, variant,
+                file: prototype === 'tut-1'
+                    ? 'tut-1.lua'
+                    : variants > 1 ? `${prototype}-${variant}.lua`
+                        : `${prototype}.lua`,
+                align, defaultLit,
+            };
+            g._specialLevelPrototype = null;
+
+            if (prototype === 'castle') {
+                await generateSpecialAndFixup(load_special,
+                    g._activeSpecialLevel);
+                for (const room of level.rooms.slice(0, level.nroom))
+                    if (isRoom(room)) await fill_special_room(room);
+                break generation;
+            }
+            if (prototype === 'knox') {
+                await generateKnoxLevel(g._activeSpecialLevel);
+                break generation;
+            }
+            if (prototype === 'asmodeus') {
+                await generateSpecialAndFixup(
+                    load_special, g._activeSpecialLevel,
+                );
+                break generation;
+            }
+            if (prototype === 'juiblex') {
+                await generateSpecialAndFixup(
+                    load_special, g._activeSpecialLevel,
+                );
+                for (const room of level.rooms.slice(0, level.nroom))
+                    if (isRoom(room)) await fill_special_room(room);
+                break generation;
+            }
+            if (prototype === 'baalz') {
+                g._activeSpecialLevel.baalzFixup = true;
+                await generateSpecialAndFixup(
+                    load_special, g._activeSpecialLevel,
+                );
+                break generation;
+            }
+            if (prototype === 'orcus') {
+                await generateSpecialAndFixup(
+                    load_special, g._activeSpecialLevel,
+                );
+                for (const room of level.rooms.slice(0, level.nroom))
+                    if (isRoom(room)) await fill_special_room(room);
+                break generation;
+            }
+            if (['wizard1', 'wizard2', 'wizard3'].includes(prototype)) {
+                await generateWizardLevel(g._activeSpecialLevel);
+                break generation;
+            }
+            if (prototype === 'fakewiz1' || prototype === 'fakewiz2') {
+                await generateFakeWizardLevel(g._activeSpecialLevel);
+                break generation;
+            }
+            if (prototype === 'bigrm') {
+                await generateBigRoom(g._activeSpecialLevel);
+                break generation;
+            }
+            if (prototype === 'medusa') {
+                await generateMedusaLevel(g._activeSpecialLevel);
+                break generation;
+            }
+            if (prototype === 'valley') {
+                await generateSpecialAndFixup(load_special,
+                    g._activeSpecialLevel);
+                for (const room of level.rooms.slice(0, level.nroom))
+                    if (isRoom(room)) await fill_special_room(room);
+                break generation;
+            }
+            if (prototype === 'sanctum') {
+                await generateSpecialAndFixup(load_special,
+                    g._activeSpecialLevel);
+                for (const room of level.rooms.slice(0, level.nroom))
+                    if (isRoom(room)) await fill_special_room(room);
+                break generation;
+            }
+            if (['earth', 'air', 'fire', 'water'].includes(prototype)) {
+                await generateElementalPlane(g._activeSpecialLevel);
+                break generation;
+            }
+            if (prototype === 'astral') {
+                await generateAstralLevel(g._activeSpecialLevel);
+                break generation;
+            }
+            if (prototype.startsWith('soko')) {
+                await generateSokobanLevel(g._activeSpecialLevel);
+                break generation;
+            }
+            if (/^tut-[12]$/.test(prototype)) {
+                await generateSpecialAndFixup(load_special,
+                    g._activeSpecialLevel);
+                break generation;
+            }
+            if (isLuaQuestPrototype(prototype)) {
+                await generateLuaQuestLevel(g._activeSpecialLevel);
+                break generation;
+            }
+            if (/^tower[1-3]$/.test(prototype)) {
+                await generateVladsTowerLevel(g._activeSpecialLevel);
+                break generation;
+            }
+            if (prototype === 'minetn') {
+                await generateMinetown(g._activeSpecialLevel);
+                break generation;
+            }
+            if (prototype === 'minend') {
+                await generateMinesEnd(g._activeSpecialLevel);
+                break generation;
+            }
+            if (prototype === 'oracle') {
+                await generateOracleLevel(g._activeSpecialLevel);
+                break generation;
             }
         }
-        // Room-form scripts do not call des.level_init(); their first
-        // operation is des.room, so no splev_initlev lighting draw belongs
-        // between nhlib's shuffle and build_room().
-        const roomForm = (prototype === 'minetn'
-            && [2, 3, 4, 7].includes(variant))
-            || prototype === 'oracle'
-            || /-fil[ab]$/.test(prototype);
-        // LVLINIT_MAZEGRID ignores its random-light field.  Named Gehennom
-        // fortresses share that initializer with Castle, so classify the
-        // Lua operation rather than special-casing whichever file was ported
-        // first.
-        const mazeGridPrototype = new Set([
-            'castle', 'asmodeus', 'fakewiz1', 'fakewiz2',
-            'orcus', 'wizard1', 'wizard2', 'wizard3',
-        ]);
-        // Juiblex uses LVLINIT_SWAMP with `lit=0`, so its explicit lighting
-        // likewise bypasses BOOL_RANDOM.
-        const fixedLightingPrototype = prototype === 'juiblex'
-            || prototype === 'baalz';
-        const defaultLit = luaOwnedSpecial ? null
-            : roomForm || mazeGridPrototype.has(prototype)
-                || fixedLightingPrototype
-                ? false : !!rn2(2);
-        g._activeSpecialLevel = {
-            prototype, variant,
-            file: prototype === 'tut-1'
-                ? 'tut-1.lua'
-                : variants > 1 ? `${prototype}-${variant}.lua`
-                    : `${prototype}.lua`,
-            align, defaultLit,
-        };
-        g._specialLevelPrototype = null;
 
-        if (prototype === 'castle') {
-            await generateSpecialAndFixup(load_special,
-                g._activeSpecialLevel);
-            for (const room of level.rooms.slice(0, level.nroom))
-                if (isRoom(room)) await fill_special_room(room);
-            return;
+        const currentDungeon = g.dungeons?.[g.u?.uz?.dnum ?? 0];
+        if (currentDungeon?.protofile) {
+            const prototype = currentDungeon.protofile
+                + (currentDungeon.num_dunlevs > 1 ? location.dlevel : '');
+            await generateDungeonMazeFile(prototype);
+            break generation;
         }
-        if (prototype === 'knox') {
-            await generateKnoxLevel(g._activeSpecialLevel);
-            return;
+        if (currentDungeon?.levelFill) {
+            await generateDungeonMazeFile(currentDungeon.levelFill);
+            break generation;
         }
-        if (prototype === 'asmodeus') {
-            await generateSpecialAndFixup(
-                load_special, g._activeSpecialLevel,
-            );
-            return;
+        if (currentDungeon?.dname === 'The Quest') {
+            const role = g.urole?.filecode;
+            const locate = role ? g.specialLevels?.get(`${role}-loca`) : undefined;
+            if (!role || !locate) throw new Error('Quest generation requires the role and locate level.');
+            const suffix = location.dlevel < locate.dlevel ? 'a' : 'b';
+            await generateDungeonMazeFile(`${role}-fil${suffix}`);
+            break generation;
         }
-        if (prototype === 'juiblex') {
-            await generateSpecialAndFixup(
-                load_special, g._activeSpecialLevel,
-            );
-            for (const room of level.rooms.slice(0, level.nroom))
-                if (isRoom(room)) await fill_special_room(room);
-            return;
-        }
-        if (prototype === 'baalz') {
-            g._activeSpecialLevel.baalzFixup = true;
-            await generateSpecialAndFixup(
-                load_special, g._activeSpecialLevel,
-            );
-            return;
-        }
-        if (prototype === 'orcus') {
-            await generateSpecialAndFixup(
-                load_special, g._activeSpecialLevel,
-            );
-            for (const room of level.rooms.slice(0, level.nroom))
-                if (isRoom(room)) await fill_special_room(room);
-            return;
-        }
-        if (['wizard1', 'wizard2', 'wizard3'].includes(prototype)) {
-            await generateWizardLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'fakewiz1' || prototype === 'fakewiz2') {
-            await generateFakeWizardLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'bigrm') {
-            await generateBigRoom(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'medusa') {
-            await generateMedusaLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'valley') {
-            await generateSpecialAndFixup(load_special,
-                g._activeSpecialLevel);
-            for (const room of level.rooms.slice(0, level.nroom))
-                if (isRoom(room)) await fill_special_room(room);
-            return;
-        }
-        if (prototype === 'sanctum') {
-            await generateSpecialAndFixup(load_special,
-                g._activeSpecialLevel);
-            for (const room of level.rooms.slice(0, level.nroom))
-                if (isRoom(room)) await fill_special_room(room);
-            return;
-        }
-        if (['earth', 'air', 'fire', 'water'].includes(prototype)) {
-            await generateElementalPlane(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'astral') {
-            await generateAstralLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype.startsWith('soko')) {
-            await generateSokobanLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (/^tut-[12]$/.test(prototype)) {
-            await generateSpecialAndFixup(load_special,
-                g._activeSpecialLevel);
-            return;
-        }
-        if (isLuaQuestPrototype(prototype)) {
-            await generateLuaQuestLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (/^tower[1-3]$/.test(prototype)) {
-            await generateVladsTowerLevel(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'minetn') {
-            await generateMinetown(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'minend') {
-            await generateMinesEnd(g._activeSpecialLevel);
-            return;
-        }
-        if (prototype === 'oracle') {
-            await generateOracleLevel(g._activeSpecialLevel);
-            return;
-        }
-    }
 
-    const currentDungeon = g.dungeons?.[g.u?.uz?.dnum ?? 0];
-    if (currentDungeon?.protofile) {
-        const prototype = currentDungeon.protofile
-            + (currentDungeon.num_dunlevs > 1 ? location.dlevel : '');
-        await generateDungeonMazeFile(prototype);
-        return;
-    }
-    if (currentDungeon?.levelFill) {
-        await generateDungeonMazeFile(currentDungeon.levelFill);
-        return;
-    }
-    if (currentDungeon?.dname === 'The Quest') {
-        const role = g.urole?.filecode;
-        const locate = role ? g.specialLevels?.get(`${role}-loca`) : undefined;
-        if (!role || !locate) throw new Error('Quest generation requires the role and locate level.');
-        const suffix = location.dlevel < locate.dlevel ? 'a' : 'b';
-        await generateDungeonMazeFile(`${role}-fil${suffix}`);
-        return;
-    }
+        // C mklev.c consumes this rn2(5) on every non-hellish regular candidate,
+        // including levels outside Medusa's dungeon or above her level.
+        const medusa = g.medusa_level;
+        if (In_hell(location)
+            || (rn2(5) && location.dnum === medusa?.dnum
+                && depth_of_level(location) > depth_of_level(medusa))) {
+            await generateRandomMaze();
+            break generation;
+        }
 
-    // C mklev.c consumes this rn2(5) on every non-hellish regular candidate,
-    // including levels outside Medusa's dungeon or above her level.
-    const medusa = g.medusa_level;
-    if (In_hell(location)
-        || (rn2(5) && location.dnum === medusa?.dnum
-            && depth_of_level(location) > depth_of_level(medusa))) {
-        await generateRandomMaze();
-        return;
-    }
+        // C ref: mklev.c makelevel() -> extralev.c.  Rogue owns a legacy 3x3
+        // room/intersection graph and deliberately skips themed rooms, ordinary
+        // corridors, niches, vaults, and random special-room selection.
+        if (isRogueLevel) {
+            level.flags.is_rogue_level = true;
+            level.flags.rogue_level = true;
+            await makeroguerooms();
+            await makerogueghost();
+            if (level.nroom <= 0) break generation;
+            sort_rooms();
+            await generate_stairs();
 
-    // C ref: mklev.c makelevel() -> extralev.c.  Rogue owns a legacy 3x3
-    // room/intersection graph and deliberately skips themed rooms, ordinary
-    // corridors, niches, vaults, and random special-room selection.
-    if (isRogueLevel) {
-        level.flags.is_rogue_level = true;
-        level.flags.rogue_level = true;
-        await makeroguerooms();
-        await makerogueghost();
-        if (level.nroom <= 0) return;
+            const branchp = is_branchlev(game.u.uz);
+            await placeRoomLevelBranch(branchp);
+
+            // C ref: mklev.c makelevel() skip0 tail.  C still counts
+            // ROOM_IS_FILLABLE rooms and draws the bonus-room selection here,
+            // but savelev() memsets svr.rooms when the previous level is
+            // released (save.c:564, reached from goto_level and #wizmakemap),
+            // so Rogue rooms always start with needfill FILL_NONE and the
+            // count is zero: every room is offered to fill_ordinary_room with
+            // no bonus flag and returns at its needfill gate.
+            for (const croom of level.rooms.slice(0, level.nroom))
+                if (isRoom(croom)) await fill_ordinary_room(croom, false);
+            for (const croom of level.rooms.slice(0, level.nroom))
+                if (isRoom(croom)) await fill_special_room(croom);
+            break generation;
+        }
+
+        // Regular level generation
+        const themedRooms = await beginLuaThemerooms();
+        await makerooms(themedRooms);
+
+        if (level.nroom <= 0) break generation;
         sort_rooms();
         await generate_stairs();
 
+        // Branch check
         const branchp = is_branchlev(game.u.uz);
-        await placeRoomLevelBranch(branchp);
+        let roomThreshold = branchp ? 4 : 3;
 
-        // C ref: mklev.c makelevel() skip0 tail.  C still counts
-        // ROOM_IS_FILLABLE rooms and draws the bonus-room selection here,
-        // but savelev() memsets svr.rooms when the previous level is
-        // released (save.c:564, reached from goto_level and #wizmakemap),
-        // so Rogue rooms always start with needfill FILL_NONE and the
-        // count is zero: every room is offered to fill_ordinary_room with
-        // no bonus flag and returns at its needfill gate.
-        for (const croom of level.rooms.slice(0, level.nroom))
-            if (isRoom(croom)) await fill_ordinary_room(croom, false);
-        for (const croom of level.rooms.slice(0, level.nroom))
-            if (isRoom(croom)) await fill_special_room(croom);
-        return;
-    }
+        await makecorridors();
+        await make_niches();
 
-    // Regular level generation
-    const themedRooms = await beginLuaThemerooms();
-    await makerooms(themedRooms);
-
-    if (level.nroom <= 0) return;
-    sort_rooms();
-    await generate_stairs();
-
-    // Branch check
-    const branchp = is_branchlev(game.u.uz);
-    let roomThreshold = branchp ? 4 : 3;
-
-    await makecorridors();
-    await make_niches();
-
-    // Restore the reserved vault after corridors and niches are complete.
-    if (g.vault_x !== undefined && g.vault_x !== -1) {
-        if (g.vault_y === undefined) throw new Error('Vault reservation has no y coordinate.');
-        const vw = { v: 1 }, vh = { v: 1 };
-        const vx = { v: g.vault_x }, vy = { v: g.vault_y };
-        const finishVault = async () => {
-            add_room(vx.v, vy.v, vx.v + vw.v, vy.v + vh.v, true, VAULT, false);
-            level.flags.has_vault = true;
-            roomThreshold++;
-            const vaultRoom = level.rooms[level.nroom - 1];
-            if (isRoom(vaultRoom)) {
-                vaultRoom.needfill = FILL_NORMAL;
-                await fillVault(vaultRoom);
-            }
-            await maybePlaceKnoxPortal(vx.v + vw.v, vy.v + vh.v);
-            if (!level.flags.noteleport && !rn2(3)) await makeniche(TELEP_TRAP);
-        };
-        if (check_room(vx, vw, vy, vh, true)) {
-            await finishVault();
-        } else if (rnd_rect()) {
-            // C retries the reserved vault in the remaining free rectangle.
-            // A successful reservation is only provisional: makelevel copies
-            // its coordinates and re-enters the same check/fill block.
-            const reserved = create_room(
-                -1, -1, 2, 2, -1, -1, VAULT, true,
-            );
-            if (reserved) {
-                const candidate = level.rooms[level.nroom];
-                vx.v = g.vault_x = candidate?.lx ?? -1;
-                vy.v = g.vault_y = candidate?.ly ?? -1;
-                if (check_room(vx, vw, vy, vh, true)) await finishVault();
-                else if (candidate) level.rooms[level.nroom] = { ...candidate, hx: -1 };
+        // Restore the reserved vault after corridors and niches are complete.
+        if (g.vault_x !== undefined && g.vault_x !== -1) {
+            if (g.vault_y === undefined) throw new Error('Vault reservation has no y coordinate.');
+            const vw = { v: 1 }, vh = { v: 1 };
+            const vx = { v: g.vault_x }, vy = { v: g.vault_y };
+            const finishVault = async () => {
+                add_room(vx.v, vy.v, vx.v + vw.v, vy.v + vh.v, true, VAULT, false);
+                level.flags.has_vault = true;
+                roomThreshold++;
+                const vaultRoom = level.rooms[level.nroom - 1];
+                if (isRoom(vaultRoom)) {
+                    vaultRoom.needfill = FILL_NORMAL;
+                    await fillVault(vaultRoom);
+                }
+                await maybePlaceKnoxPortal(vx.v + vw.v, vy.v + vh.v);
+                if (!level.flags.noteleport && !rn2(3)) await makeniche(TELEP_TRAP);
+            };
+            if (check_room(vx, vw, vy, vh, true)) {
+                await finishVault();
+            } else if (rnd_rect()) {
+                // C retries the reserved vault in the remaining free rectangle.
+                // A successful reservation is only provisional: makelevel copies
+                // its coordinates and re-enters the same check/fill block.
+                const reserved = create_room(
+                    -1, -1, 2, 2, -1, -1, VAULT, true,
+                );
+                if (reserved) {
+                    const candidate = level.rooms[level.nroom];
+                    vx.v = g.vault_x = candidate?.lx ?? -1;
+                    vy.v = g.vault_y = candidate?.ly ?? -1;
+                    if (check_room(vx, vw, vy, vh, true)) await finishVault();
+                    else if (candidate) level.rooms[level.nroom] = { ...candidate, hx: -1 };
+                }
             }
         }
+
+        // C ref: mklev.c makelevel() -> mkroom.c mkshop().  On shallow regular
+        // levels the only eligible random special room is a shop.  Selecting it
+        // here is stateful: it changes topology and excludes the room from the
+        // ordinary-room bonus and filling passes below.
+        await maybeMakeSpecialRoom(roomThreshold);
+
+        // Place dungeon branch
+        await placeRoomLevelBranch(branchp);
+
+        // Choose one ordinary room for a level-specific bonus item, then fill all
+        // ordinary rooms.  The choice uses the rooms on this level.
+        const fillableRooms = level.rooms
+            .slice(0, level.nroom)
+            .filter((room): room is Room => isRoom(room)
+                && (room.rtype === OROOM || room.rtype === THEMEROOM)
+                && room.needfill === FILL_NORMAL);
+        let bonusItemRoomCountdown = fillableRooms.length
+            ? rn2(fillableRooms.length) : -1;
+        for (const croom of level.rooms.slice(0, level.nroom)) {
+            if (!isRoom(croom)) continue;
+            const fillable = (croom.rtype === OROOM || croom.rtype === THEMEROOM)
+                && croom.needfill === FILL_NORMAL;
+            await fill_ordinary_room(croom,
+                fillable && bonusItemRoomCountdown === 0);
+            if (fillable) bonusItemRoomCountdown--;
+        }
+
+        // C defers all special-room stocking until ordinary rooms are filled.
+        // Room order matters: this level's shop is stocked before the vault's
+        // second fill pass, and both precede mineralization.
+        for (const croom of level.rooms.slice(0, level.nroom))
+            if (isRoom(croom)) await fill_special_room(croom);
+
+        if (themedRooms) {
+            await callLuaThemerooms('post_level_generate');
+            // reset_xystart_size() restores the whole-level rectangle the
+            // interpreter's rooms narrowed; a loaded theme interpreter
+            // wallifies the complete level, including walls placed inside
+            // rooms by terrain callbacks such as "Pillars".
+            const wholeLevel = reset_xystart_size();
+            wallification(wholeLevel.xstart, wholeLevel.ystart,
+                wholeLevel.xstart + wholeLevel.width - 1, wholeLevel.ystart + wholeLevel.height - 1);
+        }
     }
-
-    // C ref: mklev.c makelevel() -> mkroom.c mkshop().  On shallow regular
-    // levels the only eligible random special room is a shop.  Selecting it
-    // here is stateful: it changes topology and excludes the room from the
-    // ordinary-room bonus and filling passes below.
-    await maybeMakeSpecialRoom(roomThreshold);
-
-    // Place dungeon branch
-    await placeRoomLevelBranch(branchp);
-
-    // Choose one ordinary room for a level-specific bonus item, then fill all
-    // ordinary rooms.  The choice uses the rooms on this level.
-    const fillableRooms = level.rooms
-        .slice(0, level.nroom)
-        .filter((room): room is Room => isRoom(room)
-            && (room.rtype === OROOM || room.rtype === THEMEROOM)
-            && room.needfill === FILL_NORMAL);
-    let bonusItemRoomCountdown = fillableRooms.length
-        ? rn2(fillableRooms.length) : -1;
-    for (const croom of level.rooms.slice(0, level.nroom)) {
-        if (!isRoom(croom)) continue;
-        const fillable = (croom.rtype === OROOM || croom.rtype === THEMEROOM)
-            && croom.needfill === FILL_NORMAL;
-        await fill_ordinary_room(croom,
-            fillable && bonusItemRoomCountdown === 0);
-        if (fillable) bonusItemRoomCountdown--;
-    }
-
-    // C defers all special-room stocking until ordinary rooms are filled.
-    // Room order matters: this level's shop is stocked before the vault's
-    // second fill pass, and both precede mineralization.
-    for (const croom of level.rooms.slice(0, level.nroom))
-        if (isRoom(croom)) await fill_special_room(croom);
-
-    if (themedRooms) {
-        await callLuaThemerooms('post_level_generate');
-        // reset_xystart_size() restores the whole-level rectangle the
-        // interpreter's rooms narrowed; a loaded theme interpreter
-        // wallifies the complete level, including walls placed inside
-        // rooms by terrain callbacks such as "Pillars".
-        const wholeLevel = reset_xystart_size();
-        wallification(wholeLevel.xstart, wholeLevel.ystart,
-            wholeLevel.xstart + wholeLevel.width - 1, wholeLevel.ystart + wholeLevel.height - 1);
-    }
+    await currentLuaLifecycle().runCallbacks(g, 'level_enter');
 }
 
 // C mklev.c:mk_knox_portal()
@@ -1482,7 +1483,7 @@ export async function place_branch(branchp: DungeonBranch | null, x = 0, y = 0):
     g.made_branch = true;
 }
 
-// C mklev.c:makelevel() marks the entrance after placing a room level's
+// Part of C mklev.c:makelevel(): marks the entrance after placing a room level's
 // branch. Lua and maze branches keep stairway_add()'s untraversed state.
 async function placeRoomLevelBranch(branch: DungeonBranch | null): Promise<void> {
     const previous = game.stairs;
@@ -1610,7 +1611,7 @@ export async function mktrap_victim(trap: Trap): Promise<void> {
     // observes the backdated age immediately and classifies it as unsafe.
     if (!corpse || corpse.age === undefined)
         throw new Error('Trap victim creation did not produce an aged corpse.');
-    corpse.age -= 51; // TAINT_AGE + 1
+    corpse.age -= TAINT_AGE + 1;
 }
 
 // Part of C dothrow.c:breaktest(): the trap-victim subset, including zap.c:obj_resists() for fresh non-invocation objects.
