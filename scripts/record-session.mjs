@@ -565,7 +565,7 @@ async function recordSegment({ seg, isFirstSegment, binary, installDir, rngLogPa
     // Buffer of 'anim' markers received between consecutive 'input'
     // markers.  When the next input marker closes a step, the buffered
     // anim screens are attached to that step as `animation_frames`,
-    // preserving order and step-attribution without any in-stream events.
+    // preserving order and step-attribution without extra stream markers.
     let pendingAnimFrames = [];
     const onMarker = async (m) => {
         if (m.kind === 'anim') {
@@ -620,7 +620,11 @@ async function recordSegment({ seg, isFirstSegment, binary, installDir, rngLogPa
                 // patched gettty seeds erase_char with '\177'.)
                 if (k === '\r')
                     k = '\n';
-                input.write(Buffer.from(k, 'utf8'));
+                // A session key is a code point in the 8-bit input domain
+                // (a meta key such as M-e is the single char U+00E5), not
+                // Unicode text: write one byte per key, as the tty reads it.
+                // UTF-8 would send a key above U+007F as two or more bytes.
+                input.write(Buffer.from(k, 'latin1'));
                 armTimeout(20000, driver
                     ? `after adaptive key ${nextKeyIdx}`
                     : `after key ${nextKeyIdx}/${moves.length}`);
