@@ -11,7 +11,7 @@ what the JS port has to match.
 | 003 | `rng-log-core` | Log every `rn2/rnd/rne/rnz/rnl/rn1/d` call to `NETHACK_RNGLOG` | Core PRNG — first of three contexts the port has to reproduce |
 | 004 | `rng-log-lua-context` | Tag Lua-side PRNG calls with their `<file>:<line>` source location | Lua scripts (special levels) use the same PRNG; need to know which call is which |
 | 005 | `rng-display-logging` | Log the third PRNG context (display/hallucination) to `NETHACK_RNGLOG_DISP` | Hallucination uses a separate stream so it doesn't perturb gameplay RNG |
-| 006 | `nomux-capture` | Replace `tty` curses output with a deterministic 24×80 frame capture | Need exact terminal contents at every input boundary |
+| 006 | `nomux-capture` | Replace `tty` curses output with a deterministic 24×80 frame capture | Need exact terminal contents at every input boundary <br>This fork keeps the capture buffer sized for full-map color but not upstream's later `nomux_reset_raw_mode()` at window teardown (teleport-contest 6ee30e6f9): the public sessions were recorded without it (seed0013's save ends with the cursor on row 1), and with it every save-then-restore session ends on row 0. |
 | 007 | `nomux-raw-print` | Route `raw_print` (early errors, banners) through nomux too | Otherwise startup banners aren't captured |
 | 008 | `nomux-deterministic-capture` | Snapshot the screen exactly when C blocks for the next key | Pins frame boundaries to `tty_nhgetch` calls |
 
