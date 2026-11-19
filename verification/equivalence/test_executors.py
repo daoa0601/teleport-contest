@@ -142,6 +142,11 @@ class ExecutorTests(unittest.TestCase):
         self.assertIn('C assertion failed', report)
         self.assertRegex(report, r'\bx=-?\d+\b')
 
+    def test_sizeof_bool_is_one_byte(self):
+        # glibc's newer assert() evaluates sizeof on a _Bool conversion of its condition.
+        source = 'unsigned long example(int x) { return sizeof ((_Bool) x) + sizeof (_Bool); }'
+        self.equivalent(source, 'function example(x) { return 2; }', params=[('x', INT)])
+
     def test_apple_assert_is_a_proof_obligation(self):
         source = '''
             extern void __assert_rtn(const char *, const char *, int, const char *)

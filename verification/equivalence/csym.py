@@ -62,7 +62,7 @@ def convert(v, src, dst):
     return z3.If(in_range(v, dst), v, wrapped)
 
 
-SCALAR_SIZES = {'char': 1, 'signed char': 1, 'unsigned char': 1, 'short': 2, 'unsigned short': 2,
+SCALAR_SIZES = {'_Bool': 1, 'bool': 1, 'char': 1, 'signed char': 1, 'unsigned char': 1, 'short': 2, 'unsigned short': 2,
                 'int': 4, 'unsigned int': 4, 'long': 8, 'unsigned long': 8,
                 'long long': 8, 'unsigned long long': 8}
 
