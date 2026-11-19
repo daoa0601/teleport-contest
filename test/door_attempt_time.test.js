@@ -4,8 +4,12 @@ import { rhack } from '../js/cmd.js';
 import { ROOM, STONE } from '../js/const.js';
 import { feel_location, map_background, newsym, swallowed } from '../js/display.js';
 import { game } from '../js/gstate.js';
+import { cmapToGlyph, CmapSymbol } from '../js/glyph_numbers.js';
 import { pushKeys } from '../js/input.js';
+import { LOCK_PICK } from '../js/object_data.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { createMonsterAt } from './support/monsters.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('closing while blind and engulfed does not spend time redisplaying known terrain after redraw', async () => {
     await freshObjectRoom({ hero: { blindTurns: 10 } });
@@ -35,6 +39,23 @@ void test('opening at a hallucinated monster does not spend time on its changing
     await newsym(11, 10);
     pushKeys('l');
     await rhack('o'.charCodeAt(0));
+    assert.equal(game._pending_message, 'You see no door there.');
+    assert.equal(game.context.move, 0);
+});
+// C lock.c:pick_lock() compares levl[cc.x][cc.y].glyph — the hero's memory —
+// around feel_location() (lock.c:578-585), not glyph_at()'s screen buffer.
+// A gas cloud over an already-felt floor is display-only, so feeling the
+// square again teaches nothing and pick_lock() returns PICKLOCK_DID_NOTHING:
+// "You see no door there." without spending a turn (apply.c:4288 maps that
+// to ECMD_OK).
+void test('applying a lock pick at a doorless square under a gas cloud spends no time', async () => {
+    const level = await freshObjectRoom();
+    await addInventoryObject(LOCK_PICK, { invlet: 'a' });
+    await feel_location(11, 10);
+    assert.equal(level.requireAt(11, 10).remembered_glyph?.glyph, cmapToGlyph(CmapSymbol.darkroom));
+    await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
+    pushKeys('al');
+    await rhack('a'.charCodeAt(0));
     assert.equal(game._pending_message, 'You see no door there.');
     assert.equal(game.context.move, 0);
 });

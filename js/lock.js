@@ -14,7 +14,7 @@ import { commandResultCancelled, cmdq_add_dir, cmdq_add_ec } from './cmd.js';
 import { game, requireGameLevel, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { doloot } from './pickup.js';
 import { flushPendingTopline } from './topl.js';
-import { feel_location, feel_newsym, newsym, canSeeMonster, glyphAt, canSpotMonster, map_invisible } from './display.js';
+import { feel_location, feel_newsym, newsym, canSeeMonster, canSpotMonster, map_invisible } from './display.js';
 import { promptDirection } from './cmd.js';
 import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';
 import { findDrawbridgeAt, isLavaAt, isPoolAt } from './dbridge.js';
@@ -823,11 +823,15 @@ async function pickDoorLock(tool, x, y, automatic, state) {
         return true;
     }
     if (door.typ !== DOOR) {
-        const previousGlyph = glyphAt(x, y)?.glyph;
+        // C lock.c:pick_lock() reads door->glyph — levl[x][y].glyph, the
+        // hero's memory, not glyph_at()'s screen buffer. A gas cloud drawn
+        // over the square changes only the display layer; feeling the floor
+        // then repaints it without teaching anything, and no time passes.
+        const previousGlyph = door.remembered_glyph?.glyph;
         recordMappedOverviewState();
         const previousTerrain = door.lastseentyp;
         await feel_location(x, y);
-        const learned = glyphAt(x, y)?.glyph !== previousGlyph || door.lastseentyp !== previousTerrain;
+        const learned = door.remembered_glyph?.glyph !== previousGlyph || door.lastseentyp !== previousTerrain;
         const portcullis = door.typ === DBWALL && findDrawbridgeAt(x, y, state) !== null;
         await plineWithContinuation(`You ${heroIsBlind(state) ? 'feel' : 'see'} no ${portcullis ? 'lock on the drawbridge' : 'door there'}.`);
         return learned;
