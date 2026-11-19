@@ -68,7 +68,7 @@ function publicDisplayOptions(): string {
 }
 
 export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly GeneratorKind[], recipes: readonly string[],
-    optionMix: OptionMix = 'fixed', long = false): { spec: CandidateSpec; session: Session } {
+    optionMix: OptionMix = 'fixed', long = false, meta = false): { spec: CandidateSpec; session: Session } {
     const rotation: GeneratorKind[] = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', ...(kinds.includes('deep') ? ['deep' as const] : [])];
@@ -120,7 +120,7 @@ export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly
         // 'deepwide' plays the wide policy over the same setup.
         const driver: PolicyConfig = { kind: kind === 'deep' ? 'explore' : kind === 'deepwide' ? 'wide' : kind,
             seed: randomInt(1, 0x7fffffff), maxSteps: spec.targetKeys,
-            ...(kind === 'deepwide' ? { debug: true } : {}) };
+            ...(kind === 'deepwide' ? { debug: true } : {}), ...(meta ? { meta: true } : {}) };
         let nethackrc = rc;
         if (kind === 'deep' || kind === 'deepwide') {
             spec.debug = true;

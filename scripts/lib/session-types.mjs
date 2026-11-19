@@ -88,7 +88,8 @@ export function decodePolicyConfig(value) {
     return { kind: driver.kind, seed: numberValue(driver.seed, 'driver seed'), maxSteps: numberValue(driver.maxSteps, 'driver maxSteps'),
         ...(driver.name === undefined ? {} : { name: stringValue(driver.name, 'driver name') }),
         ...(driver.setup === undefined ? {} : { setup: decodeActions(driver.setup) }),
-        ...(driver.debug === undefined ? {} : { debug: booleanValue(driver.debug, 'driver debug') }) };
+        ...(driver.debug === undefined ? {} : { debug: booleanValue(driver.debug, 'driver debug') }),
+        ...(driver.meta === undefined ? {} : { meta: booleanValue(driver.meta, 'driver meta') }) };
 }
 function decodeSummary(value) {
     const data = objectValue(value, 'driver summary');

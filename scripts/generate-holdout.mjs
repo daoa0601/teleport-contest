@@ -24,7 +24,7 @@ process.on('SIGINT', stopChildren);
 process.on('SIGTERM', stopChildren);
 function options(argv) {
     const opts = { count: 500, jobs: 2, out: path.join(ROOT, '.cache/holdout-dev/mixed'),
-        maxAttempts: 0, resume: false, kinds: ['recipe', 'fuzz', 'explore'], optionMix: 'fixed', long: false };
+        maxAttempts: 0, resume: false, kinds: ['recipe', 'fuzz', 'explore'], optionMix: 'fixed', long: false, meta: false };
     let requestedMaxAttempts = null;
     for (let index = 0; index < argv.length; index++) {
         const flag = argv[index];
@@ -36,6 +36,10 @@ function options(argv) {
         }
         if (flag === '--long') {
             opts.long = true;
+            continue;
+        }
+        if (flag === '--meta') {
+            opts.meta = true;
             continue;
         }
         const value = argv[++index];
@@ -174,7 +178,7 @@ async function record(input, output, install) {
 async function main() {
     const opts = options(process.argv.slice(2));
     if (!opts) {
-        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide,deepwide] [--recipes NAME,...] [--options fixed|public] [--long] [--max-attempts N]');
+        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide,deepwide] [--recipes NAME,...] [--options fixed|public] [--long] [--meta] [--max-attempts N]');
         return;
     }
     const lock = await reserveOutput(opts);
@@ -242,7 +246,7 @@ async function main() {
                 && manifest.attempts < opts.maxAttempts) {
                 inFlight++;
                 const index = manifest.attempts++;
-                const candidate = makeCandidate(index, seeds, opts.kinds, opts.recipes ?? RECIPE_NAMES, opts.optionMix, opts.long);
+                const candidate = makeCandidate(index, seeds, opts.kinds, opts.recipes ?? RECIPE_NAMES, opts.optionMix, opts.long, opts.meta);
                 const { spec, session } = candidate;
                 const planPath = path.join(opts.out, 'plans', `${spec.id}.json`);
                 const partial = path.join(runtime, `${spec.id}.partial.json`);

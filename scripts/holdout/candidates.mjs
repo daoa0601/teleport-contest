@@ -63,7 +63,7 @@ function publicDisplayOptions() {
     }
     return options.join(',');
 }
-export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed', long = false) {
+export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed', long = false, meta = false) {
     const rotation = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', ...(kinds.includes('deep') ? ['deep'] : [])];
@@ -122,7 +122,7 @@ export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed',
         // 'deepwide' plays the wide policy over the same setup.
         const driver = { kind: kind === 'deep' ? 'explore' : kind === 'deepwide' ? 'wide' : kind,
             seed: randomInt(1, 0x7fffffff), maxSteps: spec.targetKeys,
-            ...(kind === 'deepwide' ? { debug: true } : {}) };
+            ...(kind === 'deepwide' ? { debug: true } : {}), ...(meta ? { meta: true } : {}) };
         let nethackrc = rc;
         if (kind === 'deep' || kind === 'deepwide') {
             spec.debug = true;

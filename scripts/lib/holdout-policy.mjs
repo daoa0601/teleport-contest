@@ -1199,6 +1199,10 @@ const WIDE_EXTENDED = ['pray', 'chat', 'offer', 'turn', 'monster', 'ride', 'sit'
     'overview', 'conduct', 'annotate', 'name', 'adjust', 'dip', 'enhance', 'quiver',
     'vanquished', 'genocided', 'history', 'lookaround', 'herecmdmenu', 'therecmdmenu'];
 const WIDE_ITEM_KEYS = 'qrztfZpPRWTAxXdDaiIewCE';
+// cmd.c binds M-<letter> to extended commands. M-X (exploremode) leaves the
+// session's mode and M-v prints the recorder's build date, so neither is
+// sent; the unbound letters exercise the unknown-command report.
+const WIDE_META_KEYS = Array.from('?aAcCdefgijlmnopRrsTtuVw2ONbhkxz', letter => String.fromCharCode(letter.charCodeAt(0) | 0x80));
 const WIDE_INFO_KEYS = 'OvV:;/?\\`$+="[()*^@&|\x18\x10\x0f\x06\x14\x05\x12\x01';
 const EXIT_CHOICE = /\b(quit|save|shell|suspend|exploremode)\b|no return|leave the dungeon|escape the dungeon/i;
 // The '?' help menu's "List of game options." entry runs option_help(),
@@ -1239,6 +1243,11 @@ function createWidePolicy(config) {
     function send(key) {
         summary.keysSent++;
         return key;
+    }
+    // With meta keys on, a prompt sometimes receives one: the tty reads it
+    // as a single high-bit byte that the prompt must reject or interpret.
+    function strayMeta() {
+        return config.meta && rand() < 0.05 ? send(choose(WIDE_META_KEYS)) : null;
     }
     function startLine(query, target) {
         lineInput = { query, target, remaining: target + '\r' };
@@ -1333,7 +1342,7 @@ function createWidePolicy(config) {
         // Menus have the same footer for PICK_ONE, PICK_ANY and PICK_NONE.
         // Reobserve after every selector: PICK_ONE may already have closed.
         if (cls.kind === 'menu')
-            return menuKey(rows, draining);
+            return (draining ? null : strayMeta()) ?? menuKey(rows, draining);
         menuHeading = null;
         menuPicks.clear();
         if (cls.kind === 'chargen')
@@ -1341,14 +1350,14 @@ function createWidePolicy(config) {
         if (cls.kind === 'direction') {
             if (prefix)
                 return sendPrefix();
-            return send(draining || rand() < 0.12 ? ESC : choose([...DIR_KEYS, '.', '<', '>']));
+            return (draining ? null : strayMeta()) ?? send(draining || rand() < 0.12 ? ESC : choose([...DIR_KEYS, '.', '<', '>']));
         }
         if (cls.kind === 'yn') {
             if (EXIT_CHOICE.test(cls.detail))
                 return send(cls.choices?.includes('n') ? 'n' : ESC);
             if (draining || rand() < 0.10)
                 return send(ESC);
-            return send(choose((cls.choices ?? 'yn').replaceAll('/', '').split('')));
+            return strayMeta() ?? send(choose((cls.choices ?? 'yn').replaceAll('/', '').split('')));
         }
         // Unlike the narrow legacy classifier, wide must accept object-class
         // punctuation and inventory ranges, including questions wrapped to row 1.
@@ -1358,6 +1367,9 @@ function createWidePolicy(config) {
             const choices = wideObjectChoices(itemAt(bracket, 1));
             if (draining || rand() < 0.12)
                 return send(ESC);
+            const stray = strayMeta();
+            if (stray)
+                return stray;
             if (choices.length)
                 return send(choose(choices));
             return send(active.includes('?') ? '?' : ESC);
@@ -1369,7 +1381,8 @@ function createWidePolicy(config) {
                 return startLine(cls.detail.trim(), config.name?.trim().slice(0, 32) || 'Holdout');
             }
             if (/what (?:do you want to (?:write|engrave)|should.*(?:name|call))|name|call|annotat|write|engrave|search for/i.test(cls.detail)) {
-                return startLine(cls.detail.trim(), 'wide');
+                // A high-bit letter is one tty byte, like a meta key.
+                return startLine(cls.detail.trim(), config.meta && rand() < 0.3 ? 'w\u00efde' : 'wide');
             }
             return send(ESC);
         }
@@ -1430,7 +1443,10 @@ function createWidePolicy(config) {
         summary.exploredCells = rows.slice(1, bottom).reduce((count, row) => count + row.replaceAll(' ', '').length, 0);
         const action = pickWeighted(rand, [['move', 36], ['item', 22], ['door', 6],
             ['info', 10], ['extended', 16], ['travel', 4], ['prefix', 8],
-            ['pickup', 4], ['search', 4], ['rest', 2], ['eat', status?.hunger ? 8 : 2]]);
+            ['pickup', 4], ['search', 4], ['rest', 2], ['eat', status?.hunger ? 8 : 2],
+            ...(config.meta ? [['meta', 8]] : [])]);
+        if (action === 'meta')
+            return send(choose(WIDE_META_KEYS));
         if (action === 'item')
             return send(choose(WIDE_ITEM_KEYS.split('')));
         if (action === 'door') {
