@@ -63,7 +63,7 @@ import { changeHeroLuck, checkAttributeExercise, currentAttribute, exerciseAttri
 import { encumber_msg } from './pickup.js';
 import { rndcurse } from './sit.js';
 import { resolveMonsterGaze, completeHeroAttackSlot, mattacku, missmu, resolveMonsterSelfExplosion } from './mhitu.js';
-import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
+import { bot, rankOf, roleSwitch, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
 import { canSpotMonster, docrt, redrawMap, flush_screen, newsym, map_invisible, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, curs_on_u } from './display.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, rememberToplines, appendSuppressedTopline, resetToplineClip } from './topl.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level } from './vision.js';
@@ -115,7 +115,8 @@ async function showLegacy() {
     const d = requireGameDisplay(game);
     const alignment = game.initAlignment?.name;
     const god = (alignment ? game.urole.gods?.[alignment] : null) || 'your god';
-    const rank = game.urole?.rank?.m || game.urole?.title?.[0]?.m || 'adventurer';
+    // C questpgr.c %r: rank_of(u.ulevel, Role_switch, flags.female).
+    const rank = rankOf(game.u.ulevel ?? 1, roleSwitch(game), !!game.flags?.female, game);
     const deityNoun = (alignment && game.urole.goddessAlignments?.includes(alignment))
         || god === 'The Lady'
         ? 'goddess' : 'god';

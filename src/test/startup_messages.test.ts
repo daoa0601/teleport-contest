@@ -32,6 +32,17 @@ void test('acknowledging the legacy introduction reaches welcome and leaves ques
     assert.ok(await prepareQuestText('quest_portal', engine.state));
 });
 
+void test('the legacy introduction gives a female hero her rank title', async () => {
+    // C questpgr.c %r: rank_of(u.ulevel, Role_switch, flags.female).
+    const engine = await runSegment({
+        seed: 123,
+        datetime: '20260801120000',
+        nethackrc: 'OPTIONS=name:Reader,role:Barbarian,race:human,gender:female,align:neutral,legacy,!tutorial,pettype:none',
+        moves: '', storage: memoryStorage(),
+    });
+    assert.match(visibleRows(engine).join('\n'), /You, a newly trained Plunderess, have been heralded/);
+});
+
 async function startWithLongWelcome({
     tutorial = false, explore = false, datetime = '20260801120000',
 } = {}) {
