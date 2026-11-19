@@ -54,8 +54,18 @@ void test('tutorial entry retains the old armor class until its entry message is
     }
 
     assert.equal(entryFound, true, 'startup must reach the tutorial entry message');
-    assert.equal(engine.state.inventory.length, 0);
+    // deferred_goto() prints the entry pager before goto_level()
+    // sequesters anything (do.c:2082-2090), so the pager moment still
+    // carries the starting gear and the armor class it displays.
+    assert.ok(engine.state.inventory.length > 0,
+        'the inventory is sequestered only after the pager is acknowledged');
     assert.equal(engine.state.u.uac, startingArmorClass);
+    // After the acknowledgment, goto_level() runs tutorial(TRUE) ->
+    // nh.gamestate() before the next input boundary.
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    assert.equal(engine.state.inventory.length, 0,
+        'acknowledging the pager sequesters the starting inventory');
     // C's goto_level() bookkeeping marks the tutorial dungeon's reached
     // level, so the disclosure heading shows no empty level range.
     const tutorialDnum = engine.state.dungeons.findIndex(
@@ -136,6 +146,52 @@ void test('the tutorial entry pager leaves the displayed map unchanged', async (
                 `screen row ${row} col ${col} changed across the tutorial entry pager`);
         }
     }
+});
+
+void test('the tutorial entry pager keeps the starting gold in the status line', async () => {
+    const engine = await runSegment({
+        seed: 1901573816,
+        datetime: '20261012090000',
+        nethackrc: 'OPTIONS=name:Holdout,role:tourist,race:human,gender:male,align:neutral,!legacy,!autopickup,pettype:none',
+        moves: '', storage: memoryStorage(),
+    });
+    // C deferred_goto() prints dfr_pre_msg before calling goto_level()
+    // (do.c:2082-2083), and the hero's gold is only sequestered inside
+    // goto_level() by tutorial(TRUE) -> nh.gamestate() (do.c:1494-1496,
+    // nhlib.lua tutorial_enter).  vpline() flushes the screen before the
+    // message shows (pline.c: "flush_screen(1)"), so the status line the
+    // "Entering the tutorial.--More--" pager displays still reports the
+    // pre-tutorial wallet; only the flush after the arrival's docrt()
+    // repaints it (do.c:1845-1846).
+    const screenRows = (): string[] => {
+        const display = engine.state.nhDisplay;
+        assert.ok(display);
+        return display.grid.map(row => row.map(cell => cell.ch).join(''));
+    };
+    let beforeMenu: string[] | null = null;
+    let previous = screenRows();
+    let entry: string[] | null = null;
+    for (let phase = 0; phase < 10 && !entry; phase++) {
+        const rows = screenRows();
+        const screen = rows.join('\n');
+        if (screen.includes('Entering the tutorial.')) {
+            entry = rows;
+            break;
+        }
+        if (screen.includes('Do you want a tutorial?')) beforeMenu = previous;
+        previous = rows;
+        engine.inputGate.feed(screen.includes('Do you want a tutorial?') ? 'y' : ' ');
+        await engine.runUntilInputNeeded();
+    }
+    assert.ok(entry, 'startup must reach the tutorial entry message');
+    assert.ok(beforeMenu, 'startup must show the pre-menu welcome screen');
+    const beforeGold = beforeMenu[23]?.match(/\$:(\d+)/)?.[1];
+    assert.ok(beforeGold !== undefined && Number(beforeGold) > 0,
+        `the Tourist must start with gold, saw $:${beforeGold ?? 'none'}`);
+    assert.equal(entry[22], beforeMenu[22],
+        'the title status row must not change across the tutorial entry pager');
+    assert.equal(entry[23], beforeMenu[23],
+        'the status row must keep the starting gold until the pager is dismissed');
 });
 
 void test('entering the tutorial stores equipment and returning restores the same items', async t => {

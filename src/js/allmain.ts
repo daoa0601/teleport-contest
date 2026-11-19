@@ -289,6 +289,11 @@ export async function restoregamePreamble() {
 // arrival, modeled here as a hand-rolled level transition combining Lua
 // state transfer and that arrival.  Destination construction and arrival
 // precede the entry pager, but that pager still projects the source graph.
+// deferred_goto() prints dfr_pre_msg before goto_level() starts
+// (do.c:2082-2083), so the sequestering below (tutorial(TRUE) ->
+// nh.gamestate(), do.c:1494-1496) must not precede that pager either:
+// the status line under "Entering the tutorial.--More--" still reports
+// the pre-tutorial wallet until the arrival repaints it.
 // Tutorial inventory is deliberately sequestered until a later portal
 // restores the saved game state.
 async function maybeDoTutorial(): Promise<void> {
@@ -330,7 +335,6 @@ async function maybeDoTutorial(): Promise<void> {
     });
 
     game.u.ucamefrom = { ...oldDepth };
-    await currentLuaLifecycle().changeTutorialMode(game, true);
     game.u.uz = { ...target };
     // C's tutorial entry runs through goto_level(), which records the
     // reached level for the destination dungeon (do.c:1678-1685) before
@@ -380,6 +384,13 @@ async function maybeDoTutorial(): Promise<void> {
     oldHero.uy0 = oldPosition.y0;
     await plineWithContinuation('Entering the tutorial.');
     await flushPendingTopline();
+
+    // goto_level() sequesters the hero's state only after deferred_goto()
+    // has printed dfr_pre_msg (do.c:1494-1496 below the pline1 at
+    // do.c:2082-2083), so the pager above still displays the pre-tutorial
+    // status line: vpline() flushes the screen before showing the message,
+    // while the hero's gold is still carried.
+    await currentLuaLifecycle().changeTutorialMode(game, true);
     await checkSpecialRoom({ newLevel: true });
 
     game.level = tutorialLevel;
