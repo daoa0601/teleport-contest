@@ -58,6 +58,15 @@ function publicOptions(debug: boolean): string {
     return options.join(',');
 }
 
+function publicDisplayOptions(): string {
+    const options: string[] = [];
+    for (const [option, percent] of [['color', 18], ['lit_corridor', 14], ['msg_window:reversed', 9],
+        ['showexp', 18], ['pushweapon', 14], ['suppress_alert:3.4.3', 68]] as const) {
+        if (chance(percent)) options.push(option);
+    }
+    return options.join(',');
+}
+
 export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly GeneratorKind[], recipes: readonly string[],
     optionMix: OptionMix = 'fixed'): { spec: CandidateSpec; session: Session } {
     const rotation: GeneratorKind[] = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
@@ -89,6 +98,13 @@ export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly
             spec.character = character;
         }
         session = makeRecipe(recipe, { seed, datetime: date.datetime, character, name: 'Holdout' });
+        if (optionMix === 'public') {
+            // Recipes script their own keys and check their own messages, so
+            // only display options join them: no intro, prompt or message changes.
+            const display = publicDisplayOptions();
+            spec.options = display;
+            if (display) for (const segment of session.segments) segment.nethackrc += `OPTIONS=${display}\n`;
+        }
         spec.debug = session.segments.some(segment => /playmode:debug/.test(segment.nethackrc));
     } else {
         const lengthSlot = Math.floor(index / schedule.length) % 20;

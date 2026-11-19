@@ -54,6 +54,15 @@ function publicOptions(debug) {
         options.push('disclose:yi ya yv yg yc yo');
     return options.join(',');
 }
+function publicDisplayOptions() {
+    const options = [];
+    for (const [option, percent] of [['color', 18], ['lit_corridor', 14], ['msg_window:reversed', 9],
+        ['showexp', 18], ['pushweapon', 14], ['suppress_alert:3.4.3', 68]]) {
+        if (chance(percent))
+            options.push(option);
+    }
+    return options.join(',');
+}
 export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed') {
     const rotation = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
@@ -88,6 +97,15 @@ export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed')
             spec.character = character;
         }
         session = makeRecipe(recipe, { seed, datetime: date.datetime, character, name: 'Holdout' });
+        if (optionMix === 'public') {
+            // Recipes script their own keys and check their own messages, so
+            // only display options join them: no intro, prompt or message changes.
+            const display = publicDisplayOptions();
+            spec.options = display;
+            if (display)
+                for (const segment of session.segments)
+                    segment.nethackrc += `OPTIONS=${display}\n`;
+        }
         spec.debug = session.segments.some(segment => /playmode:debug/.test(segment.nethackrc));
     }
     else {
