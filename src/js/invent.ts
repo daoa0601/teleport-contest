@@ -440,6 +440,9 @@ type InventoryObjectSelection = {
     object: GameObject;
     none: false;
     count: number | null;
+    // Chosen from the '?'/'*' menu; tty's menu cleared the message window,
+    // so the query is no longer painted on the top line.
+    fromMenu: boolean;
 } | {
     cancelled: false;
     object: null;
@@ -1099,7 +1102,7 @@ export async function getobj(
                     const object = game.inventory.find(candidate => candidate.invlet === letter
                         && admitsChoice(classify(candidate)));
                     if (object) return {
-                        cancelled: false, object, none: false,
+                        cancelled: false, object, none: false, fromMenu: false,
                         count: count !== null && count > 0 && count < object.quan ? count : null,
                     };
                 }
@@ -1283,7 +1286,7 @@ export async function getobj(
         }
         // split_otmp: an explicit zero count selects nothing.
         if (count === 0) return { ...CANCELLED, count: 0 };
-        return { cancelled: false, object, none: false, count };
+        return { cancelled: false, object, none: false, count, fromMenu: !answered };
     }
 }
 
