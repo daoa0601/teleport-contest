@@ -5,49 +5,10 @@
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, syncDeafness } from './senses.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
-
-    A_DEX,
-
-    A_WIS,
-
-    ALTAR, AM_MASK, AM_SANCTUM, Amask2align,
-
-    COLNO, CORR,
-
-    DOOR, D_NODOOR,
-
-    FOUNTAIN,
-
-    GRAVE,
-
-    In_endgame,
-
-    In_sokoban,
-
-    Is_astralevel,
-
-    KILLED_BY, NO_KILLER_PREFIX,
-
-    LAVAPOOL,
-
-    M_AP_FURNITURE,
-
-    M_AP_OBJECT,
-
-    M_AP_TYPE, MGIVENNAME,
-
-    PIT, ROOM,
-
-    ROWNO,
-
-    SCORR, SDOOR, SHOPBASE, SINK,
-
-    STRAT_WAITMASK,
-
-    THRONE, TT_BURIEDBALL, TT_PIT,
-
-    is_pit,
-
+    A_DEX, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, DOOR, D_NODOOR, FOUNTAIN, GRAVE,
+    In_endgame, In_sokoban, Is_astralevel, KILLED_BY, NO_KILLER_PREFIX, LAVAPOOL, M_AP_FURNITURE, M_AP_OBJECT,
+    M_AP_TYPE, MGIVENNAME, PIT, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SINK, STRAT_WAITMASK, THRONE,
+    TT_BURIEDBALL, TT_PIT, is_pit,
 } from './const.js';
 import { In_V_tower } from './dungeon.js';
 import { canSeeMonster, newsym, shieldeff } from './display.js';
@@ -57,7 +18,6 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { zapHeroWithObject, monsterResistsEffect, zapRayWithObject } from './zap.js';
 import { MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
 import {
     revealMonsterAppearance, finishMonsterLiquidDeath, resolveMonsterLiquid, wakeMonster,
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
@@ -69,18 +29,16 @@ import { monsterResistsSleep, is_mercenary, monsterIsMindless, heroCanBlow, mons
 import { putMonsterToSleep, sleptMonst } from './mhitm.js';
 import { makeMonsterFlee, monsterIsScaredAt } from './monmove.js';
 import {
-    BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM,
-    MAGIC_FLUTE, MAGIC_HARP, TOOLED_HORN, WOODEN_FLUTE,
-    WOODEN_HARP, BOULDER,
+    BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP, TOOLED_HORN,
+    WOODEN_FLUTE, WOODEN_HARP, BOULDER,
 } from './object_data.js';
 import { learnObjectType } from './o_init.js';
 import { consumeObjectCharge, objectAt } from './invent.js';
 import {
-    definiteObjectAction,
-    definiteName, ownedObjectName, simpleObjectName,
+    definiteObjectAction, definiteName, ownedObjectName, simpleObjectName,
 } from './objnam.js';
 import { askForTune, playTune } from './passtune.js';
-import { heroFormSticks, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
+import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { d, rnl, rnd, rn2 } from './rng.js';
 import { promptYesNoQuit } from './query.js';
 import { promptDirection } from './cmd.js';
@@ -92,7 +50,7 @@ import { heroLiquidEffects, loseHeroHp, roomsAt, finishDestinationSpotEffects } 
 import { monsterAtPosition } from './steed.js';
 import { altarmaskAt, desecrateAltar } from './pray.js';
 import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
-import {remove_object, updateIceObjectTimersAt} from './mkobj.js';
+import { remove_object, updateIceObjectTimersAt } from './mkobj.js';
 import { applyFloorEffects } from './do.js';
 import {
     monsterSelfTouch, trapAt, waterDamageChain, fireDamageChain, setHeroTrap, resetUtrap, maketrap,
@@ -103,7 +61,7 @@ import { convertSecretDoor } from './detect.js';
 import { addShopDamage } from './shk.js';
 import { align_str } from './insight.js';
 
-export type InstrumentOptions = NonNullable<Parameters<typeof playTune>[2]>;
+type InstrumentOptions = NonNullable<Parameters<typeof playTune>[2]>;
 type InstrumentEffectResult = { heroDied: boolean } | void;
 
 const G_UNIQ = 0x1000;

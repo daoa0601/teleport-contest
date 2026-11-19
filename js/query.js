@@ -4,15 +4,10 @@
 import { COLNO } from './const.js';
 import { clearMessageWindow, flushPendingTopline, messageWindowMode, rememberToplines, resetToplineClip, } from './topl.js';
 import { flush_screen } from './display.js';
-import { pline, setTopline, impossible } from './pline.js';
+import { pline, setTopline } from './pline.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { cmdq_pop } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
-import { CMDQ_KEY } from './const.js';
-import { FUZZER_IMPOSSIBLE_CONTINUE } from './diagnostics.js';
-import { paniclog } from './novel_tribute.js';
-import { showChoiceWindow } from './windows.js';
 import { extcmdsMatch, yn_function } from './cmd.js';
 import { ttyDoprevMessage } from './topl.js';
 import { visibleCommandKey } from './hacklib.js';

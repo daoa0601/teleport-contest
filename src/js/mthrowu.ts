@@ -113,7 +113,7 @@ interface ProjectileOptions {
     rollDice?: typeof d;
     publish?: MessagePublisher;
 }
-export interface MonsterProjectileOptions extends ProjectileOptions {
+interface MonsterProjectileOptions extends ProjectileOptions {
     state?: GameState;
     dx: number;
     dy: number;
@@ -985,7 +985,7 @@ const DIRECTIONS = Object.freeze({
     y: [-1, -1], u: [1, -1], b: [-1, 1], n: [1, 1],
 });
 
-export interface BreathRayOptions extends NativeRayOptions {
+interface BreathRayOptions extends NativeRayOptions {
     attack?: MonsterAttack | null;
 }
 
@@ -1047,7 +1047,7 @@ interface MonsterCombatBreathOptions {
     publish?: MessagePublisher;
 }
 
-export interface MonsterCombatBreathResult {
+interface MonsterCombatBreathResult {
     nativeResult: number;
     heroDied: boolean;
 }

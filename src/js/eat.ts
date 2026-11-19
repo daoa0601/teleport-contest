@@ -2,23 +2,23 @@
 // floorfood(), and the rest of the eating mechanics.
 
 import {
-    RANDOM_CLASS, WEAPON_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS,
-    POTION_CLASS, SCROLL_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS,
-    CHAIN_CLASS,
+    RANDOM_CLASS, WEAPON_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, COIN_CLASS,
+    GEM_CLASS, BALL_CLASS, CHAIN_CLASS,
 } from './objclass.js';
-import { objectPropertyName, oc_nutrition,
-    objectDelay, objectCharged, objectUnique, AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, BEARTRAP, CANDY_BAR,
-    CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF,
-    FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE,
-    LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_NAMES, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION,
-    SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION,
-    } from './object_data.js';
 import {
-    heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic, your_race,
-    monsterHasAttackType,
-    carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous, monsterHasProperName,
-    monsterIsGiant, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead,
-    monsterPerceives, fleshPetrifies, formCanBecomeStoneGolem, heroResistsStoning, heroWouldPetrifyFromFlesh,
+    objectPropertyName, oc_nutrition, objectDelay, objectCharged, objectUnique, AMULET_OF_STRANGULATION,
+    AMULET_OF_YENDOR, APPLE, AXE, BEARTRAP, CANDY_BAR, CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION,
+    CREAM_PIE, EGG, EUCALYPTUS_LEAF, FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE,
+    GLOB_OF_GREEN_SLIME, GOLD_PIECE, LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_NAMES,
+    ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, SLIME_MOLD,
+    SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION,
+} from './object_data.js';
+import {
+    heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic,
+    your_race, monsterHasAttackType, carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter,
+    metallivorous, monsterHasProperName, monsterIsGiant, monsterIsHumanoid, monsterIsMindless,
+    monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, fleshPetrifies,
+    formCanBecomeStoneGolem, heroResistsStoning, heroWouldPetrifyFromFlesh,
 } from './mondata.js';
 import {
     setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused,
@@ -34,16 +34,16 @@ import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, currentAt
 import { bot } from './botl.js';
 import { commandResultCancelled, commandResultSpentTime, currentMulti, setMulti, setOccupation, paranoidQuery } from './cmd.js';
 import {
-    ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, BEAR_TRAP, CHOKING, DIED, DISMOUNT_FELL, EXPL_FIERY,
-    FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE,
-    GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY, IRONBARS,
-    Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LUCKMIN, mon_offmap, M_AP_NOTHING, M_AP_OBJECT,
-    M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN,
-    SATIATED, SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TT_BEARTRAP, TIMEOUT, Upolyd, WEAK, W_AMUL,
+    ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, BEAR_TRAP, CHOKING, DIED, DISMOUNT_FELL,
+    EXPL_FIERY, FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT,
+    GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY, IRONBARS, Is_airlevel,
+    Is_waterlevel, KILLED_BY, KILLED_BY_AN, LUCKMIN, mon_offmap, M_AP_NOTHING, M_AP_OBJECT, M_ATTK_AGR_DIED,
+    M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN, SATIATED,
+    SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TT_BEARTRAP, TIMEOUT, Upolyd, WEAK, W_AMUL,
     W_ARMOR, W_NONDIGGABLE, W_RING, W_SADDLE, W_TOOL, FINGER, LIGHT_HEADED, STOMACH, NOSE, LL_CONDUCT,
 } from './const.js';
 import { reviveCorpseImmediately } from './do.js';
-import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters, refreshHeroSeeing, curs_on_u } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, see_monsters, refreshHeroSeeing, curs_on_u } from './display.js';
 import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { displayColorName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
@@ -78,27 +78,8 @@ import type { HeroContactAttack } from './monster_action_types.js';
 import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import { AD_BLND, AD_HALU, AD_POLY, AD_STUN, AT_ENGL, AT_MAGC } from './monster_attack_types.js';
 import {
-
-    MONSTER_ATTACKS,
-
-    MONSTER_BODY_META,
-
-    MONSTER_CONVEYS,
-
-    MONSTER_FLAGS1,
-
-    MONSTER_GENO,
-
-    MONSTER_LEVEL,
-
-    MONSTER_NAME,
-
-    MONSTER_SYMBOL,
-
-    requireMonsterData,
-
-    PM_GREEN_SLIME,
-
+    MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL,
+    MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, PM_GREEN_SLIME,
 } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { learnObjectType, objectMaterial, observeObject } from './o_init.js';
@@ -107,23 +88,8 @@ import type { GameObject } from './object_types.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import type { FoodMeal, FoodOccupation, NonfoodMeal, PreparedFoodObject, TinOpening } from './occupation_types.js';
 import {
-
-    pline as immediatePline,
-
-    pline1,
-
-    plineWithContinuation as pline,
-
-    plineWithContinuation,
-
-    recordGameLogEvent,
-
-    formatFeltMessage,
-
-    publishHeardMessage,
-
-    impossible,
-
+    pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation,
+    recordGameLogEvent, formatFeltMessage, publishHeardMessage, impossible,
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { altarWrath } from './pray.js';
@@ -145,7 +111,7 @@ import { isWeldedPrimary, uqwepgone, uswapwepgone, uwepgone, wieldTool } from '.
 import { captureLevitationState, floatHeroUp, triggerBoobyTrap, selfTouchPetrifyingWeapons, deleteTrap, resetUtrap } from './trap.js';
 
 // Context for the monster-against-monster eat_brains branch.
-export interface BrainMealContext {
+interface BrainMealContext {
     state: GameState;
     visible: boolean;
     random: typeof rn2;
@@ -292,7 +258,7 @@ interface VomitOptions {
 
 // C hands_obj represents the terrain being eaten, not an inventory object.
 export const IRON_BARS_FOOD = Object.freeze({ kind: 'iron-bars' });
-export type FoodSelection = GameObject | typeof IRON_BARS_FOOD;
+type FoodSelection = GameObject | typeof IRON_BARS_FOOD;
 
 const NONROTTING = new Set(['acid blob', 'lichen', 'lizard', 'Death', 'Pestilence', 'Famine']
     .map(name => MONSTER_NAME.indexOf(name)));

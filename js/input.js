@@ -2,8 +2,6 @@
 // C refs: win/tty/wintty.c:tty_nhgetch(), win/tty/getline.c.
 import { KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { game } from './gstate.js';
-import { NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS } from './command_data.js';
-import { rn1, rn2, rnd } from './rng.js';
 import { isok } from './cmd.js';
 import { randomKey, resetFuzzerCommandState } from './cmd.js';
 export const MAP_CLICK_KEY = 256;

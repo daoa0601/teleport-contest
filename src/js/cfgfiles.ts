@@ -32,7 +32,7 @@ import {
     PARANOID_PRAY, PARANOID_SWIM, PARANOID_TRAP,
 } from './const.js';
 
-export interface ConfigurationError {
+interface ConfigurationError {
     lineNumber: number;
     sourceLine: string;
     message: string;
@@ -416,7 +416,7 @@ export function get_configfile(): string {
     return `${RECORDING_HOME}/.nethackrc`;
 }
 
-export interface ConfigurationSources {
+interface ConfigurationSources {
     fileName?: string;
     nethackOptions?: string | null;
 }

@@ -9,26 +9,25 @@ import {
 } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
-import { type MonsterProjectileDisplay, monsterProjectileDisplay } from './mthrowu.js';
+import { type MonsterProjectileDisplay } from './mthrowu.js';
 
-import { A_STR, BOLT_LIM, IRONBARS, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, ZAP_POS, is_hole, is_pit } from './const.js';
+import { BOLT_LIM, IRONBARS, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, ZAP_POS, is_hole, is_pit } from './const.js';
 import { isok } from './cmd.js';
 import { monsterName } from './do_name.js';
 import { artifactById } from './artifact.js';
 import { heroMoveBlockedBetween } from './hack.js';
 import { shipObject } from './dokick.js';
-import { currentAttribute, currentStrength } from './attrib.js';
+import { currentStrength } from './attrib.js';
 import {
-    canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym,
-    show_glyph_cell, transientObjectGlyph, unmapObject, TemporaryMapEffect,
+    canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym, show_glyph_cell,
+    transientObjectGlyph, unmapObject,
 } from './display.js';
 import { plineWithContinuation, publishHeardMessage } from './pline.js';
-import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
+import { game, requireInitializedGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type {  Position, Trap } from './map_types.js';
-import type { DisplayGlyph } from './display.js';
+import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import { costlySpot, shopkeeperCatch } from './shk.js';
 import { finishInventoryRemoval } from './invent.js';
@@ -48,7 +47,7 @@ import { cansee } from './vision.js';
 import { rockSkipRange } from './zap.js';
 
 
-export type ProjectileStop = 'range' | 'edge' | 'liquid-wall' | 'iron-bars'
+type ProjectileStop = 'range' | 'edge' | 'liquid-wall' | 'iron-bars'
     | 'web' | 'monster' | 'passage' | 'terrain' | 'liquid' | 'sink';
 
 export interface ProjectileFlight extends Position {
@@ -59,17 +58,12 @@ export interface ProjectileFlight extends Position {
     migrated: boolean;
 }
 
-export interface ThrowTrajectory {
+interface ThrowTrajectory {
     range: number;
     recoil: number;
 }
 
-export type ProjectileFlightCapture = (
-    object: GameObject, path: readonly Position[], state: GameState, glyph?: DisplayGlyph,
-    retainGlyph?: boolean,
-) => Promise<void>;
-
-export interface ProjectileFlightOptions {
+interface ProjectileFlightOptions {
     state?: GameState;
     object: GameObject;
     dx: number;

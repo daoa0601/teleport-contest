@@ -39,7 +39,7 @@ export class LuaGameState extends LuaState {
 type BeforeExecute = ((state: LuaGameState) => void) | null;
 
 const CALLBACK_NAMES = ['cmd_before', 'level_enter', 'level_leave', 'end_turn'] as const;
-export type LuaCallbackName = typeof CALLBACK_NAMES[number];
+type LuaCallbackName = typeof CALLBACK_NAMES[number];
 export type LuaAlignmentName = 'law' | 'neutral' | 'chaos';
 
 // Part of C nhlua.c:nhl_callback(): membership in decl.c's nhcb_name[]

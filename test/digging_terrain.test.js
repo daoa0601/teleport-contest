@@ -323,7 +323,7 @@ void test('a floating eye flies over a pit dug beneath it', async () => {
     assert.match(game._pending_message, /flies over the pit/);
 });
 void test('a released leash lets a pet fall through a dug hole', async () => {
-    const level = heroRoom();
+    heroRoom();
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
     requireFixtureGame(game);
     const pet = await createMonsterAt('little dog', 11, 10);
@@ -341,7 +341,7 @@ void test('a cursed leash holds a pet above a dug hole', async () => {
     const pet = await createMonsterAt('little dog', 11, 10);
     pet.mtame = 1;
     pet.mleashed = 1;
-    const leash = await addInventoryObject(LEASH, { invlet: 'l',
+    await addInventoryObject(LEASH, { invlet: 'l',
         leashmon: pet.m_id, cursed: true });
     await digHole({ coordinate: { x: 11, y: 10 } });
     assert.equal(pet.mleashed, 1);

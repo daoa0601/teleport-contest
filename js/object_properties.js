@@ -1,13 +1,12 @@
 // Predicates derived from NetHack's object table.
 // C refs: include/obj.h.
-import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, WAND_CLASS, GEM_CLASS, ARM_SHIELD, ARM_HELM, ARM_BOOTS, ARM_GLOVES, ARM_CLOAK, ARM_SHIRT, ARM_SUIT } from './objclass.js';
-import { objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS, FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN, TALLOW_CANDLE, WAX_CANDLE, TIN_OPENER, TOWEL, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE, } from './object_data.js';
+import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, GEM_CLASS, ARM_SHIELD, ARM_HELM, ARM_BOOTS, ARM_GLOVES, ARM_CLOAK, ARM_SHIRT, ARM_SUIT } from './objclass.js';
+import { objectBaseDirection, objectSkill, oc_armcat, objectBimanual, FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, TALLOW_CANDLE, WAX_CANDLE, TOWEL, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE, } from './object_data.js';
 import { artifactById } from './artifact.js';
 import { objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_SHORT_SWORD, P_SHURIKEN, P_SPEAR, } from './const.js';
 import { objectMaterial } from './o_init.js';
-import { AKLYS_LIM, P_AXE, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_WHIP } from './const.js';
-import { rn2 } from './rng.js';
+import { P_AXE, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER } from './const.js';
 const LEATHER = 7;
 const WOOD = 8;
 const IRON = 11;

@@ -1,19 +1,15 @@
-import type { finishEnvironmentalMonsterDeath, MonsterDeathHandler, MonsterFormChange, MonsterHideUnder } from './mon.js';
-import type { PetMeal } from './dogmove.js';
+import type { MonsterDeathHandler, MonsterFormChange } from './mon.js';
 import type { WereChange } from './were.js';
 import type { MessagePublisher } from './pline.js';
 import type { reassessMonsterArmor } from './mon.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { DungeonLocation } from './dungeon_types.js';
 import type { Position, Trap } from './map_types.js';
-import type { rndcurse } from './sit.js';
 import type { finishMonsterAttackDeath, DeathHandler } from './end.js';
 import type { MonsterBreathResult, MonsterSpitResult } from './mthrowu.js';
 import type { MonsterOffensivePhase, MonsterOffensiveResult } from './monster_offensive_types.js';
 import type { AttackMethod, DamageType, AT_EXPL, AT_GAZE, AT_ENGL, AT_WEAP, AT_BREA, AT_SPIT } from './monster_attack_types.js';
 import type { HeroMonsterWeaponVolley } from './monster_projectile_types.js';
-import type { applyMonsterContactPassive } from './mhitm.js';
 import type { MonsterBearTrapEvent } from './trap.js';
 import type { MonsterFireTrapEvent, MonsterPitTrap, MonsterProjectileTrapEvent } from './trap.js';
 import type { MonsterLandMineEvent } from './trap.js';
@@ -80,14 +76,14 @@ export interface MonsterMeleeAttack {
     attackIndex: number;
 }
 
-export interface MonsterMeleeHit extends MonsterMeleeAttack {
+interface MonsterMeleeHit extends MonsterMeleeAttack {
     roll: number;
     threshold: number;
     hit: boolean;
     damage: number;
 }
 
-export type MonsterSpecialHit = {
+type MonsterSpecialHit = {
     damageType: DamageType;
     attackIndex: number;
     hit: boolean;
@@ -99,7 +95,7 @@ export type MonsterSpecialHit = {
     | { type: 'engulf'; attackType: typeof AT_ENGL }
 );
 
-export type MonsterRangedHit = {
+type MonsterRangedHit = {
     damageType: DamageType;
     attackIndex: number;
     hit: boolean;
@@ -115,8 +111,6 @@ export type MonsterRangedHit = {
 export type MonsterAttackHit = MonsterMeleeHit | MonsterSpecialHit | MonsterRangedHit;
 
 export type MonsterGrowth = ReturnType<typeof growMonster>;
-export type MonsterDeath = Awaited<ReturnType<typeof finishEnvironmentalMonsterDeath>>;
-export type MonsterPassive = Awaited<ReturnType<typeof applyMonsterContactPassive>>;
 
 export interface MonsterCombatDeath {
     survived: boolean;
@@ -143,7 +137,7 @@ export interface MonsterCombatAttack {
     counterattack?: MonsterCombatResult;
 }
 
-export interface MonsterWieldAction {
+interface MonsterWieldAction {
     kind: 'monster-wield';
     aggressor: Monster;
     defender: Monster;
@@ -156,13 +150,13 @@ export interface MonsterWieldAction {
 
 export type MonsterCombatResult = MonsterCombatAttack | MonsterWieldAction;
 
-export interface MonsterConflictFight {
+interface MonsterConflictFight {
     attack: MonsterCombatResult;
     heroDied?: boolean;
     consumed?: boolean;
 }
 
-export interface MonsterRange {
+interface MonsterRange {
     inRange: boolean;
     nearby: boolean;
     scared: boolean;
@@ -181,7 +175,7 @@ export interface MonsterMoveCandidate extends Position {
 }
 
 // dogmove.c:dog_invent()'s relobj() drop, reported on the movement record.
-export interface PetInventoryAction {
+interface PetInventoryAction {
     dropped?: GameObject[];
 }
 
@@ -296,7 +290,7 @@ export interface HeroSpellAttack extends HeroAttackProgress {
     rehumanize?: boolean;
 }
 
-export type HeroProjectile = HeroMonsterWeaponVolley;
+type HeroProjectile = HeroMonsterWeaponVolley;
 
 export type HeroAttack =
     | HeroContactAttack
@@ -499,7 +493,7 @@ export interface MonsterTurnResult extends MonsterMoveResult {
     dochugContext: DochugContext;
 }
 
-export interface MonsterRandomOptions {
+interface MonsterRandomOptions {
     random?: RandomBelow;
     rollOne?: RollOne;
     rollDice?: RollDice;

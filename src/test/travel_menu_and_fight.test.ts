@@ -18,7 +18,7 @@ function toplineText(): string {
 
 // C getpos.c:getpos() accepts a queued direction before printing cursor help.
 void test('travel to a queued position shows only the travel question', async () => {
-    const input = freshTurnRoom({ flags: { tips: false, verbose: true } });
+    freshTurnRoom({ flags: { tips: false, verbose: true } });
     queueCannedKeys('_');
     queueCannedDir(0, 0);
 
@@ -33,7 +33,7 @@ void test('travel to a queued position shows only the travel question', async ()
 // nomul(0) for a fight prefix even when u.ustuck is a safe monster, so a
 // counted F-attack on the swallower spends a single hero action.
 void test('a counted fight-prefix attack on a safe swallower is cut short', async () => {
-    const input = freshTurnRoom({ role: 'barbarian' });
+    freshTurnRoom({ role: 'barbarian' });
     game.u.uhp = game.u.uhpmax = 500;
     // Telepathy spots the engulfer on the hero's own square while swallowed,
     // so a peaceful swallower passes _is_safemon(); only the fight prefix

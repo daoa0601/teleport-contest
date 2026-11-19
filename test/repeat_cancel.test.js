@@ -4,9 +4,6 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { moveloop_core } from '../js/allmain.js';
 import { freshTurnRoom } from './support/playable-room.js';
-function toplineText() {
-    return (game.nhDisplay?.grid[0] ?? []).map(cell => cell.ch).join('').trimEnd();
-}
 // C engrave.c:doengrave() reports ECMD_CANCEL when the stylus prompt is
 // refused; rhack() then clears CQ_REPEAT, so ^A cannot repeat the engraving.
 void test('an escape-cancelled engraving leaves no command to repeat', async () => {

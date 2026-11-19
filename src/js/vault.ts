@@ -321,7 +321,7 @@ function lowercaseAscii(name: string): string {
 }
 
 // C vault.c:clear_fcorr(), blackout(), parkguard(), and grddead().
-export interface VaultGuard extends Monster {
+interface VaultGuard extends Monster {
     _egd: VaultGuardData;
 }
 

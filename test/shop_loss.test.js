@@ -10,10 +10,9 @@ import { shopObjectUnitCost, stolenValue } from '../js/shk.js';
 import { flush_screen } from '../js/display.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
+import { floorObject, knownObject } from './support/game-objects.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { monsterGoldAmount } from '../js/hack.js';
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 function collector() {
     const messages = [];
@@ -168,7 +167,7 @@ void test('a doorway hero is an outsider: damage and anger, no debt line', async
     assert.equal(shopkeeper.mpeaceful, 0);
 });
 void test('a FREE no_charge container prices contents from the hero square', async () => {
-    const { shopkeeper } = await lossShop();
+    await lossShop();
     requirePlayingGame(game);
     const sack = await floorObject(SACK, 10, 10, { no_charge: true });
     sack.where = 'free'; // floorObject stamps floor; free is the C case

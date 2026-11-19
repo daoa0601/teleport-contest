@@ -18,7 +18,7 @@ import { heroIsBlind } from './senses.js';
 import { surfaceName } from './dungeon.js';
 import { floatHeroDown } from './trap.js';
 
-export type LevitationDescentResult =
+type LevitationDescentResult =
     | { handled: false; spentTurn: false }
     | { handled: true; spentTurn: boolean };
 

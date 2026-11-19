@@ -1,6 +1,5 @@
 import { requireScreenRow } from './support/screen.js';
 import { requirePlayingGame } from '../js/gstate.js';
-import { requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { promptKey, rhack } from '../js/cmd.js';

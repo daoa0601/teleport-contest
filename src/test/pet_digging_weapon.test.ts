@@ -33,7 +33,7 @@ for (const obstacle of ['rock', 'tree']) {
         const input = resetInputState();
         input.beforeRead = () => input.feed(' ');
 
-        const action = await beginMonsterMove(dwarf, game, limit => Math.min(1, limit - 1));
+        await beginMonsterMove(dwarf, game, limit => Math.min(1, limit - 1));
 
         assert.deepEqual([dwarf.mx, dwarf.my], [14, 10], 'readying a tool uses this move');
         assert.ok(dwarf.mw === tool, 'the pet must ready the tool for this obstacle');

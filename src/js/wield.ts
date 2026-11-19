@@ -2,17 +2,17 @@
 // C refs: wield.c dowield(), dowieldquiver(), doquiver_core(),
 // doswapweapon(), dotwoweapon(), finish_splitting(), and ready_ok().
 
-import { WEAPON_CLASS, TOOL_CLASS, SCROLL_CLASS, COIN_CLASS } from './objclass.js';
+import { WEAPON_CLASS, SCROLL_CLASS, COIN_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import {
-    objectClassForType, objectSkill, LENSES, LOADSTONE, AKLYS, CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW,
-    ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER,
-    BATTLE_AXE, CORPSE, WORM_TOOTH, } from './object_data.js';
-import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
+    objectClassForType, objectSkill, LOADSTONE, AKLYS, CRYSKNIFE, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER,
+    BATTLE_AXE, CORPSE, WORM_TOOTH,
+} from './object_data.js';
+import { game, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
 import type { GameObject } from './object_types.js';
-import { A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, P_SABER, P_SHORT_SWORD, W_QUIVER, W_SWAPWEP, W_WEP, HAND } from './const.js';
+import { A_DEX, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, P_SABER, P_SHORT_SWORD, W_QUIVER, W_SWAPWEP, W_WEP, HAND } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroSpecies, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 
@@ -34,12 +34,11 @@ import { endObjectBurn } from './timeout.js';
 import { shopkeeperName } from './shknam.js';
 import { statusConditionEnabled } from './botl.js';
 import { resolveImmediatePetrification } from './trap.js';
-import { setnotworn, setworn } from './worn.js';
+import { setworn } from './worn.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { strangeFeeling } from './potion.js';
 import { displayColorName } from './do_name.js';
-import { dropInventoryObjectAtHero, dropObjectAtHero, landObjectOnAltar } from './do.js';
-import { shipObject } from './dokick.js';
+import { dropInventoryObjectAtHero } from './do.js';
 import { encumber_msg } from './pickup.js';
 import { monsterIsHumanoid, could_twoweap, heroResistsStoning, touchPetrifies } from './mondata.js';
 
@@ -260,7 +259,7 @@ function hasFreeBasicInventoryLetter(): boolean {
     return game.inventory.filter(item => item.oclass !== COIN_CLASS).length < 52;
 }
 
-export interface QuiverCommandResult {
+interface QuiverCommandResult {
     item: GameObject | null;
     spentTime: boolean;
     cancelled: boolean;
@@ -507,7 +506,7 @@ export function emptyHandedDescription(state: GameState = game): string {
 }
 
 // A refusal must abort queued fire assistance; an untimed success keeps it.
-export type WeaponReadinessResult = 'time' | 'ok' | 'failed';
+type WeaponReadinessResult = 'time' | 'ok' | 'failed';
 
 // C wield.c:ready_weapon()
 // The caller has already checked whether the old weapon is welded. A failed
@@ -998,7 +997,7 @@ function simpleonames(object: GameObject): string {
 
 // C wield.c:wield_tool().
 
-export interface WieldToolOptions {
+interface WieldToolOptions {
     swapWeapons?: (() => unknown) | undefined;
 }
 

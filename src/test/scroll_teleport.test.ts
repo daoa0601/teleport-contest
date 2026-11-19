@@ -1,6 +1,6 @@
 import { GameMap } from '../js/game.js';
 import { createSpecialLevel, createDungeon } from './support/topology.js';
-import { loadScoreRecords, SCORE_RECORD_STORAGE_KEY } from '../js/topten.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

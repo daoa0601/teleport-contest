@@ -33,7 +33,7 @@ const persistentNames = [
     'uswapwep', 'uwep', 'valley_level', 'wandNothingDirection', 'water_level',
 ] as const satisfies readonly (keyof GameState)[];
 
-export type PersistentStateKey = typeof persistentNames[number];
+type PersistentStateKey = typeof persistentNames[number];
 // These port fields live beside svc.context data, but C stores them in
 // display state, instance globals, or eat.c:newuhs()'s static meal buffer.
 export type PersistentGameContext = Omit<GameContext,

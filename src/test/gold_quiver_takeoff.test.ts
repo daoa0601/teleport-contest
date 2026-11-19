@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
 import { setHeroGoldAmount } from '../js/sit.js';
 import { freshTurnRoom } from './support/playable-room.js';
 

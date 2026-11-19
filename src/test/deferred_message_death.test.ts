@@ -7,12 +7,11 @@ function isWalkableTerrain(type: number): boolean {
     return type === ROOM || type === CORR || type === LADDER;
 }
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { CORPSE } from '../js/object_data.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/do.js';
-import {placeObjectSynchronously} from '../js/mkobj.js';
+import { placeObjectSynchronously } from '../js/mkobj.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { untimedCorpse } from './support/game-objects.js';
 import { createDungeon } from './support/topology.js';

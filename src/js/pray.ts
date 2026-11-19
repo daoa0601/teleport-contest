@@ -5,14 +5,12 @@
 // behavior change).
 
 import {
-    RANDOM_CLASS, WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS,
-    POTION_CLASS, SPBOOK_CLASS, GEM_CLASS,
+    WEAPON_CLASS, AMULET_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_CLASS,
 } from './objclass.js';
 import {
-    objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE,
-    FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT,
-    LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,
-    SPE_BLANK_PAPER, STATUE, getObjectClassBounds,
+    AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR,
+    FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LONG_SWORD, LOADSTONE,
+    MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_BLANK_PAPER, STATUE, getObjectClassBounds,
 } from './object_data.js';
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
@@ -28,9 +26,10 @@ import {
     ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM,
     DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT,
     GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX,
-    LUCKMIN, Luck, M_AP_FURNITURE, M_AP_TYPE, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD,
-    PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL,
-    TT_LAVA, Upolyd, W_SADDLE, WEAK, STOMACH, EYE, FOOT, LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER,
+    LUCKMIN, Luck, M_AP_FURNITURE, M_AP_TYPE, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG,
+    P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR,
+    STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK, STOMACH, EYE, FOOT, LL_ARTIFACT,
+    LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER,
 } from './const.js';
 import { isok, paranoidQuery } from './cmd.js';
 import { encumber_msg } from './pickup.js';
@@ -53,13 +52,14 @@ import { currentHungerState, init_uhunger } from './eat.js';
 import { demonLord, summonMinion } from './minion.js';
 import { setMonsterMalign } from './makemon.js';
 import { makemonNear } from './mklev.js';
-import { mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject, adjustObjectLightAfterBlessing} from './mkobj.js';
+import { mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject, adjustObjectLightAfterBlessing } from './mkobj.js';
 import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { displayColorName, monsterName } from './do_name.js';
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance,
     monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn,
-    monsterIsVampireShifter, monsterIsRider, monsterThrowsRocks, heroResistsStoning, touchPetrifies, eyecount, heroCanChant,
+    monsterIsVampireShifter, monsterIsRider, monsterThrowsRocks, heroResistsStoning, touchPetrifies, eyecount,
+    heroCanChant,
 } from './mondata.js';
 import { wakeMonstersNearWithMessages, finishHeroMonsterKill } from './mon.js';
 import type { HeroMonsterKillOptions } from './mon.js';
@@ -384,7 +384,7 @@ function inHell(state: GameState = game) {
     return !!state.dungeons?.[dnum]?.flags?.hellish;
 }
 
-export interface TurnUndeadOptions {
+interface TurnUndeadOptions {
     finishMonsterKill?: (monster: Monster, x: number, y: number, options?: HeroMonsterKillOptions) => unknown;
     random?: typeof rn2;
 }
@@ -971,7 +971,7 @@ export async function godVoice(
     await pline(`The voice of ${deityName(alignment, state)} ${voice}: ${speech}`);
 }
 
-export interface DivineAnger {
+interface DivineAnger {
     responseAlignment: number;
     heroAlignment: number;
     alignmentRecord?: number;

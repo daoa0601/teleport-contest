@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { flush_screen, map_object, newsym, see_monsters, see_objects, see_traps } from '../js/display.js';
+import { flush_screen, newsym, see_monsters, see_objects, see_traps } from '../js/display.js';
 import { monsterName } from '../js/do_name.js';
 import { placeMonsterOnMap } from '../js/steed.js';
 import { detachMonsterFromLevel } from '../js/mon.js';
@@ -48,7 +48,7 @@ void test('a monster a level teleport trap sends off the level is not repainted 
     // then the monster), and mon_leaving_level()'s newsym of the vacated
     // square; the next input boundary redraws the dagger once more.
     hallucinatingRoom();
-    const dagger = await floorObject(DAGGER, TRAP.x, TRAP.y);
+    await floorObject(DAGGER, TRAP.x, TRAP.y);
     const standing = await createMonsterAt('orc', START.x, START.y, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     initRng(SEED);
     await see_monsters();

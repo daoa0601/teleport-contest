@@ -27,7 +27,6 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
 import { memoryStorage } from './support/memory-storage.js';
-import type { GameObject } from '../js/object_types.js';
 import type { StorageBackend } from '../js/storage.js';
 
 // The bones-room setup from bones.test.ts: a room on a bones-enabled level

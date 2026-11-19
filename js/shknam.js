@@ -27,7 +27,7 @@ import { setMonsterMalign } from './makemon.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { removeMonsterFromGame } from './mon.js';
 import { S_MIMIC } from './mklev.js';
-import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { roomsAt } from './hack.js';
 import { objectWeight } from './mkobj.js';
 // BEGIN GENERATED SHOP DATA (scripts/generate-shop-data.mjs rewrites this region)

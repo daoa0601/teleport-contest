@@ -1,7 +1,7 @@
 // senses.js — Derived hero blindness and deafness state.
 // C refs: youprop.h Blind/Deaf, u_init.c:u_init_misc(), potion.c.
 import { game } from './gstate.js';
-import { FAINTED, TIMEOUT } from './const.js';
+import { TIMEOUT } from './const.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { heroIsUnconscious } from './trap.js';
 import { LENSES } from './object_data.js';

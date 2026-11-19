@@ -1,13 +1,13 @@
 // wield.js — Wield, quiver, and weapon-swap commands.
 // C refs: wield.c dowield(), dowieldquiver(), doquiver_core(),
 // doswapweapon(), dotwoweapon(), finish_splitting(), and ready_ok().
-import { WEAPON_CLASS, TOOL_CLASS, SCROLL_CLASS, COIN_CLASS } from './objclass.js';
+import { WEAPON_CLASS, SCROLL_CLASS, COIN_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
-import { objectClassForType, objectSkill, LENSES, LOADSTONE, AKLYS, CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, BATTLE_AXE, CORPSE, WORM_TOOTH, } from './object_data.js';
-import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
+import { objectClassForType, objectSkill, LOADSTONE, AKLYS, CRYSKNIFE, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, BATTLE_AXE, CORPSE, WORM_TOOTH, } from './object_data.js';
+import { game, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
-import { A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, P_SABER, P_SHORT_SWORD, W_QUIVER, W_SWAPWEP, W_WEP, HAND } from './const.js';
+import { A_DEX, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, P_SABER, P_SHORT_SWORD, W_QUIVER, W_SWAPWEP, W_WEP, HAND } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroSpecies, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 import { makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName, verbForSubject, ownedObjectName, withIndefiniteArticle } from './objnam.js';
@@ -26,12 +26,11 @@ import { endObjectBurn } from './timeout.js';
 import { shopkeeperName } from './shknam.js';
 import { statusConditionEnabled } from './botl.js';
 import { resolveImmediatePetrification } from './trap.js';
-import { setnotworn, setworn } from './worn.js';
+import { setworn } from './worn.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { strangeFeeling } from './potion.js';
 import { displayColorName } from './do_name.js';
-import { dropInventoryObjectAtHero, dropObjectAtHero, landObjectOnAltar } from './do.js';
-import { shipObject } from './dokick.js';
+import { dropInventoryObjectAtHero } from './do.js';
 import { encumber_msg } from './pickup.js';
 import { monsterIsHumanoid, could_twoweap, heroResistsStoning, touchPetrifies } from './mondata.js';
 // C wield.c:dotwoweapon(): the #twoweapon command; toggleTwoWeaponCombat() below holds the toggle and its rnd(20) > DEX time result.

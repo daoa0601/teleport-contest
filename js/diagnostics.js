@@ -1,12 +1,6 @@
 // Diagnostics helpers for pline.c:impossible() and end.c:panic();
 // panic() itself lives in end.ts with its end.c owner.
 import { BUFSZ } from './const.js';
-import { beginPanicOutput, plineWithContinuation, rawPrintf } from './pline.js';
-import { rawPrint } from './input.js';
-import { game, requireLiveGame } from './gstate.js';
-import { paniclog } from './novel_tribute.js';
-import { saveErrorGame } from './save.js';
-import { PanicTermination } from './panic_termination.js';
 export const FUZZER_OFF = 0;
 export const FUZZER_IMPOSSIBLE_PANIC = 1;
 export const FUZZER_IMPOSSIBLE_CONTINUE = 2;

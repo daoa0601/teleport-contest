@@ -5,8 +5,8 @@ import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } fro
 import { finishHeroDeath } from './end.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { adjustLevelAbilities, currentAttribute, minHeroMaxHitPoints, newHeroHitPoints, setHeroMaxHitPoints } from './attrib.js';
-import { rnd, rn2 } from './rng.js';
-import { A_CON, A_WIS, KILLED_BY, LL_MINORAC, MAXULEV, Upolyd } from './const.js';
+import { rn2 } from './rng.js';
+import { A_WIS, KILLED_BY, LL_MINORAC, MAXULEV, Upolyd } from './const.js';
 import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { rankAchievement, recordAchievement } from './insight.js';
 import {
@@ -31,7 +31,7 @@ interface LoseExperienceOptions extends ExperienceOptions { die?: DeathHandler; 
 interface MonsterExperienceOptions { killCount?: number; amphibious?: boolean; armorClass?: number; }
 
 
-export interface ExperienceMonster {
+interface ExperienceMonster {
     mnum?: number;
     m_lev?: number;
     mrevived?: Monster['mrevived'];

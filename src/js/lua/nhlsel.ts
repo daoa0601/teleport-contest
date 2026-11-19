@@ -28,7 +28,7 @@ import { isRoom } from '../map_types.js';
 import type { Coordinate, Selection, SelectionArea, SelectionBounds } from '../selvar.js';
 import type { LuaHostObject, LuaMetatable, LuaValue } from './runtime.js';
 
-export interface SelectionContext {
+interface SelectionContext {
     xstart: number;
     ystart: number;
     width: number;

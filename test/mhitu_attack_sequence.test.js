@@ -27,7 +27,7 @@ void test('a sewer rat bite resolves its whole mattacku sequence from mhitu.js',
     assert.equal(game.u.uhp, 97, 'mdamageu() subtracts the bite during the slot');
     const action = { monster: rat, calls,
         movement: { oldx: 11, oldy: 10, x: 11, y: 10, moved: false, ...initiation } };
-    const next = await completeHeroAttackSlot(action, game, rn2, d, () => 1);
+    await completeHeroAttackSlot(action, game, rn2, d, () => 1);
     assert.equal(sequence?.done, true, 'the sixth slot ends mattacku()');
     assert.equal(sequence?.results[0], M_ATTK_HIT);
     assert.equal(game.u.uhp, 97, 'the empty slots deal no further damage');

@@ -1,12 +1,11 @@
 import { TOOL_CLASS } from '../js/objclass.js';
 import {
     objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, ARROW, BOOMERANG, BOW,
-    CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG, FIGURINE, LEATHER_GLOVES, LONG_SWORD, MAGIC_LAMP,
-    OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING,
-    POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION,
-    POT_MONSTER_DETECTION, POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS,
-    POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING, POT_WATER, ROBE, ROCK, SCR_BLANK_PAPER, SPEAR,
-    STATUE, TALLOW_CANDLE, TWO_HANDED_SWORD, WAX_CANDLE,
+    CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG, FIGURINE, LEATHER_GLOVES, LONG_SWORD, MAGIC_LAMP, OIL_LAMP,
+    PICK_AXE, POT_FRUIT_JUICE, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
+    POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION, POT_INVISIBILITY,
+    POT_OBJECT_DETECTION, POT_OIL, POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING, POT_WATER, ROBE, ROCK,
+    SCR_BLANK_PAPER, SPEAR, STATUE, TWO_HANDED_SWORD, WAX_CANDLE,
 } from '../js/object_data.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { requireScreenRow } from './support/screen.js';
@@ -18,8 +17,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
 import {
-    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, P_BASIC, PIT, W_AMUL,
-    W_QUIVER, W_SWAPWEP, W_WEP,
+    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, P_BASIC, PIT, W_AMUL, W_QUIVER, W_SWAPWEP, W_WEP,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
@@ -36,8 +34,7 @@ import {
     addInventoryObject, addInventoryWeapon, artifactObject, knownObject,
 } from './support/game-objects.js';
 import {
-    installHeroWeaponSkills, installHumanWerewolfHero,
-    installPolymorphedHero, wearPolymorphControlRing,
+    installHeroWeaponSkills, installHumanWerewolfHero, installPolymorphedHero, wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
@@ -989,7 +986,7 @@ void test('swallowed cursed-water vapor changes an unthreatened lycanthrope hero
 
 void test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
     async () => {
-        const engulfer = await freshSwallowedState(PM_JUIBLEX);
+        await freshSwallowedState(PM_JUIBLEX);
         requirePlayingGame(game);
         installHumanWerewolfHero();
         await wearHeroAccessory(await addInventoryObject(AMULET_OF_UNCHANGING), 'uamul');
@@ -1008,7 +1005,7 @@ void test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
 
 void test('gremlin hero water vapor creates a named tame clone and splits form HP',
     async () => {
-        const engulfer = await freshSwallowedState(PM_JUIBLEX);
+        await freshSwallowedState(PM_JUIBLEX);
         requirePlayingGame(game);
         installHumanWerewolfHero();
         game.plname = 'Splitter';
@@ -1051,7 +1048,7 @@ void test('gremlin hero water vapor creates a named tame clone and splits form H
 
 void test('one-HP gremlin vapor consumes water without constructing a clone',
     async () => {
-        const engulfer = await freshSwallowedState(PM_JUIBLEX);
+        await freshSwallowedState(PM_JUIBLEX);
         requirePlayingGame(game);
         installHumanWerewolfHero();
         game.u.umonnum = PM_GREMLIN;
@@ -1077,7 +1074,7 @@ void test('one-HP gremlin vapor consumes water without constructing a clone',
 
 void test('four-HP gremlin throw is not a stamina drop while unencumbered',
     async () => {
-        const engulfer = await freshSwallowedState(PM_JUIBLEX);
+        await freshSwallowedState(PM_JUIBLEX);
         requirePlayingGame(game);
         installHumanWerewolfHero();
         game.u.umonnum = PM_GREMLIN;
@@ -1190,7 +1187,7 @@ void test('stressed four-HP gremlin drops without physical exercise then contact
 
 void test('controlled lycanthrope acceptance completes swallowed mutation',
     async () => {
-        const engulfer = await freshSwallowedState(PM_JUIBLEX);
+        await freshSwallowedState(PM_JUIBLEX);
         requirePlayingGame(game);
         installHumanWerewolfHero();
         const ring = await wearPolymorphControlRing();
@@ -1216,7 +1213,7 @@ void test('controlled lycanthrope acceptance completes swallowed mutation',
 
 void test('stun bypasses the lycanthrope control prompt and permits transformation',
     async () => {
-        const engulfer = await freshSwallowedState(PM_JUIBLEX);
+        await freshSwallowedState(PM_JUIBLEX);
         requirePlayingGame(game);
         installHumanWerewolfHero();
         await wearPolymorphControlRing();

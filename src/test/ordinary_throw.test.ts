@@ -216,7 +216,7 @@ void test('a cockatrice egg petrifies a monster and costs Luck', async () => {
 });
 
 void test('a fresh egg turns to rock when it hits a cockatrice', async () => {
-    const level = await freshObjectRoom({ right: 20, gameplaySeed: 4112n });
+    await freshObjectRoom({ right: 20, gameplaySeed: 4112n });
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 18;
     const egg = await addInventoryObject(EGG, {

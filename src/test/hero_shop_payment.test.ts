@@ -6,7 +6,7 @@ import { setHeroGoldAmount } from '../js/sit.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
+import { createStaffedShop } from './support/shop.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES, SACK } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -400,7 +400,7 @@ void test('unexamined container contents use the plural insufficient-funds messa
     const sack = await addInventoryObject(SACK, { cknown: false });
     const dagger = await knownObject(DAGGER);
     await addCreatedObjectToContainer(sack, dagger);
-    const { shopkeeper } = await createStaffedShop({ bill: [
+    await createStaffedShop({ bill: [
         { bo_id: dagger.o_id, bquan: 1, price: 4, useup: false },
     ] });
     dagger.unpaid = true;

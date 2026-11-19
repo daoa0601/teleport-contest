@@ -10,13 +10,12 @@ import { ILLOBJ_CLASS, COIN_CLASS, FOOD_CLASS } from './objclass.js';
 import { game } from './gstate.js';
 import { clearrolefilter, createCharacterFilters, setrolefilter } from './role.js';
 import { randomCharacterOption, str2align, str2gend, str2race, str2role } from './role.js';
-import { NATIVE_COMMANDS } from './command_data.js';
-import { changeCommandAutocompletions, countCommandAutocompletions, setCommandAutocomplete } from './cmd.js';
+import { changeCommandAutocompletions, countCommandAutocompletions } from './cmd.js';
 import { displayHelpFile } from './pager.js';
 import { displayPagerText } from './wintty.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
-import { rn2, rnd } from './rng.js';
+import { rnd } from './rng.js';
 import { isTextOption, textOptionValue, cInteger, optionError } from './option_values.js';
 import { readSymFile, isDefaultSymsetName } from './novel_tribute.js';
 import { featureAlertVersion } from './extversion.js';
@@ -48,9 +47,9 @@ import { mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf, visible
 import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
-import { attributeName, colorAttrToString, colorName, matchAttributeName, matchColorName, parseColorAttr, parseMenuColoring, queryAttr, queryColorMenu } from './coloratt.js';
+import { attributeName, colorAttrToString, colorName, matchAttributeName, parseColorAttr, queryAttr, queryColorMenu, } from './coloratt.js';
 import { cutConfigBytes, get_configfile } from './cfgfiles.js';
-import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PICK_NONE, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, def_warnsyms, STONE, } from './const.js';
+import { BUFSZ, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PICK_NONE, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, def_warnsyms, STONE, } from './const.js';
 import { editSymset } from './options.js';
 // C options.c:ask_do_tutorial(). Empty acceptance rebuilds the menu with
 // an explanation; a selected answer or Escape ends the question.

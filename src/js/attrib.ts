@@ -20,15 +20,14 @@ import { retouchEquipment, whatGives } from './artifact.js';
 import { makeConfused } from './potion.js';
 import { summonFuries } from './makemon.js';
 import {
-    grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty,
-    propertyIsActive, propertyTimeout, revokeIntrinsicProperty,
+    grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive,
+    propertyTimeout, revokeIntrinsicProperty,
 } from './properties.js';
 import { addHeroWeaponSkillSlots, loseHeroWeaponSkillSlots } from './weapon.js';
 import { experienceRankIndex } from './botl.js';
 import { formMaximumStrength, body_part } from './polyself.js';
 import {
-    CORNUTHAUM, DUNCE_CAP, GAUNTLETS_OF_POWER, HELM_OF_OPPOSITE_ALIGNMENT, LUCKSTONE,
-    MUMMY_WRAPPING,
+    CORNUTHAUM, DUNCE_CAP, GAUNTLETS_OF_POWER, HELM_OF_OPPOSITE_ALIGNMENT, LUCKSTONE, MUMMY_WRAPPING,
 } from './object_data.js';
 import { definiteName, ownedSimpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { encumber_msg } from './pickup.js';
@@ -40,16 +39,16 @@ import type { AlignmentValue, AttributeValues, Race } from './role.js';
 import type { LevelAbility } from './innate_abilities.js';
 import type { IntrinsicOrigin, PropertyName, WornPropertySlot } from './property_types.js';
 import {
-    A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE,
-    FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, Is_astralevel, LUCKADD, LUCKMAX, LUCKMIN, MAXULEV,
-    MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART,
-    W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, FACE, LL_ALIGNMENT,
+    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE,
+    HVY_ENCUMBER, I_SPECIAL, INTRINSIC, Is_astralevel, LUCKADD, LUCKMAX, LUCKMIN, MAXULEV, MOD_ENCUMBER,
+    POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER,
+    W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, FACE, LL_ALIGNMENT,
 } from './const.js';
 import { loseHeroHp, nearCapacity } from './hack.js';
 
 export type AttributeIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
-export type AttributeChangeResult = {
+type AttributeChangeResult = {
     changed: false;
     amount: number;
     fixed?: true;
@@ -69,7 +68,7 @@ export type AttributeChangeResult = {
     blockedByDunceCap?: false;
 };
 
-export type InnateSource = 'none' | 'role' | 'race' | 'outside' | 'experience' | 'form' | 'lycanthropy';
+type InnateSource = 'none' | 'role' | 'race' | 'outside' | 'experience' | 'form' | 'lycanthropy';
 
 interface StrengthLossOptions {
     state?: GameState;
@@ -281,7 +280,7 @@ export async function loseHeroStrength(amount: number, killer: string | null | u
     return false;
 }
 
-export interface PoisonDamageOptions {
+interface PoisonDamageOptions {
     state?: GameState;
     random?: typeof rn2;
     publish?: MessagePublisher;
@@ -299,7 +298,7 @@ export interface HeroPoisonOptions extends PoisonDamageOptions {
     thrownWeapon?: boolean;
 }
 
-export type HeroPoisonResult = {
+type HeroPoisonResult = {
     resisted: true;
     damage?: never;
     died: false;

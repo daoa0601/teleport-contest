@@ -8,12 +8,12 @@
 import { stack_object } from './invent.js';
 import { WEAPON_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
-import { objectSkill, ACID_VENOM, BLINDING_VENOM, CORPSE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
+import { objectSkill, ACID_VENOM, BLINDING_VENOM, CORPSE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, LEASH, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
 import { setHeroGrip, angerAttackedMonster, hideHeroUnder, monstersInFmonOrder, wakeMonster, validVampireShiftForm, finishHeroMonsterKill, finishHeroMonsterKillOutcome, } from './mon.js';
 import { cansee, couldsee, monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon.js';
 import { isWeldedPrimary, uswapwepgone, uwepgone, heroCanUseTwoWeapons, stopTwoWeaponCombat } from './wield.js';
-import { BOLT_LIM, P_SHORT_SWORD, P_SABER, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, ARM, EYE, FINGER, FINGERTIP, FOOT, G_GENOD, HAIR, HAND, HANDED, HEAD, I_SPECIAL, In_endgame, Is_airlevel, Is_waterlevel, LEG, M_AP_NOTHING, M_AP_OBJECT, NECK, NO_PART, NOSE, STR18, STR19, TOE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, STRANGE_OBJECT, LL_CONDUCT, LL_MINORAC, } from './const.js';
+import { BOLT_LIM, P_SHORT_SWORD, P_SABER, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CON, A_DEX, A_STR, A_WIS, ARM, EYE, FINGER, FINGERTIP, FOOT, G_GENOD, HAIR, HAND, HANDED, HEAD, I_SPECIAL, In_endgame, Is_airlevel, Is_waterlevel, LEG, M_AP_NOTHING, M_AP_OBJECT, NECK, NO_PART, NOSE, STR18, STR19, TOE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, STRANGE_OBJECT, LL_CONDUCT, LL_MINORAC, } from './const.js';
 import { corpseName, verbForSubject, makePlural, withIndefiniteArticle, minimalObjectName, ownedObjectName, simpleObjectName, simpleArmorName } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
@@ -33,7 +33,7 @@ import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroS
 import { displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { newuhs } from './eat.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { levelHasCeiling, surfaceName, sameDungeonLevel } from './dungeon.js';
+import { levelHasCeiling, surfaceName } from './dungeon.js';
 import { heroHidingStatus } from './insight.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
@@ -46,13 +46,13 @@ import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpa
 import { mksobj, placeCreatedObject, adjustObjectLightAfterBlessing as adjustObjectLight } from './mkobj.js';
 import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons, setHeroTrap, trapAt } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
-import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
+import { adjustLevelAbilities, currentAttribute, exerciseAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { FLAMING_SPECIES, MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, S_GHOST, SPECIAL_PM, } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, see_monsters, set_mimic_blocking } from './display.js';
 import { addShopDamage, deleteObject } from './shk.js';
 import { is_elven_armor, isFlimsyObject } from './object_properties.js';
-import { grantIntrinsicProperty, propertySourceIsActive, refreshMovementProperties, refreshProperty, revokeIntrinsicProperty, setPropertyFloatBlocked } from './properties.js';
+import { grantIntrinsicProperty, propertySourceIsActive, refreshMovementProperties, refreshProperty, revokeIntrinsicProperty, setPropertyFloatBlocked, } from './properties.js';
 import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
 import { objectLightRadius, new_light_source } from './light.js';
 import { endObjectBurn, learnEggType } from './timeout.js';
@@ -68,10 +68,6 @@ import { unpunishHero } from './read.js';
 import { handleRidingAfterFormChange } from './steed.js';
 import { golemHitPoints, isHomeElemental, pickFormFromClass } from './makemon.js';
 import { expelHero } from './mhitu.js';
-const G_FREQ = 0x0007;
-const G_NOGEN = 0x0200;
-const G_HELL = 0x0400;
-const G_NOHELL = 0x0800;
 const G_UNIQ = 0x1000;
 const S_MIMIC = 13;
 const S_NYMPH = 14;
@@ -89,7 +85,6 @@ const PM_ORC_CAPTAIN = MONSTER_NAME.indexOf('orc-captain');
 const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
 const PM_VAMPIRE_BAT = MONSTER_NAME.indexOf('vampire bat');
 const PM_VAMPIRE_LEADER = MONSTER_NAME.indexOf('vampire leader');
-const S_LICH = MONSTER_SYMBOL[MONSTER_NAME.indexOf('lich')];
 const PLACEHOLDER_MONSTERS = new Set(['orc', 'giant', 'elf', 'human']
     .map(name => MONSTER_NAME.indexOf(name)));
 // Part of C youprop.h:Polymorph_control(), Unchanging(),

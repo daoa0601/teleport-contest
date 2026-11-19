@@ -3,7 +3,6 @@ import test from 'node:test';
 import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
-import { game } from '../js/gstate.js';
 import { makeDeaf } from '../js/potion.js';
 import { pushKeys } from '../js/input.js';
 import { playInstrument } from '../js/music.js';

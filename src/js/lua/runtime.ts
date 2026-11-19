@@ -11,10 +11,10 @@ import type {
 export type LuaValue = null | boolean | number | string | LuaTable
     | LuaUserdata<unknown> | LuaFunction | LuaIterator | LuaGlobals
     | LuaNativeFunction | LuaHostObject | LuaValueArray;
-export type LuaResult = LuaValue | LuaValues | undefined;
+type LuaResult = LuaValue | LuaValues | undefined;
 export type LuaNativeFunction = (...args: LuaValue[]) => LuaResult | void | Promise<LuaResult | void>;
 export interface LuaHostObject { [key: string]: LuaValue | undefined }
-export interface LuaValueArray extends Array<LuaValue> {}
+interface LuaValueArray extends Array<LuaValue> {}
 export type LuaSerializedValue = null | boolean | number | string
     | LuaSerializedValue[] | LuaVariables;
 export interface LuaVariables { [key: string]: LuaSerializedValue }

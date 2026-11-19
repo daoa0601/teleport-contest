@@ -110,7 +110,7 @@ void test('bought protection lowers armor class before the next command', async 
     assert.equal(game.u.uac, 10 - protection, 'the next command must use the donated protection');
 });
 void test('a protective donation cannot exceed the protection cap', async () => {
-    const priest = await donationTemple(0, 11n);
+    await donationTemple(0, 11n);
     grantIntrinsicProperty('protection', 'outside', game);
     game.u.ublessed = 20;
     setHeroGoldAmount(game, 800);

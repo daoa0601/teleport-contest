@@ -13,7 +13,7 @@ import type { Rectangle } from './map_types.js';
 import type { GameMap } from './game.js';
 import { impossible } from './pline.js';
 
-export interface CaveMapOptions {
+interface CaveMapOptions {
     lit: boolean | number;
     foreground?: number;
     background?: number;

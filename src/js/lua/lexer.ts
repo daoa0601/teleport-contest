@@ -1,6 +1,6 @@
 import { luaSyntaxError } from './syntax_error.js';
 
-export type LuaTokenData =
+type LuaTokenData =
     | { type: 'number'; value: number }
     | { type: 'string' | 'name' | 'keyword' | 'symbol' | 'eof'; value: string };
 

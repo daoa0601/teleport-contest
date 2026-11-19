@@ -17,7 +17,6 @@ import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { heroGoldAmount, monsterGoldAmount } from '../js/hack.js';
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
-const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 function monsterLevel(species) {
     const level = MONSTER_LEVEL[species];
     assert.ok(level !== undefined);
@@ -189,7 +188,7 @@ void test('dropped gold pays debt before establishing credit', async (t) => {
     assert.equal(shopkeeper.eshk.credit, 15);
 });
 void test('an out-of-stock item draws no interest', async (t) => {
-    const { shopkeeper } = await sellShop(t, [], { shoptype: SHOPBASE + 3 });
+    await sellShop(t, [], { shoptype: SHOPBASE + 3 });
     requirePlayingGame(game); // potion shop
     const dagger = await floorObject(DAGGER, 10, 10);
     const outcome = await sellHeroDroppedObject(dagger, 10, 10);

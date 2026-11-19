@@ -83,7 +83,7 @@ export const MONSTER_WIZARD_SPELLS: readonly [MonsterSpell, ...MonsterSpell[]] =
 // publisher and its death finishers; dochug()'s movement cast supplies the
 // plain tty ones.  `publish` returns the pager dismissal so an escaped
 // --More-- can be recognized where tty replaces a retained line.
-export interface McastuSpellContext {
+interface McastuSpellContext {
     state: PlayingGameState;
     publish: typeof plineWithContinuation;
     random: RandomBelow;
@@ -921,7 +921,7 @@ export function monsterSpellDeathReason(monster: Monster, reason: string): strin
 // C mcastu.c:buzzmu(). Ranged spell rays are one original attack slot.
 // ---------------------------------------------------------------------------
 
-export interface MonsterMagicRayOptions {
+interface MonsterMagicRayOptions {
     state?: GameState;
     publish?: MessagePublisher;
     random?: typeof rn2;

@@ -162,9 +162,6 @@ function create(monster) { return [keys('\x07'), answer('Create what kind of mon
 function clearMonsters() {
     return [...wish('blessed scroll of genocide'), identify(), choose('of genocide', 'r*'), answer('What class of monsters', '*\r')];
 }
-function wait(turns) {
-    return Array.from({ length: turns }, () => [keys('m.'), answer('Call ', '\r'), answer('Die?', 'n')]).flat();
-}
 function identify() { return keys('\t\t\r'); }
 function choose(target, openKeys) { return { type: 'select-menu-entry', target, openKeys, dismissMore: true }; }
 function answer(prompt, value) { return { type: 'answer-prompt', prompt, value, dismissMore: true }; }

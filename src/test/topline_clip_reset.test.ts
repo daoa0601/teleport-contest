@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { flush_screen } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { showFloorPile } from '../js/invent.js';
-import { game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { waitForCurrentMonsterMore } from '../js/end.js';
 import { APPLE, FOOD_RATION } from '../js/object_data.js';

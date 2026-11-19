@@ -1,7 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DBWALL, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH, DB_UNDER, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, LEVEL_TIMER_KIND } from '../js/const.js';
+import { DBWALL, DB_FLOOR, DB_LAVA, DB_MOAT, DB_NORTH, DB_UNDER, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, LEVEL_TIMER_KIND } from '../js/const.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { game } from '../js/gstate.js';
 import { meltIce } from '../js/zap.js';

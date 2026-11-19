@@ -14,7 +14,7 @@ import { equipMonsterObject } from './support/monsters.js';
 for (const hallucinating of [false, true]) {
     for (const greaseRoll of [0, 1]) {
         void test(`a rust trap silently protects greased monster armor when grease ${greaseRoll ? 'stays' : 'washes off'}${hallucinating ? ' during hallucination' : ''}`, async () => {
-            const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP);
+            const { monster } = await freshMonsterTrapRoom(RUST_TRAP);
             const helmet = await knownObject(HELMET, { greased: true });
             await equipMonsterObject(monster, helmet, W_ARMH);
             game.u.hallucinationTurns = hallucinating ? 20 : 0;
@@ -67,7 +67,7 @@ const headCases = [
 ];
 for (const [species, part] of headCases) {
     void test(`a rust trap's head gush on a ${species} names its ${part}`, async () => {
-        const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP, { monster: { species } });
+        const { monster } = await freshMonsterTrapRoom(RUST_TRAP, { monster: { species } });
         const messages = [];
         requirePlayingGame(game);
         await mintrap(monster, game, {
@@ -80,7 +80,7 @@ for (const [species, part] of headCases) {
 // C trapeffect_rust_trap() prints the gush before it rolls rn2(3) and calls
 // split_mon(), so a gremlin only multiplies once that report is shown.
 void test('a gremlin splits on a rust trap only after the gush is reported', async () => {
-    const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP, { monster: { species: 'gremlin' } });
+    const { monster } = await freshMonsterTrapRoom(RUST_TRAP, { monster: { species: 'gremlin' } });
     requirePlayingGame(game);
     const level = game.level;
     const living = () => level.monsters.filter(candidate => !candidate.dead).length;

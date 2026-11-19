@@ -233,7 +233,7 @@ void test('a successful aggravation spell aimed at a misplaced hero still explai
     // explains the effect and deals no damage.
     const attack = action.movement.heroAttackSequence?.current;
     assert.equal(attack?.kind, 'hero-spell');
-    const presented = await presentMonsterAttackEffects(action, game);
+    await presentMonsterAttackEffects(action, game);
     const text = `${messages.join('\n')}\n${game._pending_message ?? ''}`;
 
     assert.equal(game.u.uhp, 500);

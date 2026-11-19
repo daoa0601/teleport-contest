@@ -4,7 +4,6 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterStagger } from '../js/mondata.js';
 import { makePlural } from '../js/objnam.js';
 import { makeStunned } from '../js/potion.js';
-import { game } from '../js/gstate.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshTurnRoom } from './support/playable-room.js';
 function speciesOf(name) {

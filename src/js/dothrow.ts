@@ -5,22 +5,22 @@
 // per-missile handoff to the flight owners.
 
 import {
-    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS,
-    SCROLL_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, FOOD_CLASS, BALL_CLASS,
-    VENOM_CLASS,
+    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, COIN_CLASS,
+    GEM_CLASS, FOOD_CLASS, BALL_CLASS, VENOM_CLASS,
 } from './objclass.js';
 import {
-    objectClassForType, objectSkill, objectBaseDirection, objectMagic, objectUnique, AKLYS, AMULET_OF_YENDOR, BOOMERANG, BOULDER, WAR_HAMMER,
-    BULLWHIP, CORPSE, EGG, SLING, FAKE_AMULET_OF_YENDOR, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA,
-    CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING,
-    BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND,
-    OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI,
-    ROCK, RUBBER_HOSE, OBJ_NAME, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER,
+    objectClassForType, objectSkill, objectBaseDirection, objectMagic, objectUnique, AKLYS, AMULET_OF_YENDOR,
+    BOOMERANG, BOULDER, WAR_HAMMER, BULLWHIP, CORPSE, EGG, SLING, FAKE_AMULET_OF_YENDOR, ACID_VENOM,
+    BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER,
+    STATUE, HEAVY_IRON_BALL, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT,
+    FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW,
+    ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, ROCK, RUBBER_HOSE, OBJ_NAME, GAUNTLETS_OF_FUMBLING,
+    GAUNTLETS_OF_POWER,
 } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import {
-    isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isAxe, isWetTowel,
-    launcherMatchesAmmo, objectIsCrackable, objectClass, isPick,
+    isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isAxe, isWetTowel, launcherMatchesAmmo,
+    objectIsCrackable, objectClass, isPick,
 } from './object_properties.js';
 import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -31,18 +31,7 @@ import type { GameObject } from './object_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { currentAttribute, changeHeroLuck, exerciseAttribute } from './attrib.js';
 import {
-
-    MONSTER_MOVE,
-
-    MONSTER_SIZE,
-
-
-    MONSTER_NAME,
-
-    MONSTER_LEVEL,
-
-    MONSTER_ALIGNMENT,
-
+    MONSTER_MOVE, MONSTER_SIZE, MONSTER_NAME, MONSTER_LEVEL, MONSTER_ALIGNMENT,
 } from './monster_data.js';
 import { artifactById, artifactToHitBonus, applyArtifactHit } from './artifact.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm, body_part } from './polyself.js';
@@ -53,8 +42,9 @@ import {
     M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel,
     Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
     TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, P_BOW,
-    P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHORT_SWORD, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, STRAT_WAITMASK,
-    Luck, W_QUIVER, W_WEP, W_SWAPWEP, WT_SPLASH_THRESHOLD, AKLYS_LIM, RLOC_MSG, HAND, EYE, HEAD, FACE, FOOT, ARM,
+    P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHORT_SWORD, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR,
+    STRAT_WAITMASK, Luck, W_QUIVER, W_WEP, W_SWAPWEP, WT_SPLASH_THRESHOLD, AKLYS_LIM, RLOC_MSG, HAND, EYE,
+    HEAD, FACE, FOOT, ARM,
 } from './const.js';
 import {
     weaponHitValue, weaponSkillHitBonus, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills,
@@ -62,7 +52,7 @@ import {
 } from './weapon.js';
 import type { WeaponAccuracyOptions } from './weapon.js';
 import { quiverObjectClass } from './wield.js';
-import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName, simpleArmorName } from './objnam.js';
+import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName, simpleArmorName } from './objnam.js';
 import {
     inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore,
     stack_object, fullyIdentifyObject, addInventoryItem,
@@ -75,7 +65,7 @@ import { applyPolearm, applyTool, couldPoleMonster, snuffCandle } from './apply.
 import { snapshotMenuUnderlay } from './wintty.js';
 import { captureThrownObjectFlight, detachThrownUnit, flyHeroThrownObject, heroThrowTrajectory, heroDirectGoldThrowRange } from './thrown_object.js';
 import type { ProjectileFlight } from './thrown_object.js';
-import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster , angerMonster, finishHeroMonsterKillOutcome } from './mon.js';
+import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, angerMonster, finishHeroMonsterKillOutcome } from './mon.js';
 import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext, MonsterLiquidDeathResult, FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome, HeroLiquidMonsterDeathOutcome } from './mon.js';
 import { canLetGo, dropObjectAtHero, landObjectOnAltar, applyFloorEffects, objectNoLongerHeld } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -86,7 +76,7 @@ import { deityName } from './pray.js';
 import { encumber_msg } from './pickup.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile, makeBlinded } from './potion.js';
 import type { PotionWakeMonster, PotionWakeNearby } from './potion.js';
-import { dist2 , possessiveName } from './hacklib.js';
+import { dist2, possessiveName } from './hacklib.js';
 import { resolveGoldMonsterContact, shipObject, containerImpactDamage } from './dokick.js';
 import {
     hitMonsterWithHeroObject, applyCaitiffPenalty, applyMonsterPassiveToObject,
@@ -94,7 +84,7 @@ import {
 import { captureHeroProjectileName } from './objnam.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { rayMissMessage } from './zap.js';
-import type { Position , MapLocation, Trap } from './map_types.js';
+import type { Position, MapLocation, Trap } from './map_types.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { cutWorm } from './worm.js';
 import { findMonsterArmorClass } from './worn.js';
@@ -116,11 +106,11 @@ import {
 import { stopHeroOccupation } from './allmain.js';
 import { cansee, vision_recalc } from './vision.js';
 import { rn2, rnd, d, rnl } from './rng.js';
-import { updateMonsterRegions , updateHeroRegions } from './region.js';
+import { updateMonsterRegions, updateHeroRegions } from './region.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
 import { displayLiquidName, monsterName, randomDisplayMonsterName, monsterTypeName, visibleMonsterSubject } from './do_name.js';
-import { isPoolAt , isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
-import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet } from './do_wear.js';
+import { isPoolAt, isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
+import { armorSimpleName, heroHasWaterWalking, objectIsHardHelmet } from './do_wear.js';
 import { setMonsterMalign, makemonAt } from './makemon.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
 import { explodeLitOilPotion } from './explode.js';
@@ -144,10 +134,9 @@ import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, dropBall } from './ball.js';
 import {
-    monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous,
-    monsterIsFlyer, monsterIsSlithy, monsterIsWhirly, monsterPassesWalls,
+    monsterObjectPronoun, monsterDigests, monsterHatesBlessings, monsterIsWhirly, monsterPassesWalls,
     monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies,
-    formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race, canBlnd,
+    formCanBecomeStoneGolem, eyecount, befriendWithObj, is_elf, is_orc, your_race, canBlnd,
 } from './mondata.js';
 import { detachHeroGold, heroGoldObject } from './sit.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -798,7 +787,7 @@ export async function reportHeroThrownMiss(monster: Monster, object: GameObject,
 // Map flight and impact for potions thrown by the hero.
 // C refs: dothrow.c throwit(), throwit_mon_hit(), thitmonst(), tmiss(),
 // breaktest(), breakmsg(), breakobj(); zap.c bhit().
-export interface MapPotionThrowOptions {
+interface MapPotionThrowOptions {
     state?: GameState;
     item: GameObject;
     objectClass: number;
@@ -970,12 +959,10 @@ export async function resolveMapPotionThrow({
 // C refs: dothrow.c:will_hurtle()/mhurtle()/mhurtle_to_doom()/mhitm_knockback().
 // ---------------------------------------------------------------------------
 
-const S_EYE = 5;
-const S_LIGHT = 25;
 const PM_GRID_BUG = 116;
 
-export type HurtleDeathOptions = HeroMonsterKillOptions & MonsterDeathOptions;
-export type HurtleDeathOutcome = HeroMonsterKillOutcome | MonsterDeathResult | boolean;
+type HurtleDeathOptions = HeroMonsterKillOptions & MonsterDeathOptions;
+type HurtleDeathOutcome = HeroMonsterKillOutcome | MonsterDeathResult | boolean;
 export type HurtleDeathHandler = (
     monster: Monster, options?: HurtleDeathOptions,
 ) => Promise<HurtleDeathOutcome>;
@@ -983,7 +970,7 @@ export type HurtleLiquidDeathHandler = (
     monster: Monster, options: MonsterLiquidDeathContext,
 ) => Promise<HeroLiquidMonsterDeathOutcome | MonsterLiquidDeathResult | HurtleDeathOutcome>;
 
-export interface MonsterHurtleOptions {
+interface MonsterHurtleOptions {
     state?: GameState;
     announce?: MessagePublisher;
     nameMonster?: (monster: Monster) => string;
@@ -1295,13 +1282,13 @@ export function rangedTargetHitBonus(object: GameObject, defender: Monster, {
 // a monster (dothrow.c:2011-2308).
 // ---------------------------------------------------------------------------
 
-export type RangedAttackMode = 'applied' | 'thrown' | 'kicked';
+type RangedAttackMode = 'applied' | 'thrown' | 'kicked';
 
-export type FinishKillWithObject = (
+type FinishKillWithObject = (
     monster: Monster, object: GameObject, options?: HeroMonsterKillOptions,
 ) => Promise<HeroMonsterKillOutcome>;
 
-export interface RangedObjectHitOptions {
+interface RangedObjectHitOptions {
     state?: GameState;
     guaranteedHit?: boolean;
     finishKillWithObject?: FinishKillWithObject | null;
@@ -1318,7 +1305,7 @@ export interface RangedObjectHitOptions {
     wakeNearby?: PotionWakeNearby | null;
 }
 
-export type RangedObjectHitResult = { heroDied: true } | {
+type RangedObjectHitResult = { heroDied: true } | {
     heroDied?: false;
     hit: boolean;
     consumed: boolean;
@@ -1694,7 +1681,7 @@ export async function offerThrownFood(
     return { heroDied: false, handled };
 }
 
-export type ThrownFoodContact = { heroDied: true }
+type ThrownFoodContact = { heroDied: true }
     | { heroDied: false; handled: boolean };
 
 // Part of C dothrow.c:thitmonst(): the applied (use_pole()) arm. C's
@@ -1727,7 +1714,7 @@ export function hitMonsterWithThrownObject(
     return hitMonsterWithRangedObject(monster, object, state, 'thrown', options);
 }
 
-export interface ObjectBreakOptions {
+interface ObjectBreakOptions {
     x?: number;
     y?: number;
     fromInventory?: boolean;
@@ -1968,7 +1955,7 @@ export async function breakObjectAtLocation(object: GameObject, {
 // below receives the hero's explicit position instead.
 // ---------------------------------------------------------------------------
 
-export interface HitFloorOptions {
+interface HitFloorOptions {
     verbose?: boolean;
     state?: GameState;
     publish?: MessagePublisher;
@@ -3546,7 +3533,7 @@ async function returnThrowToInventory(
 // path through throwit().
 // ---------------------------------------------------------------------------
 
-export interface GoldContactCallbacks {
+interface GoldContactCallbacks {
     wakeMonster?: PotionWakeMonster | null;
     angerMonster?: ((monster: Monster) => unknown) | null;
 }
@@ -3557,7 +3544,7 @@ export interface GoldContactOptions extends GoldContactCallbacks {
     gold: GameObject;
 }
 
-export interface GoldThrowOptions extends GoldContactCallbacks {
+interface GoldThrowOptions extends GoldContactCallbacks {
     state: GameState;
     gold: GameObject | null;
     dx?: number;

@@ -3,7 +3,7 @@
 import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown, sokobanGuilt } from './trap.js';
 import { OBJ_DESCR } from './o_init.js';
 import { encumber_msg } from './pickup.js';
-import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, mon_offmap, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, LEG, HAND } from './const.js';
+import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, mon_offmap, NO_KILLER_PREFIX, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, LEG, HAND } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import type { DirectionVector } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -15,21 +15,21 @@ import { pline, plineWithContinuation, impossible } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { levitationAtWill, refreshMovementProperties, propertyIsActive } from './properties.js';
 import { canSpotMonster, newsym } from './display.js';
-import { finishMonsterKilled,
-    finishHeroMonsterKill,
+import {
+    finishMonsterKilled, finishHeroMonsterKill,
 } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
 import { releaseMonsterLeash } from './apply.js';
-import { BOULDER, SADDLE, } from './object_data.js';
+import { BOULDER, SADDLE } from './object_data.js';
 import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject, freeInventoryObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './worn.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { displayLiquidName, monsterName, monsterReflexiveAction, placementMonsterName, monsterTypeName } from './do_name.js';
 import {
-    monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsClinger, monsterIsFlyer,
+    monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsFlyer,
     monsterIsHumanoid, monsterIsSlithy, monsterIsSwimmer, monsterThrowsRocks, needspick, tunnels, cant_drown,
     monsterIsAmorphous, monsterIsUnsolid, touchPetrifies, grounded,
 } from './mondata.js';
@@ -48,33 +48,33 @@ import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './do.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { blocksDiagonalDoor, badRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects, heroKnowsWaterWalking, heroKnowsLavaWalking } from './hack.js';
-import { levelHasCeiling, surfaceName } from './dungeon.js';
+import { surfaceName } from './dungeon.js';
 import { isAccessibleAt, heroCanOoze } from './monmove.js';
 import { isLavaAt, isPoolAt, isWaterwallAt } from './dbridge.js';
 import { describeLevel } from './botl.js';
 
 
-export type DismountReason = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type DismountReason = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-export interface DismountHeroOptions {
+interface DismountHeroOptions {
     state?: GameState;
     random?: (range: number) => number;
     announce?: MessagePublisher;
 }
 
-export interface DismountMovement extends Position {
+interface DismountMovement extends Position {
     oldx: number;
     oldy: number;
 }
 
-export interface DismountLanding {
+interface DismountLanding {
     died?: boolean;
     moved?: boolean;
     dismounted?: boolean;
     shortCircuited?: boolean;
 }
 
-export type DismountHeroResult = {
+type DismountHeroResult = {
     dismounted: false;
     died?: true;
 } | {
@@ -86,11 +86,11 @@ export type DismountHeroResult = {
     location?: DismountLanding | null;
 };
 
-export interface StrikeSteedOptions extends DismountHeroOptions {
+interface StrikeSteedOptions extends DismountHeroOptions {
     roll?: (sides: number) => number;
 }
 
-export type StrikeSteedResult = { struck: false } | {
+type StrikeSteedResult = { struck: false } | {
     struck: true;
     helpless?: boolean;
     thrown?: boolean;

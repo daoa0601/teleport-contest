@@ -128,7 +128,7 @@ export interface HeroInitialState {
 
 // These do not exist when the starting pet is made. In particular, absent
 // Charisma yields native apport 3; installing a zero tuple earlier changes it.
-export interface HeroStartingAttributes {
+interface HeroStartingAttributes {
     acurr: HeroAttributes;
     amax: HeroAttributes;
     atemp: HeroAttributes;

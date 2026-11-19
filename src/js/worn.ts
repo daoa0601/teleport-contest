@@ -13,15 +13,7 @@ import { WEAPON_CLASS } from './objclass.js';
 import { MFAST, MSLOW, NON_PM } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import {
-
-    MONSTER_EXPERIENCE_META,
-
-    MONSTER_NAME,
-
-    MONSTER_SIZE,
-
-    MONSTER_SYMBOL,
-
+    MONSTER_EXPERIENCE_META, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -29,17 +21,17 @@ import { naturalMonsterSpeed } from './mon.js';
 import type { GameObject, WornObjectSlot } from './object_types.js';
 import {
     objectDelay, objectPropertyName, ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING,
-    AMULET_OF_REFLECTION, CORNUTHAUM, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING,
-    SADDLE,
+    AMULET_OF_REFLECTION, CORNUTHAUM, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT,
+    MUMMY_WRAPPING, SADDLE,
 } from './object_data.js';
-import type { PropertyName, WornPropertySlot } from './property_types.js';
+import type { PropertyName } from './property_types.js';
 import { canSeeMonster, newsym } from './display.js';
 import { grantWornProperty, hasCarriedProperty, refreshProperty, removeWornProperty } from './properties.js';
 import {
     seenResistanceForProperty, monstersForgetHeroResistance, monsterObjectPronoun, monsterPossessive,
-    monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAnimal, monsterIsCentaur,
-    monsterIsMindless, monsterIsSlithy, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor,
-    monsterWrappingAllowed, touchPetrifies,
+    monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAnimal,
+    monsterIsCentaur, monsterIsMindless, monsterIsSlithy, monsterIsVerySmall, monsterIsWhirly,
+    monsterSlipsArmor, monsterWrappingAllowed, touchPetrifies,
 } from './mondata.js';
 import { armorBonus, armorSimpleName, armorSlotFor, cancelSlotTakeoff, clearHeroArmor, clearHeroAccessory } from './do_wear.js';
 import { syncBlindness } from './senses.js';
@@ -47,8 +39,8 @@ import { setTwoWeaponCombat } from './wield.js';
 import { artifactEmitsLight, setWieldedArtifactProperties, setWornArtifactProperties } from './artifact.js';
 import { isBimanualObject, isWeaponTool } from './object_properties.js';
 import {
-    I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_BALL, W_CHAIN, W_QUIVER,
-    W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, AC_MAX, DISMOUNT_FELL,
+    I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_BALL, W_CHAIN,
+    W_QUIVER, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, AC_MAX, DISMOUNT_FELL,
 } from './const.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
 import { dragonFormForArmor } from './polyself.js';
@@ -68,7 +60,6 @@ import { dismountHero, heroCanRideSteed, monsterCanBeSaddled } from './steed.js'
 import { possessiveName } from './hacklib.js';
 import { rnl } from './rng.js';
 import { objectNoLongerHeld } from './do.js';
-import { deleteObject } from './shk.js';
 import { placeObject, unlinkMonsterObject } from './mkobj.js';
 import { unwieldMonsterWeapon } from './weapon.js';
 import { resolveImmediatePetrification } from './trap.js';
@@ -334,7 +325,7 @@ export function setMonsterPermanentInvisibility(monster: Monster, permanent = tr
     };
 }
 
-export interface MonsterSpeedChange {
+interface MonsterSpeedChange {
     amount: number;
     oldSpeed: number;
     speed: number;

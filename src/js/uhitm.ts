@@ -7,13 +7,12 @@ import {
     WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, POTION_CLASS, SPBOOK_CLASS, COIN_CLASS, GEM_CLASS,
 } from './objclass.js';
 import {
-    objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERANG, BOULDER, CLOVE_OF_GARLIC, CORPSE,
-    CREAM_PIE, DUNCE_CAP, EGG, ELVEN_ARROW, ELVEN_BOW, EXPENSIVE_CAMERA, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL,
-    IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_NAMES, TOWEL, YA, YUMI,
+    objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERANG, BOULDER, CLOVE_OF_GARLIC,
+    CORPSE, CREAM_PIE, DUNCE_CAP, EGG, ELVEN_ARROW, ELVEN_BOW, EXPENSIVE_CAMERA, GAUNTLETS_OF_POWER,
+    HEAVY_IRON_BALL, IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_NAMES, TOWEL, YA, YUMI,
 } from './object_data.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
 import { sessionIsNight } from './calendar.js';
-import { monsterHasMagicResistance } from './mondata.js';
 import {
     applyArtifactHit, artifactById, artifactEmitsLight, defends, findArtifact, isPermanentlyPoisonedObject,
 } from './artifact.js';
@@ -28,7 +27,7 @@ import {
     IS_OBSTRUCTED, IS_TREE, Is_waterlevel, KILLED_BY, KILLED_BY_AN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
     M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_ACID,
     M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA,
-    MM_IGNOREWATER, MMOVE_DIED, MON_EXPLODE, MSLOW, Luck, NEW_MOON, NON_PM, P_BARE_HANDED_COMBAT, P_BASIC,
+    MM_IGNOREWATER, MMOVE_DIED, MON_EXPLODE, MSLOW, Luck, NEW_MOON, P_BARE_HANDED_COMBAT, P_BASIC,
     P_ISRESTRICTED, P_KNIFE, P_LANCE, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, P_WHIP,
     PARANOID_HIT, POOL, RLOC_MSG, RLOC_NOMSG, SHOPBASE, STONING, STRAT_WAITFORU, STRAT_WAITMASK, TT_PIT,
     Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU, W_RINGL, W_RINGR, W_SADDLE, W_WEP, WATER,
@@ -53,7 +52,7 @@ import { floorObjectDescription } from './invent.js';
 import type { GameState, MonsterHelplessnessReason, PlayingGameState } from './game_state.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { checkHeroAttackOverexertion, doorlessDoor, exceedsActionCapacity, heroTestMove, mNext2u, nearCapacity, nomul, roomForRoomno, roomsAt, stopRun } from './hack.js';
-import { dist2, ordinalSuffix, possessiveName, upstart } from './hacklib.js';
+import { dist2, possessiveName, upstart } from './hacklib.js';
 import { dropObjectAtHero, woundHeroLegs } from './do.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
 import { releaseHeroFromMonster, finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome, isZombieMaker } from './mon.js';
@@ -67,7 +66,7 @@ import type { HeroNaturalDamageResult, HeroNaturalEffectContext, HeroNaturalEffe
 import type { HeroPhysicalAttackMode, HeroPhysicalHitOptions, HeroPhysicalHitResult, HeroProjectileVolley } from './hero_physical_types.js';
 import { retouchEquipment } from './artifact.js';
 import { requireInitializedHero } from './hero_types.js';
-import type { Hero, HeroSkill } from './hero_types.js';
+import type { Hero } from './hero_types.js';
 import { consumeInventoryItem, inventoryItemDescription, mergable } from './invent.js';
 import { snuffMonsterInventoryLights } from './light.js';
 import { cloneMonster } from './makemon.js';
@@ -84,26 +83,27 @@ import { cloneHeroMonsterForm } from './mhitu.js';
 import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity, objectWeight, set_corpsenm, splitObjectStack, unlinkMonsterObject, unlinkObject } from './mkobj.js';
 import {
     angerAttackedMonster, angerWatchGuards, applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled,
-    finishMonsterPetrification, grantMonsterIntrinsic, healMonster, isWatch,
-    removeMonsterFromGame, resolveMonsterCorpseChance, revealMonsterAppearance, turnGolemToStone,
-    wakeAttackedMonster, wakeMonster, wakeMonstersNearWithMessages,
+    finishMonsterPetrification, grantMonsterIntrinsic, healMonster, isWatch, removeMonsterFromGame,
+    resolveMonsterCorpseChance, revealMonsterAppearance, turnGolemToStone, wakeAttackedMonster, wakeMonster,
+    wakeMonstersNearWithMessages,
 } from './mon.js';
 import { paralyzeMonster } from './mhitm.js';
 import type { MonsterDeathHandler, MonsterDefenderPetrificationResult, PetrificationOptions } from './mon.js';
 import {
     is_neuter, defended, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance,
-    monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance,
-    monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep,
-    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun, cant_drown, carnivorous,
-    herbivorous, is_elf, is_orc, is_shapeshifter, metallivorous, monsterIsAmphibious, monsterIsBreathless,
-    monsterIsHumanoid, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead,
+    monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance,
+    monsterHasShockResistance, monsterHasStoneResistance, monsterIsHelpless, monsterPossessive,
+    monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun,
+    cant_drown, carnivorous, herbivorous, is_elf, is_orc, metallivorous, monsterIsAmphibious,
+    monsterIsBreathless, monsterIsHumanoid, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead,
     monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver,
     monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer,
     monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade,
-    monsterIsBig, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid,
-    monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver,
-    monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies,
-    isHeroDefender, canBlnd, resistsBlnd, resistsBlndByArtifact, monsterStagger,
+    monsterIsBig, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead,
+    monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls,
+    monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem,
+    heroResistsStoning, touchPetrifies, isHeroDefender, canBlnd, resistsBlnd, resistsBlndByArtifact,
+    monsterStagger,
 } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
@@ -113,27 +113,8 @@ import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY,
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
 import type { MonsterCombatEffectContext, MonsterCombatEffectResult } from './monster_combat_effect_types.js';
 import {
-
-    MONSTER_ATTACKS,
-
-    MONSTER_BODY_META,
-
-    MONSTER_GENO,
-
-    MONSTER_LEVEL,
-
-    MONSTER_MOVE,
-
-    MONSTER_NAME,
-
-    MONSTER_SIZE,
-
-    MONSTER_SYMBOL,
-
-    PM_GREEN_SLIME,
-
-    requireMonsterData,
-
+    MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE,
+    MONSTER_SYMBOL, PM_GREEN_SLIME, requireMonsterData,
 } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';
@@ -145,9 +126,8 @@ import { greatestErosion, isAxe, isBimanualObject, isBlade, isBluntWeapon, isFli
 import type { GameObject } from './object_types.js';
 import {
     captureHeroProjectileName, corpseName, makePlural, minimalObjectName, objectCombatName,
-    objectHasPersonalName, objectName,
-    observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject,
-    withIndefiniteArticle,
+    objectHasPersonalName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName,
+    pluralizeObjectNoun, verbForSubject, withIndefiniteArticle,
 } from './objnam.js';
 import { stopHeroOccupation } from './allmain.js';
 import { objectAtMonsterDescription } from './pager.js';
@@ -158,7 +138,7 @@ import {
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { HeroPoisonOptions } from './attrib.js';
-import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
+import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroPassesWalls, heroSpecies, polymonHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
 import {
     cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused,
     makeStunned, setHeroSlimingTimeout, splitMon, startHeroSliming,
@@ -188,7 +168,7 @@ import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } fro
 import { addInventoryItem } from './invent.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
 import { drainHeroWeaponSkills, dryTowel, ensureHeroSkills, heroAttackBonus, heroStrengthDamageBonus, monsterWieldedWeapon, proficiency, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, specialContactDamage, showHeroSilverContact, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, useHeroSkill, weaponHitValue, weaponSkillDamageBonus, weaponSkillHitBonus, weaponSkillType } from './weapon.js';
-import { applyHeroWereChange, isHumanWereMonster, isWereMonster, revertHeroWereForm, setHeroLycanthropy, wereChange } from './were.js';
+import { isHumanWereMonster, isWereMonster, setHeroLycanthropy, wereChange } from './were.js';
 import { isTwoWeaponObject, setPrimaryWeapon, setTwoWeaponCombat, uwepgone } from './wield.js';
 import { cutWorm } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
@@ -205,7 +185,7 @@ function completelyBurns(monster: Pick<Monster, 'mnum'>): boolean {
     return species === 'paper golem' || species === 'straw golem';
 }
 
-export interface HeroDefenderFireContext {
+interface HeroDefenderFireContext {
     state: PlayingGameState;
     attacker: Monster;
     /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
@@ -223,12 +203,12 @@ export interface HeroDefenderFireContext {
 
 // One call of mhitm_adtyping(… AD_FIRE …): the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdFireCall =
+type MhitmAdFireCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderFireContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
-export interface MhitmAdFireResult {
+interface MhitmAdFireResult {
     /** mhm->damage after the branch. */
     damage: number;
     /** mhm->hitflags (set only by the monster-vs-monster golem death). */
@@ -252,7 +232,7 @@ function continueResult(damage: number): MhitmAdFireResult {
 // Attack permission and hidden-monster discovery before a hero weapon strike.
 // C ref: uhitm.c attack_checks().
 
-export interface AppliedWeaponAttackOptions {
+interface AppliedWeaponAttackOptions {
     state?: GameState;
     // C gb.bhitpos: a struck worm tail can be away from the head.
     struckAt?: Position;
@@ -832,7 +812,7 @@ interface HeroWeaponHitOptions {
     confirmationOverridden?: boolean;
 }
 
-export interface HeroWeaponHitResult {
+interface HeroWeaponHitResult {
     hit: boolean;
     survived: boolean;
     heroDied: boolean;
@@ -880,14 +860,14 @@ export async function resolveHeroWeaponHit(
 
 // Native uhitm.c:double_punch(), hmon_hitmon_barehands(), and damage bonuses.
 
-export interface BarehandContact {
+interface BarehandContact {
     damage: number;
     silverRings: boolean;
     useWeaponSkill: boolean;
     trainWeaponSkill: boolean;
 }
 
-export interface BarehandContactOptions {
+interface BarehandContactOptions {
     state?: GameState;
     twoHits?: number;
 }
@@ -964,7 +944,7 @@ interface HeroWeaponContactOptions {
     publish?: MessagePublisher;
 }
 
-export interface HeroWeaponContactResult {
+interface HeroWeaponContactResult {
     damage: number;
     useWeaponSkill: boolean;
     trainWeaponSkill: boolean;
@@ -1043,7 +1023,6 @@ async function meleeWeaponContact(
 
 // Part of C uhitm.c:hmon_hitmon_weapon(): select the improvised-use damage branch.
 function isImprovisedContact(weapon: GameObject, mode: HeroPhysicalAttackMode, state: PlayingGameState): boolean {
-    const skill = objectSkill(weapon.otyp) ?? P_NONE;
     const launcher = is_launcher(weapon);
     return launcher
         || (mode === 'melee' && (isMissileObject(weapon) || isLauncherAmmunition(weapon)))
@@ -1110,7 +1089,7 @@ function shatterCandidate(
 // C uhitm.c:hmon_hitmon_potion() and hmon_hitmon_misc_obj(). This phase
 // resolves the object's own effects; hmon owns bonuses and remaining damage.
 
-export interface HeroObjectContactOptions {
+interface HeroObjectContactOptions {
     mode: HeroPhysicalAttackMode;
     state?: GameState;
     target?: Position;
@@ -1121,7 +1100,7 @@ export interface HeroObjectContactOptions {
     finishMonsterDeath?: FinishHeroMonsterDeath;
 }
 
-export interface HeroObjectContactEffects {
+interface HeroObjectContactEffects {
     damage: number;
     getDamageBonus: boolean;
     specialMessage: boolean;
@@ -1402,7 +1381,7 @@ export async function recalculateHeroPhysicalDamage(
 // Poison applied by the hero's weapon.
 // C ref: uhitm.c hmon_hitmon_poison().
 
-export interface HeroWeaponPoisonOptions {
+interface HeroWeaponPoisonOptions {
     state?: GameState;
     mode: HeroPhysicalAttackMode;
     dieRoll: number;
@@ -1411,7 +1390,7 @@ export interface HeroWeaponPoisonOptions {
     rollOne?: (sides: number) => number;
 }
 
-export interface HeroWeaponPoisonResult {
+interface HeroWeaponPoisonResult {
     damage: number;
     deadly: boolean;
     resisted: boolean;
@@ -1509,7 +1488,7 @@ interface JoustImpactOptions {
     publish?: MessagePublisher;
 }
 
-export interface HeroJoustImpact {
+interface HeroJoustImpact {
     damage: number;
     alreadyKilled: boolean;
     heroDied: boolean;
@@ -1554,7 +1533,7 @@ export async function resolveHeroJoust(
     return { damage, alreadyKilled, heroDied, specialMessage: true, weapon: survivingWeapon };
 }
 
-export interface UnarmedStaggerOptions {
+interface UnarmedStaggerOptions {
     skill: number;
     damage: number;
     dx: number;
@@ -1567,7 +1546,7 @@ export interface UnarmedStaggerOptions {
     finishMonsterDeath?: HurtleDeathHandler | undefined;
 }
 
-export interface UnarmedStaggerOutcome extends Partial<MonsterHurtleOutcome> {
+interface UnarmedStaggerOutcome extends Partial<MonsterHurtleOutcome> {
     staggered: boolean;
 }
 
@@ -2248,7 +2227,7 @@ export async function mhitmAdFire(call: MhitmAdFireCall): Promise<MhitmAdFireRes
 }
 
 // mhitu-branch call context shared by the cold and electric owners.
-export interface HeroDefenderElementContext {
+interface HeroDefenderElementContext {
     state: PlayingGameState;
     attacker: Monster;
     /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
@@ -2264,18 +2243,18 @@ export interface HeroDefenderElementContext {
 
 // One call of mhitm_adtyping(… AD_COLD …): the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdColdCall =
+type MhitmAdColdCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderElementContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
 // One call of mhitm_adtyping(… AD_ELEC …).
-export type MhitmAdElecCall =
+type MhitmAdElecCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderElementContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
-export interface MhitmAdElementResult {
+interface MhitmAdElementResult {
     /** mhm->damage after the branch. */
     damage: number;
     nativeResult: number;
@@ -2482,7 +2461,7 @@ export async function mhitmAdElec(call: MhitmAdElecCall): Promise<MhitmAdElement
 const LOW_BOOTS = 163;
 
 // mhitu-branch call context shared by the stun and enchantment owners.
-export interface HeroDefenderStatusContext {
+interface HeroDefenderStatusContext {
     state: PlayingGameState;
     attacker: Monster;
     /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
@@ -2494,11 +2473,11 @@ export interface HeroDefenderStatusContext {
     calls: MonsterCallLog;
 }
 
-export interface HeroDefenderDrliContext extends HeroDefenderStatusContext {
+interface HeroDefenderDrliContext extends HeroDefenderStatusContext {
     die: DeathHandler;
 }
 
-export interface HeroDefenderBlndContext {
+interface HeroDefenderBlndContext {
     state: PlayingGameState;
     attacker: Monster;
     /** mattk->aatyp, for can_blnd()'s contact rules. */
@@ -2509,7 +2488,7 @@ export interface HeroDefenderBlndContext {
     calls: MonsterCallLog;
 }
 
-export interface HeroDefenderLegsContext {
+interface HeroDefenderLegsContext {
     state: PlayingGameState;
     attacker: Monster;
     damage: number;
@@ -2519,7 +2498,7 @@ export interface HeroDefenderLegsContext {
     calls: MonsterCallLog;
 }
 
-export interface MhitmAdStatusResult {
+interface MhitmAdStatusResult {
     /** mhm->damage after the branch. */
     damage: number;
     nativeResult: number;
@@ -2544,7 +2523,7 @@ function naturalContinueResult(damage: number, state: GameState): HeroNaturalEff
 // hitmu()'s resumed contact context: the begin-phase slot already composed
 // hitmsg() and rolled the negation probes these deferred branches consume, so
 // one shared shape serves every mhitu arm that hitmu() resumes after the line.
-export interface HeroDefenderContactContext {
+interface HeroDefenderContactContext {
     state: PlayingGameState;
     attacker: Monster;
     /** The deferred hitmu() slot, carrying its declared damage and probes. */
@@ -2557,7 +2536,7 @@ export interface HeroDefenderContactContext {
 
 // One call of mhitm_adtyping(… AD_DRLI …); the monster-versus-monster arm
 // also serves mhitm_ad_deth()'s redirected branch, as in C.
-export type MhitmAdDrliCall =
+type MhitmAdDrliCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderDrliContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -2650,7 +2629,7 @@ export async function mhitmAdDrli(call: MhitmAdDrliCall): Promise<MhitmAdStatusR
 }
 
 // One call of mhitm_adtyping(… AD_BLND …).
-export type MhitmAdBlndCall =
+type MhitmAdBlndCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderBlndContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -2702,7 +2681,7 @@ export async function mhitmAdBlnd(call: MhitmAdBlndCall): Promise<MhitmAdStatusR
 }
 
 // One call of mhitm_adtyping(… AD_ENCH …).
-export type MhitmAdEnchCall =
+type MhitmAdEnchCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderStatusContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -2747,7 +2726,7 @@ export async function mhitmAdEnch(call: MhitmAdEnchCall): Promise<MhitmAdStatusR
 }
 
 // One call of mhitm_adtyping(… AD_STUN …).
-export type MhitmAdStunCall =
+type MhitmAdStunCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderStatusContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -2791,7 +2770,7 @@ export async function mhitmAdStun(call: MhitmAdStunCall): Promise<MhitmAdStatusR
 }
 
 // One call of mhitm_adtyping(… AD_LEGS …).
-export type MhitmAdLegsCall =
+type MhitmAdLegsCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderLegsContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -2854,13 +2833,13 @@ export async function mhitmAdLegs(call: MhitmAdLegsCall): Promise<MhitmAdStatusR
         return statusContinueResult(damage);
     } else {
         /* mhitm: monster versus monster */
-        const { attacker, defender, context } = call;
+        const { attacker, context } = call;
         if (attacker.mcan) return statusContinueResult(0);
         return await context.applyPhysical();
     }
 }
 
-export interface HeroDefenderSeduContext {
+interface HeroDefenderSeduContext {
     state: PlayingGameState;
     attacker: Monster;
     /** The mhitm_data port for hitmu()'s current slot. */
@@ -2872,7 +2851,7 @@ export interface HeroDefenderSeduContext {
     calls: MonsterCallLog;
 }
 
-export type MhitmAdSeduCall =
+type MhitmAdSeduCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderSeduContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3017,7 +2996,7 @@ export async function mhitm_ad_sedu(call: MhitmAdSeduCall): Promise<HeroNaturalE
 
 // One call of mhitm_adtyping(… AD_SSEX …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdSsexCall =
+type MhitmAdSsexCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3047,12 +3026,12 @@ const S_LIGHT = 25;
 
 type PhysicalActor = Hero | Monster;
 
-export interface KnockbackAttack {
+interface KnockbackAttack {
     attackType: number;
     damageType: number;
 }
 
-export interface KnockbackOptions {
+interface KnockbackOptions {
     state?: GameState;
     random?: (limit: number) => number;
     publish?: MessagePublisher;
@@ -3064,7 +3043,7 @@ export interface KnockbackOptions {
     wakeDefender?: (() => Promise<{ heroDied?: boolean } | void>) | undefined;
 }
 
-export interface KnockbackOutcome {
+interface KnockbackOutcome {
     knocked: boolean;
     moved?: boolean;
     heroDied?: boolean;
@@ -3272,7 +3251,7 @@ export async function mhitm_mgc_atk_negated(attacker: Hero | Monster, defender: 
 }
 // One call of mhitm_adtyping(… AD_ACID …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdAcidCall =
+type MhitmAdAcidCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3340,7 +3319,7 @@ function damageResult(damage: number): MonsterCombatEffectResult {
 
 // One call of mhitm_adtyping(… AD_SGLD …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdSgldCall =
+type MhitmAdSgldCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3418,7 +3397,7 @@ const PM_IRON_GOLEM = MONSTER_NAME.indexOf('iron golem');
 const PM_LEATHER_GOLEM = MONSTER_NAME.indexOf('leather golem');
 const PM_WOOD_GOLEM = MONSTER_NAME.indexOf('wood golem');
 
-export interface HeroDefenderErosionContext {
+interface HeroDefenderErosionContext {
     state: PlayingGameState;
     attacker: Monster;
     /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
@@ -3443,7 +3422,7 @@ async function rehumanizeErosionForm(
 
 // One call of mhitm_adtyping(… AD_RUST …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdRustCall =
+type MhitmAdRustCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderErosionContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3493,7 +3472,7 @@ export async function mhitmAdRust(call: MhitmAdRustCall): Promise<MhitmAdStatusR
 }
 
 // One call of mhitm_adtyping(… AD_CORR …).
-export type MhitmAdCorrCall =
+type MhitmAdCorrCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderErosionContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3526,7 +3505,7 @@ export async function mhitmAdCorr(call: MhitmAdCorrCall): Promise<MhitmAdStatusR
 }
 
 // One call of mhitm_adtyping(… AD_DCAY …).
-export type MhitmAdDcayCall =
+type MhitmAdDcayCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderErosionContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3581,7 +3560,7 @@ const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 
 // One call of mhitm_adtyping(… AD_DREN …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdDrenCall =
+type MhitmAdDrenCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
@@ -3622,7 +3601,7 @@ async function drainEnergy(
 
 // One call of mhitm_adtyping(… AD_CURS …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdCursCall =
+type MhitmAdCursCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3712,7 +3691,7 @@ export async function mhitmAdCurs(call: MhitmAdCursCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_DRST/DRDX/DRCO …); the union member names
 // the actor that C compares against &gy.youmonst.
-export type MhitmAdDrstCall =
+type MhitmAdDrstCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
@@ -3753,7 +3732,7 @@ export async function mhitmAdDrst(call: MhitmAdDrstCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_FAMN …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdFamnCall =
+type MhitmAdFamnCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3770,7 +3749,7 @@ export async function mhitmAdFamn(call: MhitmAdFamnCall): Promise<MhitmAdStatusR
         return naturalContinueResult(damage, call.context.state);
     } else if ('mdef' in call) {
         /* mhitu: Famine's touch starves the hero, plus the normal damage */
-        const { state, attack, publish, random = rn2 } = call.context;
+        const { state, attack, random = rn2 } = call.context;
         await exerciseAttribute(A_CON, false, state);
         if (state.u.uhs !== FAINTED) await morehungry(random(40) + 40, { state });
         return statusContinueResult(attack.damage ?? 0);
@@ -3786,7 +3765,7 @@ export async function mhitmAdFamn(call: MhitmAdFamnCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_PEST …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdPestCall =
+type MhitmAdPestCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3811,7 +3790,7 @@ export async function mhitmAdPest(call: MhitmAdPestCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_DISE …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdDiseCall =
+type MhitmAdDiseCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3847,7 +3826,7 @@ export async function mhitmAdDise(call: MhitmAdDiseCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_DETH …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdDethCall =
+type MhitmAdDethCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -3899,7 +3878,7 @@ export async function mhitmAdDeth(call: MhitmAdDethCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_TLPT …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdTlptCall =
+type MhitmAdTlptCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -4083,7 +4062,7 @@ export async function poisonMonsterFromAttack(attacker: Monster, defender: Monst
     return damage;
 }
 
-export interface MonsterBrainAttackOptions {
+interface MonsterBrainAttackOptions {
     state?: GameState;
     visible: boolean;
     notOnHead?: boolean;
@@ -4239,12 +4218,12 @@ const PM_BARBED_DEVIL = MONSTER_NAME.indexOf('barbed devil');
 
 // One call of mhitm_adtyping(… AD_STCK …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdStckCall =
+type MhitmAdStckCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderStckContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
-export interface HeroDefenderStckContext {
+interface HeroDefenderStckContext {
     state: PlayingGameState;
     attacker: Monster;
     /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
@@ -4302,7 +4281,7 @@ const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
 
 // One call of mhitm_adtyping(… AD_WRAP …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdWrapCall =
+type MhitmAdWrapCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -4443,12 +4422,12 @@ function heroSurvivesWrappingUnderwater(state: PlayingGameState): boolean {
 
 // One call of mhitm_adtyping(… AD_SLIM …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdSlimCall =
+type MhitmAdSlimCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderSlimContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
-export interface HeroDefenderSlimContext {
+interface HeroDefenderSlimContext {
     state: PlayingGameState;
     attacker: Monster;
     /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
@@ -4550,7 +4529,7 @@ export async function mhitmAdSlim(call: MhitmAdSlimCall): Promise<MhitmAdStatusR
 const PM_ARCHON = MONSTER_NAME.indexOf('Archon');
 // One call of mhitm_adtyping(… AD_HALU …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdHaluCall =
+type MhitmAdHaluCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
@@ -4577,7 +4556,7 @@ export async function mhitmAdHalu(call: MhitmAdHaluCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_PLYS …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdPlysCall =
+type MhitmAdPlysCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -4633,7 +4612,7 @@ export async function mhitmAdPlys(call: MhitmAdPlysCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_SLEE …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdSleeCall =
+type MhitmAdSleeCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -4683,7 +4662,7 @@ export async function mhitmAdSlee(call: MhitmAdSleeCall): Promise<MhitmAdStatusR
            second call rejects it. Retain the resulting absence of a message,
            wait reset, and released grip. */
         const { attacker, defender, context } = call;
-        const { state, publish, visible, random, rollOne } = context;
+        const { state, publish, visible, rollOne } = context;
         if (!defender.msleeping
             && await sleepContact(defender, rollOne(10), context)
             && await sleepContact(defender, rollOne(10), context)) {
@@ -4701,7 +4680,7 @@ export async function mhitmAdSlee(call: MhitmAdSleeCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_SLOW …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdSlowCall =
+type MhitmAdSlowCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -4753,7 +4732,7 @@ export async function mhitmAdSlow(call: MhitmAdSlowCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_CONF …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdConfCall =
+type MhitmAdConfCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -4798,7 +4777,7 @@ export async function mhitmAdConf(call: MhitmAdConfCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_WERE …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdWereCall =
+type MhitmAdWereCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -4940,7 +4919,7 @@ interface HeroDefenderPhysicalContext {
     die?: DeathHandler;
 }
 
-export type MhitmAdPhysCall =
+type MhitmAdPhysCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderPhysicalContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -5127,12 +5106,12 @@ export async function mhitm_ad_phys(call: MhitmAdPhysCall): Promise<HeroNaturalE
 
 // One call of mhitm_adtyping(… AD_STON …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdStonCall =
+type MhitmAdStonCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderStonContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
-export interface HeroDefenderStonContext {
+interface HeroDefenderStonContext {
     state: PlayingGameState;
     attacker: Monster;
     /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
@@ -5230,7 +5209,7 @@ export function nurseContactMode(monster: Monster, state: PlayingGameState): 'hi
 
 // One call of mhitm_adtyping(… AD_HEAL …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdHealCall =
+type MhitmAdHealCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -5304,7 +5283,7 @@ export async function mhitmAdHeal(call: MhitmAdHealCall): Promise<HeroNaturalEff
 
 // One call of mhitm_adtyping(… AD_DGST …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdDgstCall =
+type MhitmAdDgstCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
 
@@ -5379,7 +5358,7 @@ export async function mhitmAdDgst(call: MhitmAdDgstCall): Promise<MhitmAdStatusR
 
 // One call of mhitm_adtyping(… AD_SAMU …); the union member names the actor
 // that C compares against &gy.youmonst.
-export type MhitmAdSamuCall =
+type MhitmAdSamuCall =
     | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
     | { mdef: 'youmonst'; context: HeroDefenderContactContext }
     | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
@@ -5435,7 +5414,7 @@ interface PassiveContext {
 // The adtyps whose mhitu branches hitmu() resumes after its contact line:
 // the begin-phase slot already rolled their negation probes, so one shared
 // hero-defender context serves their ports.
-export type HeroDeferredContactDamageType = typeof AD_WERE | typeof AD_SLEE
+type HeroDeferredContactDamageType = typeof AD_WERE | typeof AD_SLEE
     | typeof AD_POLY | typeof AD_TLPT | typeof AD_PLYS | typeof AD_WRAP
     | typeof AD_CURS | typeof AD_HEAL | typeof AD_ACID | typeof AD_SLOW
     | typeof AD_SGLD | typeof AD_SSEX | typeof AD_DISE | typeof AD_PEST
@@ -5458,7 +5437,7 @@ export function isHeroDeferredContactDamageType(
 // One call of C's dispatcher uhitm.c:mhitm_adtyping(): the adtyp tag selects
 // the mhitm_ad_* port exactly as C's switch does, and the actor member names
 // the combatant C compares against &gy.youmonst.
-export type MhitmAdtypingCall =
+type MhitmAdtypingCall =
     // damageum() attacking: resolveHeroNaturalDamage() passes the hero.
     | { magr: 'youmonst'; adtyp: DamageType; defender: Monster; context: HeroNaturalEffectContext }
     // mdamagem() for monster versus monster: mhitm.ts passes both monsters.
@@ -5485,7 +5464,7 @@ export type MhitmAdtypingCall =
     | { mdef: 'youmonst'; adtyp: HeroDeferredContactDamageType; context: HeroDefenderContactContext };
 
 // mhitm_data after mhitm_adtyping(); every port's result narrows to this.
-export interface MhitmAdtypingResult {
+interface MhitmAdtypingResult {
     /** mhm->damage after the branch. */
     damage: number;
     /** mhm->hitflags. */
@@ -5707,7 +5686,7 @@ interface HeroCombatExplosionOptions {
     rollDice?: RollDice;
 }
 
-export interface HeroCombatExplosionResult {
+interface HeroCombatExplosionResult {
     nativeResult: number;
     heroDied: boolean;
 }
@@ -5761,7 +5740,7 @@ interface HeroCombatEngulfOptions {
     rollDice?: typeof d;
 }
 
-export interface HeroCombatEngulfResult {
+interface HeroCombatEngulfResult {
     nativeResult: number;
     heroDied: boolean;
 }
@@ -6429,7 +6408,7 @@ async function dropCursedFormWeapon(weapon: GameObject | null, state: PlayingGam
     await dropSecondaryWeapon(state);
     return true;
 }
-export interface PassiveEffect {
+interface PassiveEffect {
     heroDied: boolean;
     splashed?: boolean;
     appliedDamage?: number;
@@ -6440,7 +6419,7 @@ export interface PassiveEffect {
     hallucinatedEscape?: boolean;
 }
 
-export interface HeroContactPassiveResult extends PassiveEffect {
+interface HeroContactPassiveResult extends PassiveEffect {
     handled: boolean;
     damageType?: DamageType;
     damage?: number;

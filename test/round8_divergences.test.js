@@ -4,7 +4,6 @@ import { createSessionDriver } from '../scripts/lib/session-driver.mjs';
 import { makeRecipe } from '../scripts/holdout/recipes.mjs';
 import { Engine } from '../js/jsmain.js';
 import { GameDisplay } from '../js/game_display.js';
-import { BOULDER } from '../js/object_data.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { capturedScreen, screenText } from './support/screen.js';
 function planFor(recipe, character, seed) {

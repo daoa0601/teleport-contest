@@ -26,7 +26,7 @@ import {
 } from './mondata.js';
 import { loseHeroHp } from './hack.js';
 
-export interface HeroObjectHitOptions {
+interface HeroObjectHitOptions {
     state?: GameState;
     publish?: MessagePublisher;
     rollOne?: (sides: number) => number;
@@ -39,7 +39,7 @@ export interface HeroObjectHitOptions {
     killer?: string;
 }
 
-export interface HeroObjectHitResult {
+interface HeroObjectHitResult {
     hit: boolean;
     died: boolean;
 }

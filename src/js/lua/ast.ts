@@ -11,7 +11,7 @@ export interface Program {
     filename: string;
 }
 
-export interface NameExpression {
+interface NameExpression {
     type: 'Name';
     name: string;
 }
@@ -40,7 +40,7 @@ export interface TableExpression {
     fields: TableField[];
 }
 
-export interface IndexExpression {
+interface IndexExpression {
     type: 'Index';
     target: Expression;
     key: Expression;
@@ -53,7 +53,7 @@ export interface CallExpression {
     args: Expression[];
 }
 
-export interface MethodCallExpression {
+interface MethodCallExpression {
     type: 'MethodCall';
     line: number;
     target: Expression;

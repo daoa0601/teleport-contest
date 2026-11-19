@@ -8,21 +8,18 @@
 // muse_unslime/cures_sliming).
 
 import {
-    WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS,
-    SCROLL_CLASS, WAND_CLASS, COIN_CLASS,
+    WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS,
 } from './objclass.js';
 import {
-    objectBaseDirection, objectSkill, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING,
-    AMULET_OF_REFLECTION, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP,
-    CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL,
-    ICE_BOX, LARGE_BOX, PICK_AXE, POT_ACID, POT_BLINDNESS, POT_CONFUSION,
-    POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_OIL,
-    POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SCR_CREATE_MONSTER,
-    SCR_EARTH, SCR_FIRE, SCR_TELEPORTATION, TIN, TIN_OPENER, UNICORN_HORN, WAN_COLD,
-    WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE,
-    WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING,
-    WAN_TELEPORTATION, WAN_UNDEAD_TURNING, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALES,
-    SILVER_DRAGON_SCALE_MAIL,
+    objectBaseDirection, objectSkill, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
+    BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP, CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN,
+    FROST_HORN, GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, PICK_AXE, POT_ACID, POT_BLINDNESS,
+    POT_CONFUSION, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY,
+    POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SCR_CREATE_MONSTER,
+    SCR_EARTH, SCR_FIRE, SCR_TELEPORTATION, TIN, TIN_OPENER, UNICORN_HORN, WAN_COLD, WAN_CREATE_MONSTER,
+    WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_POLYMORPH,
+    WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, SHIELD_OF_REFLECTION,
+    SILVER_DRAGON_SCALES, SILVER_DRAGON_SCALE_MAIL,
 } from './object_data.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { OBJ_DESCR } from './o_init.js';
@@ -30,12 +27,13 @@ import { heroHasInvoluntaryDelay, setMulti, isok } from './cmd.js';
 import { nomul, loseHeroHp, roomsAt } from './hack.js';
 import {
     BEAR_TRAP, BOLT_LIM, CORR, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, FIRE_TRAP,
-    G_GONE, HOLE, In_endgame, In_sokoban, IS_AIR, IS_DOOR, IS_DRAWBRIDGE, IS_FURNITURE, IS_OBSTRUCTED, is_hole,
-    is_pit, ismnum, LADDER, MFAST, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_RANDOM, MIGR_SSTAIRS,
-    MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MM_NOMSG, MON_OFFMAP, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE,
-    M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NORMAL_SPEED, P_DAGGER, P_KNIFE, PIT, PLNMSG_enum, PLNMSG_UNKNOWN,
-    POLY_TRAP, QBUFSZ, RLOC_MSG, SCORR, SDOOR, SHOPBASE, STAIRS, STRAT_WAITFORU, TELEP_TRAP, TEMPLE,
-    WAND_BACKFIRE_CHANCE, W_ARM, W_ARMF, W_ARMG, W_ARMH, W_WEP, WEB, W_NONDIGGABLE, ZAP_POS, W_AMUL, W_ARMS, HAND,
+    G_GONE, HOLE, In_endgame, In_sokoban, IS_AIR, IS_DOOR, IS_DRAWBRIDGE, IS_FURNITURE, IS_OBSTRUCTED,
+    is_hole, is_pit, ismnum, LADDER, MFAST, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_RANDOM, MIGR_SSTAIRS,
+    MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MM_NOMSG, MON_OFFMAP, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC,
+    M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NORMAL_SPEED, P_DAGGER, P_KNIFE, PIT, PLNMSG_enum,
+    PLNMSG_UNKNOWN, POLY_TRAP, QBUFSZ, RLOC_MSG, SCORR, SDOOR, SHOPBASE, STAIRS, STRAT_WAITFORU, TELEP_TRAP,
+    TEMPLE, WAND_BACKFIRE_CHANCE, W_ARM, W_ARMF, W_ARMG, W_ARMH, W_WEP, WEB, W_NONDIGGABLE, ZAP_POS, W_AMUL,
+    W_ARMS, HAND,
 } from './const.js';
 import { weaponReflects } from './artifact.js';
 import { monsterHasMagicResistance } from './mondata.js';
@@ -56,8 +54,8 @@ import { depth, ledgerNo } from './dungeon.js';
 import {
     monsterObjectPronoun, monsterSubjectPronoun, monsterKnowsTrap, monsterLearnsTrap, monsterIsHelpless,
     monsterHasAcidResistance, monsterHasStoneResistance, monsterLocomotion, formCanBecomeStoneGolem,
-    monstersForgetHeroResistance, monstersObserveHeroResistance, sameMonsterRace, speciesCanBlow, is_mercenary,
-    monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs, monsterHatesLight, monsterHatesSilver,
+    monstersForgetHeroResistance, monstersObserveHeroResistance, sameMonsterRace, speciesCanBlow,
+    is_mercenary, monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs, monsterHatesLight, monsterHatesSilver,
     monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsFlyer, monsterIsKop, monsterIsMindless,
     monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsSlithy, monsterIsUndead,
     monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterPassesWalls,
@@ -66,17 +64,7 @@ import {
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, shieldeff, show_glyph_cell, transientMonsterGlyph } from './display.js';
 import {
-
-    formatFeltMessage,
-
-    formatHeardMessage,
-
-    plineWithContinuation,
-
-    publishHeardMessage,
-
-    impossible,
-
+    formatFeltMessage, formatHeardMessage, plineWithContinuation, publishHeardMessage, impossible,
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { d, rn2, rnd } from './rng.js';
@@ -90,7 +78,9 @@ import { thawObject } from './pickup.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { canLetGo, tryCallObjectType, dropObjectAtHero } from './do.js';
 import { finishInventoryRemoval, inventoryItemDescription } from './invent.js';
-import { changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, healMonster, maybeUnhideAt, removeMonsterFromGame, wakeMonster, monsterCanCarryObject, revealMonsterAppearance, presentMonsterGrowth,
+import {
+    changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, healMonster, maybeUnhideAt,
+    removeMonsterFromGame, wakeMonster, monsterCanCarryObject, revealMonsterAppearance, presentMonsterGrowth,
     finishHeroMonsterKillOutcome,
 } from './mon.js';
 import { paralyzeMonster } from './mhitm.js';
@@ -98,7 +88,7 @@ import { advanceMonsterWormBody } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { makemonAt, rndmonstAdj, growMonster, setMonsterMalign } from './makemon.js';
 import { makePlural, verbForSubject, withIndefiniteArticle, definiteName, distantObjectName, minimalObjectName, objectCombatName, objectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
-import { splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight, isContainer, placeObjectSynchronously, sweepFloorPile} from './mkobj.js';
+import { splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight, isContainer, placeObjectSynchronously, sweepFloorPile } from './mkobj.js';
 import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel, ceilingName, surfaceName, canDigDown, canFallThrough } from './dungeon.js';
 
 import { findMonsterArmorClass, wornInSlot } from './worn.js';
@@ -149,7 +139,7 @@ import { turnCarriedObjects, turnHeroWithUndeadMagic } from './zap.js';
 const S_EYE = 5;
 const S_LIGHT = 25;
 const S_GHOST = 54;
-const GEMSTONE = 20, MINERAL = 21, RAY = 3, IRON = 11, SILVER = 14;
+const RAY = 3, IRON = 11, SILVER = 14;
 const G_UNIQ = 0x1000;
 const PM_PESTILENCE = 312;
 const PM_GHOST = MONSTER_NAME.indexOf('ghost');
@@ -382,7 +372,7 @@ async function m_tele(monster: Monster, type: number, seen: boolean, options: Mo
     }
 }
 
-export type MonsterDefensiveChoice =
+type MonsterDefensiveChoice =
     | { kind: 'horn'; object: GameObject | null }
     | { kind: 'lizard' | 'bugle' | 'healing' | 'extra-healing' | 'full-healing'
         | 'digging' | 'teleport-self' | 'teleport-ray' | 'teleport-scroll'
@@ -2001,7 +1991,7 @@ interface UnslimeContext {
 }
 
 type SlimeCure = { kind: 'breath' } | { kind: 'item'; object: GameObject } | { kind: 'trap'; trap: Trap };
-export interface MonsterUnslimeResult { cured: boolean; heroDied: boolean }
+interface MonsterUnslimeResult { cured: boolean; heroDied: boolean }
 
 // C muse.c:munslime().
 export async function munslime(monster: Monster, {
@@ -2176,7 +2166,7 @@ function green_mon(monster: Monster, state: PlayingGameState): boolean {
         && [CLR_GREEN, CLR_BRIGHT_GREEN].includes(MONSTER_COLOR[monster.mnum] ?? -1);
 }
 
-export interface ReflectionSource { object: GameObject | null; noun: string; }
+interface ReflectionSource { object: GameObject | null; noun: string; }
 
 // C muse.c:ureflects().
 // Ray and gaze callers use this source in their reflection messages.

@@ -14,17 +14,16 @@
 // equipment_selection.ts.
 
 import {
-    RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, POTION_CLASS, SPBOOK_CLASS,
-    COIN_CLASS,
+    RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, POTION_CLASS, SPBOOK_CLASS, COIN_CLASS,
 } from './objclass.js';
 import {
-    objectMagic, ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, MUMMY_WRAPPING, OBJECT_NAMES, OIL_LAMP, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION,
-    POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
-    POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HALLUCINATION, POT_HEALING, POT_INVISIBILITY,
-    POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS,
-    POT_POLYMORPH, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SLEEPING, POT_SPEED,
-    POT_WATER, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY,
-    SPE_LEVITATION, SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN,
+    objectMagic, ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, MUMMY_WRAPPING, OBJECT_NAMES, OIL_LAMP, POT_ACID,
+    POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE,
+    POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HALLUCINATION, POT_HEALING,
+    POT_INVISIBILITY, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS,
+    POT_POLYMORPH, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER,
+    SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_LEVITATION,
+    SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN,
 } from './object_data.js';
 import { artifactWarningFeedback, isPermanentlyPoisonedObject, wieldedArtifactWarns } from './artifact.js';
 import { OBJ_DESCR } from './o_init.js';
@@ -38,11 +37,10 @@ import { restorationLeavesTrouble } from './apply.js';
 import {
     A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, ENL_GAMEINPROGRESS, EXPL_FIERY,
     FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT,
-    GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN,
-    MAGICENLIGHTENMENT, MM_NOMSG, M_AP_FURNITURE,
-    M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL,
-    POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, EYE, FOOT,
-    FACE, HEAD, HAND, LEG, LL_CONDUCT,
+    GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MAGICENLIGHTENMENT,
+    MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS,
+    POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU,
+    TIMEOUT, Upolyd, EYE, FOOT, FACE, HEAD, HAND, LEG, LL_CONDUCT,
 } from './const.js';
 import type { PropertyObject, WornPropertySlot, PropertyName, PropertyState } from './property_types.js';
 import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
@@ -64,8 +62,8 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { possessiveName } from './hacklib.js';
 import { depth, ledgerNo } from './dungeon.js';
 import {
-    releaseHeroFromMonster, finishMonsterKilled, removeMonsterFromGame,
-    revealMonsterAppearance, wakeMonstersNearWithMessages,
+    releaseHeroFromMonster, finishMonsterKilled, removeMonsterFromGame, revealMonsterAppearance,
+    wakeMonstersNearWithMessages,
 } from './mon.js';
 import { removeWornHeroItem } from './steal.js';
 import { holdAnotherObject } from './invent.js';
@@ -105,8 +103,8 @@ import type { Monster } from './monster_types.js';
 import { tryCallObjectType, healHeroLegs } from './do.js';
 import {
     objectDescription, makePlural, verbForSubject, withIndefiniteArticle, definiteName, definiteObjectAction,
-    objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction,
-    ownedObjectName, simpleObjectName, fruitName,
+    objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming,
+    ownedObjectAction, ownedObjectName, simpleObjectName, fruitName,
 } from './objnam.js';
 import { learnObjectType, observeObject, recordObjectEncounter, objectTypeKnown } from './o_init.js';
 import { recordObjectKnowledge } from './u_init.js';
@@ -114,25 +112,14 @@ import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object
 import type { GameObject } from './object_types.js';
 import type { ScrollEffectOptions, ScrollEffectResult } from './read.js';
 import {
-
-    formatFeltMessage,
-
-    plineWithContinuation,
-
-    plineWithContinuation as pline,
-
-    recordGameLogEvent,
-
-    impossible,
-
+    formatFeltMessage, plineWithContinuation, plineWithContinuation as pline, recordGameLogEvent, impossible,
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty } from './properties.js';
+import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removeWornProperty, revokeIntrinsicProperty } from './properties.js';
 import { promptYesNo } from './query.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { chargeUnpaidObjectAsDebt, chargeUnpaidUsage, updateUnpaidObjectPrice, deleteObject } from './shk.js';
 import { monsterAtPosition, monsterSaddle } from './steed.js';
-import { heroIsPetrifying } from './stoning.js';
 import { waterbodyName } from './pager.js';
 import { isPoolAt } from './dbridge.js';
 import { flushPendingTopline } from './topl.js';
@@ -143,18 +130,18 @@ import { aggravateMonsters } from './wizard.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 
-export interface PotionEffectOptions {
+interface PotionEffectOptions {
     state?: GameState;
 }
 
-export interface PartialPotionEffectResult {
+interface PartialPotionEffectResult {
     handled: boolean;
     unknown: number;
     nothing: boolean;
     heroDied: boolean;
 }
 
-export interface PotionEffectResult {
+interface PotionEffectResult {
     // peffects returns 1 when detection bypasses ordinary discovery.
     result: -1 | 0 | 1;
     unknown: number;
@@ -602,7 +589,7 @@ export async function releasePotionOccupant(source: GameObject, { state = game }
 
 // ---- drink_ok()/dodrink()/dopotion() (C potion.c:505-645) ----
 
-export interface QuaffResult {
+interface QuaffResult {
     spentTime: boolean;
     heroDied: boolean;
     object: GameObject | null;
@@ -1595,7 +1582,7 @@ export async function impactArtifactLight(object: GameObject, worsen: boolean): 
 
 // ---- potionhit() (C potion.c:1625) ----
 
-export type PotionWakeResult = { heroDied?: boolean } | void;
+type PotionWakeResult = { heroDied?: boolean } | void;
 export type PotionWakeMonster = (monster: Monster) => PotionWakeResult | Promise<PotionWakeResult>;
 export type PotionWakeNearby = (x: number, y: number, distance: number) => unknown;
 type PotionMonsterDisplay = (monster: Monster) => unknown;
@@ -1603,14 +1590,14 @@ type PotionSplitMonster = (monster: Monster, state: GameState) => Monster | null
 type PotionTransformWere = (monster: Monster, state: GameState) => boolean | Promise<boolean>;
 type PotionKnowledge = ObjectCallResult | { identified: true; prompted: false };
 
-export interface PotionVaporOptions {
+interface PotionVaporOptions {
     state?: GameState;
     potion: GameObject;
     publish?: MessagePublisher;
     monsterCanSeeHero?: ((monster: Monster) => boolean) | null;
 }
 
-export interface PotionVaporResult {
+interface PotionVaporResult {
     received: boolean;
     shielded?: boolean;
     abilityStart?: number | null;
@@ -1648,7 +1635,7 @@ export interface PotionHitOptions {
     target?: Position;
 }
 
-export interface PotionDirectEffect {
+interface PotionDirectEffect {
     heroDied?: boolean;
     angered?: boolean;
     healed?: number;
@@ -1685,7 +1672,7 @@ export interface PotionDirectEffect {
     selfTouch?: MonsterSelfTouchResult | null;
 }
 
-export interface PotionHitResult {
+interface PotionHitResult {
     heroDied?: boolean;
     bottleName: string;
     crashMessage: string;
@@ -3291,7 +3278,7 @@ interface SplitOptions extends CloneOptions {
 }
 
 // split_mon()'s second argument: whose heat made the monster divide.
-export type SplitMonTarget = { hero: GameState } | {
+type SplitMonTarget = { hero: GameState } | {
     monster: Monster;
     heatSource?: SplitOptions['heatSource'];
 };

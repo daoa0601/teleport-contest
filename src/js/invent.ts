@@ -11,62 +11,59 @@ import {
     VENOM_CLASS,
 } from './objclass.js';
 import {
-    objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, CRYSKNIFE, ALCHEMY_SMOCK,
-    ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, MAGIC_MARKER,
-    HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER,
-    SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
-    BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE,
-    CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA,
-    FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING,
-    MIRROR, OBJECT_NAMES, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT,
-    TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN,
-    WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW,
-    DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE,
-    YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE,
-    SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT,
-    CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC,
-    CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING,
-    SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS,
-    SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_CATEGORY, AKLYS,
-    DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD,
+    objectClassForType, objectSkill, objectMerge, objectUsesKnown, CRYSKNIFE, ARROW as FIRST_OBJECT,
+    BAG_OF_TRICKS, EGG, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, MAGIC_MARKER, LOCK_PICK, CREDIT_CARD,
+    OBJ_NAME, oc_level, SCR_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, TIN, TIN_OPENER, TOWEL,
+    AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BELL_OF_OPENING, BLINDFOLD, BULLWHIP, CANDELABRUM_OF_INVOCATION,
+    CORPSE, CREAM_PIE, DRUM_OF_EARTHQUAKE, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, HORN_OF_PLENTY, LEASH,
+    OBJECT_NAMES, OIL_LAMP, PICK_AXE, POT_OIL, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, WAX_CANDLE,
+    WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE,
+    LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL,
+    CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE,
+    SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES,
+    POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE,
+    PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER,
+    CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING,
+    SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING,
+    SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER,
+    ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD,
 } from './object_data.js';
 import {
-    pair_of, isMissileObject, isBimanualObject, isGrayStone, isWeaponTool, launcherMatchesAmmo,
-    isBlade, isPolearm, isLauncherAmmunition,
+    pair_of, isMissileObject, launcherMatchesAmmo, isPolearm, isLauncherAmmunition,
 } from './object_properties.js';
 import { isThrowingWeapon } from './dothrow.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setworn, removeHeroEquipment } from './worn.js';
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { unpunishHero } from './read.js';
 import { hideUnhideMessageTypes } from './message_types.js';
-import { inventoryActionForObject, itemReadingText } from './iactions.js';
-import { encyclopediaEntries } from './encyclopedia.js';
+import { inventoryActionForObject } from './iactions.js';
 import {
     killerObjectName, objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural,
-    withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName,
-    objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, objectNeedsFullIdentification,
-    observeObjectForNaming, simpleObjectName, singularObjectName, erosionMatters, objectUsesCharges,
+    withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation,
+    objectName, objectNameIsPlural, objectNeedsFullIdentification, observeObjectForNaming, simpleObjectName,
+    erosionMatters, objectUsesCharges,
 } from './objnam.js';
 import {
-    rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, placeObject,
-    objectWeight, isContainer, announceGlobMerge, floorPileAt,
+    rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob,
+    placeObject, objectWeight, isContainer, announceGlobMerge, floorPileAt,
 } from './mkobj.js';
 import { ATTRIBUTE_DISPLAY_ORDER, exerciseAttribute, setMoreLuck } from './attrib.js';
 import { consumeHallucinatedMenuObjectGlyph, transientMonsterGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { formatStrength } from './botl.js';
-import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './topl.js';
-import { showMessageMenu, snapshotMenuUnderlay, restoreMenuUnderlay, windowOrigin,
-    tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu,
-    tty_destroy_nhwindow } from './wintty.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, renderKeyPrompt } from './topl.js';
+import {
+    showMessageMenu, snapshotMenuUnderlay, restoreMenuUnderlay, windowOrigin, tty_create_nhwindow,
+    tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow,
+} from './wintty.js';
 import { pline, plineWithContinuation, impossible } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { getLine, addMenuHeading, showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
-import type { InventoryMenuItem, InventorySection, InventorySelection, MenuLabel, MultiSelectSection, PageLocalMultiSelectSection } from './windows.js';
+import type { InventoryMenuItem, InventorySection, InventorySelection, MenuLabel } from './windows.js';
 import { nhgetch } from './input.js';
 import { readchar, commandResultCancelled, commandResultFailed, cmdq_add_int, cmdq_add_key, cmdq_clear, cmdq_pop, getCount, GC_SAVEHIST, GC_ECHOFIRST, GC_CONDHIST, ynSingleKey, yn_function } from './cmd.js';
 import { recorderSort, ingSuffix, possessiveName, visibleCommandKey } from './hacklib.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
-import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, A_WIS, BY_NEXTHERE, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, INCLUDE_HERO, INVORDER_SORT, Is_airlevel, Is_waterlevel, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, NHW_MENU, PICK_ANY, PICK_NONE, PICK_ONE, SIGNAL_ESCAPE, USE_INVLET, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, CONTAINED_SYM, MGIVENNAME, HAND, FINGER, STOMACH } from './const.js';
+import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, A_WIS, BY_NEXTHERE, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, INCLUDE_HERO, INVORDER_SORT, Is_airlevel, Is_waterlevel, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, NHW_MENU, PICK_ANY, PICK_NONE, PICK_ONE, SIGNAL_ESCAPE, USE_INVLET, W_ACCESSORY, W_AMUL, W_ARMOR, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, CONTAINED_SYM, MGIVENNAME, HAND, STOMACH } from './const.js';
 import type { GameFlags } from './flags.js';
 import { MONSTER_NAME } from './monster_data.js';
 import type { SpellCategory } from './data_types.js';
@@ -75,13 +72,12 @@ import { recordLiteracy } from './literacy.js';
 import { learnObjectType, recordObjectEncounter, observeObject, objectMaterial, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { recordObjectKnowledge } from './u_init.js';
 import { promptYesNoAllQuit } from './query.js';
-import { isTwoWeaponObject, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
-import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
+import { isWeldedPrimary, setQuiverObject } from './wield.js';
+import { heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { discoverArtifact, touchArtifactByHero, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifact.js';
 import { touchQuestArtifact } from './quest.js';
 import { isQuestArtifact } from './questpgr.js';
 import { recordAchievement } from './insight.js';
-import { isEdibleFood } from './eat.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroCanReachFloor, readEngravingAt } from './engrave.js';
@@ -91,17 +87,16 @@ import { deityName } from './pray.js';
 import { isIceAt, isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { forceDescribeDecor, pickupBurden, encumber_msg, queryObjlist } from './pickup.js';
 import { visibleRegionAt } from './region.js';
-import { resolveImmediatePetrification, trapName, objectIsVulnerableToErosion, trapAt } from './trap.js';
+import { resolveImmediatePetrification, trapName, trapAt } from './trap.js';
 import {
     heroResistsStoning, monsterIsHumanoid, monsterDigests, touchPetrifies, formCanBecomeStoneGolem,
 } from './mondata.js';
 import { iceDescriptionAt, swallowedHeroDescription } from './pager.js';
 import { panic } from './end.js';
-import { armorSimpleName, armorSlotFor, takeoffSlotObject } from './do_wear.js';
+import { takeoffSlotObject } from './do_wear.js';
 import {
-    currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, addShopObjectToBill,
-    stolenValue, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer,
-    doinvbill,
+    costlySpot, chargeUnpaidUsage, deleteObject, addShopObjectToBill, stolenValue, billForObject,
+    visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer, doinvbill,
 } from './shk.js';
 import { attachFigurineTimer, endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { objectShedsLight } from './light.js';
@@ -118,15 +113,15 @@ import type { GameObject, ObjectTimer } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { HeroPossessions } from './hero_types.js';
 import type { GameDisplay } from './game_display.js';
-import { maybeUnhideAt, hideHeroUnder,
-    isReviver,
+import {
+    maybeUnhideAt, hideHeroUnder, isReviver,
 } from './mon.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { objectResistsDestruction } from './zap.js';
 
 
-export interface InventoryObjectMenuOptions {
+interface InventoryObjectMenuOptions {
     // display_pickinv's lets: '-' is a filter letter even without an object.
     // Omitting the filter or passing an empty string requests full inventory.
     letters?: string;
@@ -138,7 +133,7 @@ export interface InventoryObjectMenuOptions {
     menuOptions?: readonly { key: string; text: string }[];
 }
 
-export interface InventoryDescriptionOptions {
+interface InventoryDescriptionOptions {
     primaryHandDetail?: string | null;
     projectPrimaryHand?: boolean;
     withPrice?: boolean;
@@ -424,7 +419,7 @@ const CURRENCIES: readonly string[] = [
 export type InventoryClassification = typeof GETOBJ_EXCLUDE | typeof GETOBJ_EXCLUDE_NONINVENT
     | typeof GETOBJ_EXCLUDE_INACCESS | typeof GETOBJ_EXCLUDE_SELECTABLE | typeof GETOBJ_DOWNPLAY | typeof GETOBJ_SUGGEST;
 
-export interface GetobjOptions {
+interface GetobjOptions {
     // GETOBJ_PROMPT: ask even when nothing is a likely candidate.
     forcePrompt?: boolean;
     // GETOBJ_ALLOWCNT: accept a typed or menu count.
@@ -435,7 +430,7 @@ export interface GetobjOptions {
     handsText?: string;
 }
 
-export type InventoryObjectSelection = {
+type InventoryObjectSelection = {
     cancelled: true;
     object: null;
     none: false;
@@ -463,7 +458,7 @@ const QUITCHARS = [0, 32, 13, 10, ESCAPE];
 
 type InventoryReport = 'gold' | 'weapon' | 'armor' | 'rings' | 'amulet' | 'tools' | 'inuse' | 'type';
 
-export type Buc = 'B' | 'U' | 'C' | 'X';
+type Buc = 'B' | 'U' | 'C' | 'X';
 
 
 const BUC_CHOICES: readonly Buc[] = ['B', 'C', 'U', 'X'];
@@ -2005,7 +2000,7 @@ export async function lookHere(
         return { died: false, tookTime: blind };
     }
     const { ux: x, uy: y } = game.u;
-    const level = requireGameLevel();
+    requireGameLevel();
     const limit = configuredPileLimit();
     const skipObjects = limit > 0 && objectCount >= limit;
     const trap = trapAt(game, x, y);

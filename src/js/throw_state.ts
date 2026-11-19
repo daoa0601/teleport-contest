@@ -15,13 +15,13 @@ import { calcCapacity, SLT_ENCUMBER } from './hack.js';
 import { objectWeight } from './mkobj.js';
 
 
-export interface ThrowStateOptions {
+interface ThrowStateOptions {
     state?: GameState;
     object: GameObject;
     publish?: MessagePublisher;
 }
 
-export interface ThrowSlipOptions extends ThrowStateOptions {
+interface ThrowSlipOptions extends ThrowStateOptions {
     launcher?: boolean;
     throwingWeapon?: boolean;
 }

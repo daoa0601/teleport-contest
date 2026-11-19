@@ -42,7 +42,7 @@ void test('lenses occupy the eyewear slot without blinding the hero', async () =
     freshPlayableRoom();
     requireFixtureGame(game);
     const lenses = await addInventoryObject(LENSES, { invlet: 'a' });
-    const blindfold = await addInventoryObject(BLINDFOLD, { invlet: 'b' });
+    await addInventoryObject(BLINDFOLD, { invlet: 'b' });
     await applyInventoryObject('a');
     await applyInventoryObject('b');
     assert.equal(game.ublindf, lenses);

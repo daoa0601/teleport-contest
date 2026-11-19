@@ -4,7 +4,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ALTAR, ROOM, SINK } from '../js/const.js';
+import { SINK } from '../js/const.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -14,11 +14,9 @@ import { OBJECT_NAMES } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { shopkeeperName } from '../js/shknam.js';
 import { createStaffedShop } from './support/shop.js';
-import { wearHeroArmor } from '../js/do_wear.js';
 
 
 const DAGGER = OBJECT_NAMES.indexOf('dagger');
-const COCKATRICE = OBJECT_NAMES.length; // placeholder-free tests below use real indices
 
 // C do.c:714-720/722-734: a wielded dagger drops cleanly; welded or worn
 // items are refused by canletgo before any state changes.

@@ -5,7 +5,7 @@ import { canSeeMonster, flush_screen, glyphAt, newsym } from '../js/display.js';
 import { clearMessageWindow, moreUntilDismissed } from '../js/topl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
-import { game, requireGameDisplay } from '../js/gstate.js';
+import { requireGameDisplay } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS, AT_BITE, AT_CLAW } from '../js/monster_attack_types.js';

@@ -4,7 +4,7 @@ import { IRONBARS, NO_MINVENT } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { inputGate } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
-import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { throwInventoryObject } from './support/commands.js';

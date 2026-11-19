@@ -21,24 +21,11 @@ import { game, requireLiveGame, requireGameLevel, requirePlayingGame, requireIni
 import type { GameState } from './game_state.js';
 import type { WipeFaceOccupation } from './occupation_types.js';
 import {
-
-    formatHeardMessage,
-
-    norep,
-
-    pline,
-
-    plineWithContinuation,
-
-    publishHeardMessage,
-
-    recordGameLogEvent,
-
+    formatHeardMessage, norep, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent,
     impossible,
-
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
 import { monsterHasMapPosition, monsterAtPosition, dismountHero, stuckSteed } from './steed.js';
 import { AD_POLY } from './monster_attack_types.js';
 import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, INVORDER_SORT, IS_ALTAR, IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, PICK_ANY, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, USE_INVLET, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, Is_valley, Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT, VIBRATING_SQUARE, STAIRS, HAND, FACE, LEG, STOMACH, I_SPECIAL, TIMEOUT, W_ARTI, W_ART, CORR, Luck, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
@@ -54,44 +41,41 @@ import { billForObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDropp
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { callObjectType, displayColorName, displayLiquidName, monsterName, objectMonsterName, randomDisplayMonsterName } from './do_name.js';
 import type { ObjectCallResult } from './do_name.js';
-import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, blockMonsterNotices, unblockMonsterNotices, noticeAllMonsters, heroLocomotion, nearCapacity, checkSpecialRoom, nomul, applyHeroLiquidEffects, SLT_ENCUMBER, heroResistsFire, rootedHeroCannotMove } from './hack.js';
+import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, blockMonsterNotices, unblockMonsterNotices, noticeAllMonsters, heroLocomotion, nearCapacity, checkSpecialRoom, applyHeroLiquidEffects, SLT_ENCUMBER, heroResistsFire, rootedHeroCannotMove } from './hack.js';
 import type { Trap } from './map_types.js';
 import { buryFloorObjectsAt, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
 import {
-    canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object,
-    flush_screen, reglyphSymbolSet, map_background,
+    canSpotMonster, newsym, docrt, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet,
+    map_background,
 } from './display.js';
 import { cansee, canseeFromHero, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import {
-    finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster,
-    sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters,
-    purgeDeadMonsters,
-    finishHeroMonsterKill,
-    zombieForm,
+    finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm,
+    healMonster, sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount,
+    killGenocidedMonsters, purgeDeadMonsters, finishHeroMonsterKill, zombieForm,
 } from './mon.js';
 import { heroSpecies, heroFormSticks, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
 import {
-    deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrap, trapAt,
-    selfTouchPetrifyingWeapons, floatHeroDown, waterDamageObject, lava_damage,
+    deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrap,
+    trapAt, selfTouchPetrifyingWeapons, floatHeroDown, waterDamageObject, lava_damage,
 } from './trap.js';
 import { heroHasCarriedArtifactFlag } from './artifact.js';
 import { waterbodyName } from './pager.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories, autopickupAtHero, queryObjlist } from './pickup.js';
 import {
-    selectInventoryObject, inventoryClassOrder, lootSortMode, objectClassHeading, inventoryItemDescription,
-    consumeInventoryItem, delobj, sortObjects, chooseInventoryObject, finishInventoryRemoval,
-    floorObjectDescription, freeInventoryObject,
+    selectInventoryObject, inventoryItemDescription, consumeInventoryItem, delobj, sortObjects,
+    chooseInventoryObject, finishInventoryRemoval, floorObjectDescription, freeInventoryObject,
 } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { objectQuantity, rejoinObjectStack, splitObjectStack, placeObject, objectWeight, meldLandingGlob, addBuriedObject, chargeAlteredUnpaidObject } from './mkobj.js';
 import { promptYesNo } from './query.js';
 import { tty_yn_function } from './topl.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
-import { getLine, showMultiSelectWindow } from './windows.js';
-import type { CountedSelection, MultiSelectSection } from './windows.js';
+import { getLine } from './windows.js';
+import type { CountedSelection } from './windows.js';
 import { isBimanualObject, isPick } from './object_properties.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { heroCanReachFloor, engravingAt, make_grave, rewindEngravingsForSave } from './engrave.js';
@@ -112,71 +96,10 @@ import { createPlayerMonsters } from './mplayer.js';
 import { gainGuardianAngel } from './minion.js';
 import { randomMonsterRelocation, enexto, safe_teleds, finishTeleportArrival } from './teleport.js';
 import {
-
-
-    placeHeroOnLevel,
-
-
-    depth,
-
-
-    dungeonBuildsUp,
-
-
-    dungeonDepth,
-
-
-    endgameLevelName,
-
-
-    initOverviewRecord,
-
-
-    level_difficulty,
-
-
-    markOverviewUnreachable,
-
-
-    recordMappedOverviewState,
-
-
-    recordOverviewBranch,
-
-
-    specialPrototypeAt,
-
-
-    u_on_rndspot,
-
-
-    insideWizardTower,
-
-
-    levelIsWizardTower,
-
-
-    wizardTowerLevelAt,
-
-
-    ledgerNo,
-
-
-    surfaceName,
-
-
-    next_level,
-
-
-    prev_level,
-
-
-    In_quest,
-
-
-    In_hell,
-
-
+    placeHeroOnLevel, depth, dungeonBuildsUp, dungeonDepth, endgameLevelName, initOverviewRecord,
+    level_difficulty, markOverviewUnreachable, recordMappedOverviewState, recordOverviewBranch,
+    specialPrototypeAt, u_on_rndspot, insideWizardTower, levelIsWizardTower, wizardTowerLevelAt, ledgerNo,
+    surfaceName, next_level, prev_level, In_quest, In_hell,
 } from './dungeon.js';
 import {
     is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls,
@@ -662,7 +585,7 @@ export async function dropRingIntoSink(
     }
 }
 
-export interface FloorEffectOptions {
+interface FloorEffectOptions {
     state?: GameState;
     publish?: MessagePublisher;
     random?: typeof rn2;
@@ -670,7 +593,7 @@ export interface FloorEffectOptions {
     verb?: string;
 }
 
-export type FloorEffectResult = {
+type FloorEffectResult = {
     finished: false;
     object: GameObject;
     heroDied?: false;
@@ -1088,7 +1011,7 @@ export async function dropInventoryObjectAtHero(
 // the hero's current position.
 // ---------------------------------------------------------------------------
 
-export interface DropObjectOptions {
+interface DropObjectOptions {
     impact?: boolean;
     state?: GameState;
     publish?: MessagePublisher;
@@ -2440,7 +2363,7 @@ export async function finishAstralArrival(): Promise<void> {
     await gainGuardianAngel(game);
 }
 
-export type LevelArrival = 'random' | 'stairs' | 'downstairs' | 'portal' | 'falling';
+type LevelArrival = 'random' | 'stairs' | 'downstairs' | 'portal' | 'falling';
 
 export interface LevelChangeOptions {
     arrival?: LevelArrival;
@@ -2763,13 +2686,13 @@ function ignoresFallingBoulder(mnum: number): boolean {
 }
 
 
-export interface CorpseRevivalRetry {
+interface CorpseRevivalRetry {
     kind: ObjectTimerKind;
     delay: number;
 }
 
 
-export interface CorpseRevivalTimerFailure extends Omit<CorpseRevivalFailure, 'kind'> {
+interface CorpseRevivalTimerFailure extends Omit<CorpseRevivalFailure, 'kind'> {
     kind: 'failed';
     corpse: GameObject;
     retry: CorpseRevivalRetry;
@@ -2777,7 +2700,7 @@ export interface CorpseRevivalTimerFailure extends Omit<CorpseRevivalFailure, 'k
 }
 
 
-export interface CorpseRotted {
+interface CorpseRotted {
     kind: 'rotted';
     corpse: GameObject;
     monster: null;

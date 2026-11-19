@@ -29,7 +29,6 @@ const GAS_BAD = 0;
 const GAS_MINOR = 1;
 export const GAS_OK = 2;
 const PM_FOG_CLOUD = 106;
-const PM_STEAM_VORTEX = 110;
 const PM_VROCK = 295;
 const PM_HEZROU = 296;
 // Part of C region.c:create_gas_cloud_selection(): the x-then-y cell walk

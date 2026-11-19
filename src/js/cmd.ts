@@ -2,14 +2,14 @@
 // C ref: cmd.c:rhack(); movement execution belongs to hack.ts. Also hosts
 // the top-line key prompts (win/tty/wintty.c tty_yn_function()'s prompt
 // path) that commands which pause for input render through.
-import { FOOD_CLASS, POTION_CLASS } from './objclass.js';
-import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS } from './command_data.js';
+import { FOOD_CLASS } from './objclass.js';
+import { NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS } from './command_data.js';
 import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting } from './apply.js';
 import { doname, monsterName } from './do_name.js';
 import { doannotate, doDungeonOverview, levelIsWizardTower, recordMappedOverviewState, rm_mapseen, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
 import { On_stairs_dn, On_stairs_up } from './stairs.js';
 import { dochat } from './sounds.js';
-import { doloot, dotip, autopickupAtHero } from './pickup.js';
+import { doloot, dotip } from './pickup.js';
 import { doinvoke } from './artifact.js';
 import { doChronicle, doGenocided, doVanquished, doattributes, doconduct, remove_achievement } from './insight.js';
 
@@ -19,8 +19,7 @@ import { doclose, doopen, continuePicking, continueForceLock, doforce, maybeRese
 import { moveIntoFailedUntrap, doUntrap, resetUtrap, trapAt } from './trap.js';
 import { askTeleportDestination, dotelecmd } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
-import type { InventoryAction } from './invent.js';
-import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
+import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, THRONE, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
 import { nhgetch, nh_poskey, MAP_CLICK_KEY, inputGate } from './input.js';
 import { visibleCommandKey } from './hacklib.js';
 
@@ -42,7 +41,6 @@ import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
 import { TRAVEL_DIRECTIONS, heroTestMove, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, showGetposTip, shouldShowGetposTip, checkSpecialRoom, dopickup, setHeroInWater } from './hack.js';
 import { initTrack } from './track.js';
 import { showMenuControls } from './option_editors.js';
-import { propertyIsActive } from './properties.js';
 import { gotoLevel, dodown, doup, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
 import { inventoryReport } from './invent.js';
 import { enqueueInventoryAction } from './iactions.js';
@@ -55,32 +53,16 @@ import { stopHeroOccupation } from './allmain.js';
 import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff, takeOffAll, remarmSwapwep } from './do_wear.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 
-import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, knownVibratingSquareAt } from './getpos.js';
+import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting } from './getpos.js';
 import { glyphToCmapSymbol } from './glyphs.js';
-import { completeExtendedCommand, editExtendedCommand, promptChoice } from './query.js';
+import { editExtendedCommand, promptChoice } from './query.js';
 import { tty_yn_function } from './topl.js';
 import { getLine, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
-import { NO_COLOR } from './terminal.js';
-import type { TerminalCell } from './terminal.js';
 import type { UnderlayCell } from './game_display.js';
 import { promptYesNo } from './query.js';
 import { flush_screen, docrt, canSpotMonster, glyphAt, cls } from './display.js';
 import {
-
-    pline,
-
-    plineWithContinuation,
-
-    setTopline,
-
-    pline_xy,
-
-    set_msg_xy,
-
-    truncateRawMessage,
-
-    impossible,
-
+    pline, plineWithContinuation, setTopline, pline_xy, set_msg_xy, truncateRawMessage, impossible,
 } from './pline.js';
 import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
@@ -99,20 +81,19 @@ import { heroHasHidingAbility, useHeroHide } from './polyself.js';
 import { heroCanUseUnicornHorn } from './unicorn_horn.js';
 import { doread } from './read.js';
 import { eatfood, doeat, opentin } from './eat.js';
-import { doclassdisco, dodiscovered, objectTypeKnown } from './o_init.js';
-import { doextversion, doversion, NATIVE_VERSION } from './extversion.js';
+import { doclassdisco, dodiscovered } from './o_init.js';
+import { doextversion, doversion } from './extversion.js';
 import { dosearch, revealTerrain } from './detect.js';
 import { continueWipingFace, donull, dowipe, dodrop, dropMultipleObjects } from './do.js';
 
-import { setSecondaryWeapon, doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
-import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY, BOULDER } from './object_data.js';
+import { doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
+import { LOCK_PICK, CREDIT_CARD, SADDLE, SKELETON_KEY, BOULDER } from './object_data.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { isLavaAt, isPoolAt } from './dbridge.js';
 import { dosave } from './save.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave.js';
 import { finishTeleportArrival } from './teleport.js';
-import { doquit, finishHeroDeath } from './end.js';
+import { doquit } from './end.js';
 import { doborn } from './insight.js';
 import { dofire, dothrow } from './dothrow.js';
 import { doenhance } from './weapon.js';
@@ -123,18 +104,19 @@ import { FUZZER_IMPOSSIBLE_CONTINUE } from './diagnostics.js';
 import { paniclog } from './novel_tribute.js';
 import { heroCanReachFloor } from './engrave.js';
 import { CmapSymbol, GlyphOffset, monnumToGlyph, objnumToGlyph } from './glyph_numbers.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu,
-    tty_start_menu, showTextWindow } from './wintty.js';
+import {
+    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu,
+    showTextWindow,
+} from './wintty.js';
 import { selection_floodfill, selection_getbounds, selection_getpoint, selection_new, selection_size_description } from './selvar.js';
 import { floorObjectDescription } from './invent.js';
 import { cansee, couldsee, vision_reset_new_level } from './vision.js';
 import { blockingTerrain } from './mthrowu.js';
 import type { Selection } from './selvar.js';
 import type { TtyPromptAnswer } from './topl.js';
-import type { CharacterInput, CommandDirection, InputState } from './input.js';
+import type { CharacterInput, InputState } from './input.js';
 import type { Hero } from './hero_types.js';
 import type { TextPage } from './windows.js';
-import { monsterSpeciesHidesOnCeiling } from './mondata.js';
 import { finishHeroMonsterKill } from './mon.js';
 
 export { promptYesNo, promptYesNoQuit } from './query.js';
@@ -1060,7 +1042,7 @@ function contextMenuResponses(selection: ContextMenuSelection): void {
 
 // ── Contextual command menu entries (C cmd.c:there_cmd_menu_*()) ────────
 
-export type ContextMenuAction =
+type ContextMenuAction =
     | 'open' | 'lock' | 'untrap-door' | 'kick' | 'close' | 'search' | 'showtrap'
     | 'untrap' | 'move' | 'ride' | 'remove-saddle' | 'saddle' | 'chat' | 'name'
     | 'quaff' | 'dip' | 'sit' | 'up' | 'down' | 'dismount' | 'pickup' | 'loot'
@@ -1068,7 +1050,7 @@ export type ContextMenuAction =
     | 'untrap-here' | 'offer' | 'inventory' | 'cast' | 'throw' | 'travel';
 
 interface ContextMenuEntry { action: ContextMenuAction; text: string }
-export interface ContextMenuSelection extends Position { action: ContextMenuAction }
+interface ContextMenuSelection extends Position { action: ContextMenuAction }
 
 // C cmd.c:there_cmd_menu(). The dispatcher frame: menu window, self /
 // next2u / far entry sections, the no-entry move-or-travel fallback, the
@@ -1812,7 +1794,7 @@ export async function changeCommandAutocompletions(): Promise<void> {
 // getline.c's ext_cmd_getlin_hook() and tty_get_ext_cmd() are the tty
 // callers; duplicate names of key-bound and extended entries fall
 // through to the first match, as the port's editor always has.
-export interface ExtcmdsMatchOptions {
+interface ExtcmdsMatchOptions {
     /** ECM_IGNOREAC: skip the autocomplete filter. */
     ignoreAutocomplete?: boolean;
     /** ECM_EXACTMATCH: compare the whole name instead of the prefix. */
@@ -2106,23 +2088,23 @@ export interface CommandBinding {
 // C include/hack.h: struct _cmd_queue and enum cmdq_cmdtypes. One entry
 // kind per C typ value; ec_entry keeps the resolved command table entry
 // (ext_func_tab) the way C stores the pointer.
-export interface CmdQueueKeyEntry { typ: typeof CMDQ_KEY; key: number }
-export interface CmdQueueExtcmdEntry { typ: typeof CMDQ_EXTCMD; ecEntry: NativeCommand }
-export interface CmdQueueDirEntry { typ: typeof CMDQ_DIR; dirx: number; diry: number; dirz: number }
-export interface CmdQueueUserInputEntry { typ: typeof CMDQ_USER_INPUT }
-export interface CmdQueueIntEntry { typ: typeof CMDQ_INT; intval: number }
+interface CmdQueueKeyEntry { typ: typeof CMDQ_KEY; key: number }
+interface CmdQueueExtcmdEntry { typ: typeof CMDQ_EXTCMD; ecEntry: NativeCommand }
+interface CmdQueueDirEntry { typ: typeof CMDQ_DIR; dirx: number; diry: number; dirz: number }
+interface CmdQueueUserInputEntry { typ: typeof CMDQ_USER_INPUT }
+interface CmdQueueIntEntry { typ: typeof CMDQ_INT; intval: number }
 export type CmdQueueEntry = CmdQueueKeyEntry | CmdQueueExtcmdEntry | CmdQueueDirEntry
     | CmdQueueUserInputEntry | CmdQueueIntEntry;
-export type CmdQueueId = typeof CQ_CANNED | typeof CQ_REPEAT;
+type CmdQueueId = typeof CQ_CANNED | typeof CQ_REPEAT;
 
-export type DirectionalRunMode = 0 | 1 | 2 | 3;
+type DirectionalRunMode = 0 | 1 | 2 | 3;
 
 export interface MovementAttempt {
     walk: boolean;
     rush: boolean;
 }
 
-export interface DirectionalRunState {
+interface DirectionalRunState {
     mode: DirectionalRunMode;
     dx: number;
     dy: number;
@@ -2146,7 +2128,7 @@ export interface ArmorCompletion {
 export type AfterMove = ArmorCompletion
     | { kind: 'end-mimic-meal' | 'hear-again' | 'unfaint' | 'finish-digestion' | 'finish-prayer' | 'steal' | 'unstolen-armor' };
 
-export interface CommandInput {
+interface CommandInput {
     key: number;
     count: number;
 }
@@ -2798,7 +2780,7 @@ function queuedDirectionKey({ dirx, diry, dirz }: CmdQueueDirEntry): number {
     return direction < 0 ? 0 : game.commandBindings.directionKeys.charCodeAt(direction);
 }
 
-export interface DirectionPromptOptions {
+interface DirectionPromptOptions {
     // C getdir callers pass a prompt starting with '^' (doidtrap) so that
     // help_dir() explains control-key forms of mistyped letters.
     ctrlCommandHint?: boolean;

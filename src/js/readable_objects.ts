@@ -26,7 +26,7 @@ import { heroIsBlind } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
 import { CARD_MESSAGES } from './readable_object_text.js';
 
-export type OrdinaryReadingResult =
+type OrdinaryReadingResult =
     | { handled: false; spentTime: false; heroDied: false }
     | { handled: true; spentTime: boolean; heroDied: boolean };
 

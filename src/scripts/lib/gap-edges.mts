@@ -19,7 +19,7 @@ import ts from 'typescript';
 import { INFRASTRUCTURE_FILES, baseName } from './c-sources.mjs';
 import type { CSourceTree } from './c-sources.mjs';
 import { isPortSource, portProgram } from './port-program.mjs';
-import { arrayValue, objectValue, stringValue } from './session-types.mjs';
+import { arrayValue, stringValue } from './session-types.mjs';
 
 const EXTRACTOR_VERSION = 'edges-1';
 export const REACH_DEPTH = 2;
@@ -553,7 +553,6 @@ export async function compareEdges(root: string, tree: CSourceTree, cacheDir: st
     const aliases = readAliases(join(root, 'docs', 'ledger', 'c-ts-aliases.tsv'));
     const justified = readJustified(join(root, 'docs', 'ledger', 'c-edges-justified.tsv'));
     const portNames = (cName: string): string[] => [cName, ...(aliases.get(cName) ?? [])].map(normalizedName);
-    const citationIndex = ownOriginOnly ? index.byOrigin : index.byCitation;
     const rows: EdgeRow[] = [];
     const unmapped: { file: string; function: string }[] = [];
     for (const [caller, callees] of [...graph.calls].sort((a, b) => a[0].localeCompare(b[0]))) {

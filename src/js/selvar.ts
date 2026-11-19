@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { newsym_force } from './display.js';
 import { NethackLuaError } from './lua/errors.js';
-import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL } from './const.js';
+import { COLNO, ROWNO, ROOMOFFSET, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY } from './const.js';
 import { isok } from './cmd.js';
 import { match_maptyps, random_wdir } from './sp_lev.js';
 import { mapCharacterType } from './lua/lifecycle.js';
@@ -29,7 +29,7 @@ export interface SelectionArea {
     height: number;
     _room?: Room | null | undefined;
 }
-export type SelectionFloodMatch = (x: number, y: number) => boolean;
+type SelectionFloodMatch = (x: number, y: number) => boolean;
 type SelectionVisitor = (x: number, y: number) => void;
 type Point = [x: number, y: number];
 

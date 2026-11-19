@@ -4,7 +4,7 @@
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { game } from './gstate.js';
-import { FAINTED, TIMEOUT } from './const.js';
+import { TIMEOUT } from './const.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { heroIsUnconscious } from './trap.js';
 import { LENSES } from './object_data.js';

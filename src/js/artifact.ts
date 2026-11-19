@@ -588,7 +588,7 @@ export function discoverArtifact(id: number, state: GameState = game): void {
 // The union makes the other combinations unwritable, so C's
 // dispose_of_orig_obj() branches — by_align with a nonnull otmp, which C's
 // own comment calls unexpected — cannot run and are not ported.
-export type MkArtifactSource =
+type MkArtifactSource =
     | { object: GameObject; alignment: typeof A_NONE }
     | { object: null; alignment: number };
 
@@ -975,7 +975,7 @@ const PM_ROGUE = MONSTER_NAME.indexOf('rogue');
 // C's is_magic_key()/has_magic_key() take a struct monst * that may be
 // &gy.youmonst; mondata.ts's BlindCombatant is the established union for
 // that hero-or-monster parameter.
-export type MagicKeyCarrier =
+type MagicKeyCarrier =
     | { readonly youmonst: true }
     | { readonly monster: Monster };
 
@@ -1176,8 +1176,6 @@ export async function artifactWarningFeedback(
 // in-use test, and the post-change equipment pass (artifact.c's retouch
 // trio, in C source order).
 
-type RetouchSlot = 'uarmg' | 'uswapwep' | 'uwep' | 'uleft' | 'uright' | 'ublindf';
-
 interface RetouchOptions {
     state?: GameState;
     publish?: MessagePublisher;
@@ -1190,7 +1188,7 @@ interface RetouchContext {
     die: DeathHandler;
 }
 
-export interface HeroRetouchResult {
+interface HeroRetouchResult {
     died: boolean;
     rejected: boolean;
 }
@@ -1410,7 +1408,7 @@ export async function speakArtifact(
 // C artifact.c:touch_artifact()
 // The hero branch of C's touch_artifact(); the monster branch (refusal
 // without a blast) is monsterCanTouchArtifact() above.
-export interface HeroArtifactTouchResult {
+interface HeroArtifactTouchResult {
     allowed: boolean;
     blasted: boolean;
     badClass?: boolean;
@@ -1497,7 +1495,7 @@ export async function touchArtifactByHero(
 
 // Options for the Magicbane hit below.
 
-export interface MagicbaneHitOptions {
+interface MagicbaneHitOptions {
     state: GameState;
     attacker: Monster | undefined;
     visible: boolean;
@@ -1684,7 +1682,7 @@ export async function applyMagicbaneHit(
 // Artifact weapon damage and special-hit effects.
 // C ref: artifact.c artifact_hit().
 
-export interface ArtifactHitOptions {
+interface ArtifactHitOptions {
     state?: GameState;
     /** Omitted for a hero attack or a falling weapon. */
     attacker?: Monster;
@@ -1698,23 +1696,23 @@ export interface ArtifactHitOptions {
     hitOnHead?: boolean;
 }
 
-export type ArtifactHitDefender = Monster | 'hero';
+type ArtifactHitDefender = Monster | 'hero';
 
-export interface ArtifactHitDamage {
+interface ArtifactHitDamage {
     damage: number;
     specialMessage: boolean;
     attackStopped?: boolean;
     heroDied?: false;
 }
 
-export interface ArtifactHitHeroDeath {
+interface ArtifactHitHeroDeath {
     heroDied: true;
     damage?: never;
     specialMessage?: never;
     attackStopped?: never;
 }
 
-export type ArtifactHitResult = ArtifactHitDamage | ArtifactHitHeroDeath;
+type ArtifactHitResult = ArtifactHitDamage | ArtifactHitHeroDeath;
 
 interface BeheadingOptions {
     state: GameState;
@@ -2105,7 +2103,7 @@ type PropertyInvocationResult =
     | { used: true; ready: false; on: false }
     | { used: true; ready: true; on: boolean };
 
-export type ArtifactInvocationResult =
+type ArtifactInvocationResult =
     | PropertyInvocationResult
     | { used: false }
     | { used: true; ready: false }

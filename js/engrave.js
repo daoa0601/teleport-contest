@@ -11,7 +11,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { exerciseWisdom, exerciseAttribute } from './attrib.js';
 import { heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm, heroSpecies, body_part } from './polyself.js';
 import { heroTeetersAtPit, heroEscapedShaft, trapAt } from './trap.js';
-import { MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { AT_HUGS } from './monster_attack_types.js';
 import { P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS, ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, Is_airlevel, Is_waterlevel, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT, MD_PAD_RUMORS, SIZEOF_ENGRAVING, } from './const.js';
 import { rn2, rnd } from './rng.js';
@@ -23,7 +23,7 @@ import { goodPosition } from './teleport.js';
 import { artifactByName } from './artifact.js';
 import { TOWEL, MAGIC_MARKER, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
 import { isBimanualObject, isBlade, isWetTowel } from './object_properties.js';
-import { willWeld, isWeldedPrimary } from './wield.js';
+import { isWeldedPrimary } from './wield.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
 import { plineWithContinuation as pline, plineWithContinuation, formatSeenMessage, recordGameLogEvent, impossible, } from './pline.js';
 import { promptYesNoQuit } from './query.js';

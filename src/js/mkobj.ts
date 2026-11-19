@@ -2059,7 +2059,7 @@ interface ShrunkGlob extends GlobEventPosition {
     gone: boolean;
     message: string | null;
 }
-export type GlobTimerEvent =
+type GlobTimerEvent =
     | (GlobEventPosition & {
         overdue: true; delta: number; gone: boolean; message: null;
         delay?: number; finishPending?: never;
@@ -2470,7 +2470,7 @@ export async function placeTreeFruit(
 }
 
 // C mkobj.c:weight().  One object's weight, including containers and globs.
-export interface WeightObject extends Pick<GameObject, 'otyp'>, Partial<Pick<GameObject,
+interface WeightObject extends Pick<GameObject, 'otyp'>, Partial<Pick<GameObject,
     'oclass' | 'quan' | 'quantity' | 'owt' | 'globby' | 'corpsenm' | 'oeaten'
     | 'cursed' | 'blessed' | 'spe'>> {
     contents?: readonly WeightObject[];

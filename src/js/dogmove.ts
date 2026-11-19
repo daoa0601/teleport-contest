@@ -181,7 +181,7 @@ export function petFoodNutrition(monster: Monster, object: GameObject): number {
     return nutrition;
 }
 
-export interface PetMeal {
+interface PetMeal {
     object: GameObject;
     from: Position;
     devour: boolean;
@@ -958,7 +958,7 @@ interface PetRangedAttackOptions {
     calls?: MonsterCallLog;
 }
 
-export interface PetRangedAttackResult {
+interface PetRangedAttackResult {
     status: number;
     heroDied: boolean;
     attack?: MonsterCombatResult;

@@ -7,14 +7,13 @@ import { W_ARM, LEVEL_TIMER_KIND } from '../js/const.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
 import { roles } from '../js/role.js';
 import { requireScreenRow } from './support/screen.js';
-import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
+import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import { planInput } from './support/planned-input.js';
 import assert from 'node:assert/strict';
 
 import {
-    COULD_SEE, DOOR, D_CLOSED, D_NODOOR, ICE, ICED_POOL, IS_POOL, PIT,
-    POOL, ROOM, SDOOR, STONE, W_AMUL, WEB,
+    COULD_SEE, DOOR, D_CLOSED, D_NODOOR, ICE, ICED_POOL, IS_POOL, PIT, POOL, ROOM, SDOOR, STONE, W_AMUL, WEB,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
@@ -24,10 +23,9 @@ import { meltIce } from '../js/zap.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import {
-    AMULET_OF_LIFE_SAVING, APPLE, OIL_LAMP, POT_ACID, SCR_IDENTIFY,
-    WAN_CANCELLATION, WAN_CREATE_MONSTER, WAN_DIGGING,
-    WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_SECRET_DOOR_DETECTION,
-    WAN_SLEEP, WAN_STASIS, WAN_WISHING, WAN_DEATH, WAN_COLD,
+    AMULET_OF_LIFE_SAVING, APPLE, OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_CANCELLATION, WAN_CREATE_MONSTER,
+    WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_STASIS,
+    WAN_WISHING, WAN_DEATH, WAN_COLD,
 } from '../js/object_data.js';
 import { scheduleLevelTimer } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
@@ -43,7 +41,6 @@ import {
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
-import { finishHeroMonsterKill } from '../js/mon.js';
 
 void test('a digging zap changes terrain without retaining its answered direction query', async () => {
     const level = freshGameplayRoom();

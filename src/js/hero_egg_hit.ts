@@ -24,7 +24,7 @@ import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
 import type { HeroObjectContactResult } from './uhitm.js';
 import { monsterHasStoneResistance, touchPetrifies } from './mondata.js';
 
-export interface HeroEggHitOptions {
+interface HeroEggHitOptions {
     state?: GameState;
     mode: HeroPhysicalAttackMode;
     publish: MessagePublisher;

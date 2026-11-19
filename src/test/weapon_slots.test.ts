@@ -1,5 +1,5 @@
 import { requireScreenRow } from './support/screen.js';
-import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
+import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -42,10 +42,10 @@ void test('fireassist prefers a known-safe launcher over unknown and known-curse
             invlet: 'a',
             wielded: true, owornmask: W_WEP,
         });
-        const unknown = await addInventoryObject(SLING, {
+        await addInventoryObject(SLING, {
             invlet: 'b', bknown: false,
         });
-        const knownCursed = await addInventoryObject(SLING, {
+        await addInventoryObject(SLING, {
             invlet: 'c', cursed: true,
         });
         const knownSafe = await addInventoryObject(SLING, { invlet: 'd' });

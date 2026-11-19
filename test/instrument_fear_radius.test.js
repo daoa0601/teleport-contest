@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { DRUM_OF_EARTHQUAKE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

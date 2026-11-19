@@ -203,7 +203,7 @@ PREDICATE_SPECS += [
         js_file=MONDATA, assumptions=CVT_ASSUMPTIONS,
         require_counterexamples=True,
         mutants=[(MONDATA, 'damageType >= AD_MAGM && damageType <= AD_ACID',
-                  'damageType >= AD_MAGM && damageType <= AD_DRST'),
+                  'damageType >= AD_MAGM && damageType < AD_ACID'),
                  (MONDATA, 'M_SEEN_MAGR << (damageType - AD_MAGM)',
                   'M_SEEN_REFL << (damageType - AD_MAGM)')],
     ),

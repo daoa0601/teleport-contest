@@ -4,8 +4,8 @@ import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } fro
 import { finishHeroDeath } from './end.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { adjustLevelAbilities, currentAttribute, minHeroMaxHitPoints, newHeroHitPoints, setHeroMaxHitPoints } from './attrib.js';
-import { rnd, rn2 } from './rng.js';
-import { A_CON, A_WIS, KILLED_BY, LL_MINORAC, MAXULEV, Upolyd } from './const.js';
+import { rn2 } from './rng.js';
+import { A_WIS, KILLED_BY, LL_MINORAC, MAXULEV, Upolyd } from './const.js';
 import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { rankAchievement, recordAchievement } from './insight.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON, } from './monster_data.js';

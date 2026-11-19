@@ -447,16 +447,6 @@ function walkableAt(rows: readonly string[], x: number, y: number, bottom: numbe
     return true;
 }
 
-/** A neighbor cell worth reaching: unknown terrain (not yet bumped) or a
- *  closed door that might open onto new space. */
-function isFrontierNeighbor(rows: readonly string[], x: number, y: number, bottom: number, blockedCells?: ReadonlySet<string>) {
-    if (blockedCells?.has(`${x},${y}`)) return false;
-    const c = cellAt(rows, x, y, bottom);
-    if (c === ' ') return true;
-    if (c === '+' && isDoorLike(rows, x, y, bottom)) return true;
-    return false;
-}
-
 function frontierBfs(rows: readonly string[], hero: Position, bottom: number, blocked: ReadonlySet<string>, blockedCells: ReadonlySet<string>, petCells: ReadonlySet<string>, wantDoor: boolean) {
     // BFS over known walkable cells toward the closest cell adjacent to a
     // closed door (wantDoor) or to unknown terrain.

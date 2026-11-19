@@ -9,7 +9,7 @@
 // obj_pmname(), noveltitle(), lookup_novel().  The category menu is
 // naming_categories.ts.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, VENOM_CLASS, } from './objclass.js';
-import { objectClassForType, objectBaseWeight, objectUnique, objectMagic, SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, STATUE, TIN, TOWEL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_NAMES, POT_WATER, SPEED_BOOTS, } from './object_data.js';
+import { objectClassForType, objectBaseWeight, SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, STATUE, TIN, TOWEL, } from './object_data.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, NON_PM, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, HAND, LL_ARTIFACT, LL_CONDUCT, CORPSTAT_FEMALE, MD_PAD_BOGONS, } from './const.js';
 import { cmdq_clear, cmdq_pop } from './cmd.js';
 import { takeQueuedAdjacentPosition } from './getpos.js';

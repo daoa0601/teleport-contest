@@ -154,9 +154,6 @@ function buildNethackrc({ character, playerName, extraOptions, tutorialPrompt, s
         lines.push(`OPTIONS=${opt}`);
     return `${lines.join('\n')}\n`;
 }
-function key(...parts) {
-    return parts.join('');
-}
 /**
  * Build a v5 session skeleton for one recipe.
  *

@@ -18,7 +18,6 @@ import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterSpecies, is_were, monsterIsHuman } from './mondata.js';
 import { paranoidQuery } from './cmd.js';
 import { rn2, rnd } from './rng.js';
-import { monsterGrowlSound } from './sounds.js';
 import { sessionIsNight } from './calendar.js';
 import { updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { monsterIsScaredAt, makeMonsterFlee } from './monmove.js';
@@ -36,7 +35,7 @@ export interface HeroWereChangeOptions {
     publish?: MessagePublisher;
 }
 
-export interface HeroWaterVaporChangeOptions extends HeroWereChangeOptions {
+interface HeroWaterVaporChangeOptions extends HeroWereChangeOptions {
     potion?: GameObject | null;
 }
 

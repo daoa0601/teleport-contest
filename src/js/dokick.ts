@@ -8,7 +8,7 @@ import {
     EXPENSIVE_CAMERA, MIRROR, BAG_OF_HOLDING, BAG_OF_TRICKS, APPLE, BANANA, DILITHIUM_CRYSTAL,
     EUCALYPTUS_LEAF, LUCKSTONE, ORANGE, PEAR,
 } from './object_data.js';
-import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, DOOR, FOUNTAIN, G_GONE, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Is_stronghold, LADDER, LA_DOWN, LAVAWALL, Luck, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, NON_PM, ROOM, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, STAIRS, THRONE, T_LOOTED, TREE_LOOTED, TREE_SWARM, Is_airlevel, Is_waterlevel, SHOPBASE, SHOP_DOOR_COST, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole, FOOT, LEG } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, DOOR, FOUNTAIN, G_GONE, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LADDER, LA_DOWN, LAVAWALL, Luck, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, NON_PM, ROOM, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, STAIRS, THRONE, T_LOOTED, TREE_LOOTED, TREE_SWARM, Is_airlevel, Is_waterlevel, SHOPBASE, SHOP_DOOR_COST, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole, FOOT, LEG } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { rn1, rnd, rn2, rnl } from './rng.js';
 import { canSeeMonster, canSpotMonster, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
@@ -17,10 +17,11 @@ import type { MessagePublisher } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
-import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, isWatch, revealMonsterAppearance, maybeMnexto,
-    finishHeroMonsterKill, finishHurtleMonsterDeath,
+import {
+    wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards,
+    isWatch, revealMonsterAppearance, maybeMnexto, finishHeroMonsterKill, finishHurtleMonsterDeath,
 } from './mon.js';
-import { woundHeroLegs, gotoLevel, scheduleLevelChange, applyFloorEffects } from './do.js';
+import { woundHeroLegs, gotoLevel, applyFloorEffects } from './do.js';
 import {
     finishTeleportArrival, askTeleportDestination, relocateObjectRandomly, enexto, goodPosition,
     monsterTeleportRestricted,
@@ -45,8 +46,7 @@ import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
 import { makemonAt } from './makemon.js';
 import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
-import { bringLeashedFollowers, snuffCandle } from './apply.js';
-import { displayMessageWindow } from './topl.js';
+import { snuffCandle } from './apply.js';
 import type { Monster } from './monster_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { stairwayAt, stairway_find_from } from './stairs.js';
@@ -61,13 +61,13 @@ import {
 } from './trap.js';
 import { artifactById } from './artifact.js';
 import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, inTown, heroGoldAmount, inventoryWeight } from './hack.js';
-import { breakChestLock, maybeResetPick } from './lock.js';
+import { breakChestLock } from './lock.js';
 import type { GameObject, ObjectMigration } from './object_types.js';
 import type { MapLocation, Position, Stairway } from './map_types.js';
 import { breakFloorObject, hurtleHero, hitMonsterWithKickedObject } from './dothrow.js';
 import type { GoldContactOptions } from './dothrow.js';
 import { inventoryItemDescription, delobj, currency, stack_object } from './invent.js';
-import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';
+import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage } from './shk.js';
 import { scatterFloorObjects } from './explode.js';
 import { objectMaterial } from './o_init.js';
 import { addObjectToMonsterInventory, removeWornHeroItem } from './steal.js';
@@ -76,14 +76,14 @@ import { hiddenGold } from './vault.js';
 import { finishMonsterEating } from './dogmove.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { onQuestStart, okToQuest } from './quest.js';
-import { ceilingName, dungeonDepth, surfaceName, canFallThrough, sameDungeonLevel } from './dungeon.js';
+import { surfaceName, sameDungeonLevel } from './dungeon.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { shopkeeperName } from './shknam.js';
 import { objectResistsDestruction } from './zap.js';
 import {
     is_mercenary, likes_gold, monsterCanTeleport, monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs,
-    monsterIsBig, monsterIsClinger, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsSlithy,
-    monsterIsThickSkinned, touchPetrifies, heroResistsStoning,
+    monsterIsBig, monsterIsFlyer, monsterIsGiant, monsterIsSlithy, monsterIsThickSkinned, touchPetrifies,
+    heroResistsStoning,
 } from './mondata.js';
 
 // C dokick.c:martial(): the macro combining martial_bonus(),
@@ -932,7 +932,7 @@ interface KickOptions {
     announce?: MessagePublisher;
     nameMonster?: (monster: Monster) => string;
 }
-export interface PreparedKickDamage {
+interface PreparedKickDamage {
     potentialDamage: number;
     specialDamage: number;
     passesThroughShade: boolean;
@@ -1154,7 +1154,7 @@ export async function tryKickReel(monster: Monster, dx: number, dy: number, {
 // object's PRE-impact coordinates for shop-room attribution.
 const GLASS = 19;
 
-export interface ContainerImpactOptions {
+interface ContainerImpactOptions {
     state?: GameState;
     publish?: MessagePublisher;
     random?: typeof rn2;
@@ -1273,7 +1273,7 @@ export async function containerImpactDamage(
 // Moving a floor object with the kick command.
 // C refs: dokick.c really_kick_object() and zap.c bhit(KICKED_WEAPON).
 
-export interface KickObjectOptions {
+interface KickObjectOptions {
     state?: GameState;
     dx?: number;
     dy?: number;

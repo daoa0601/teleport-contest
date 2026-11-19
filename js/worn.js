@@ -39,7 +39,6 @@ import { dismountHero, heroCanRideSteed, monsterCanBeSaddled } from './steed.js'
 import { possessiveName } from './hacklib.js';
 import { rnl } from './rng.js';
 import { objectNoLongerHeld } from './do.js';
-import { deleteObject } from './shk.js';
 import { placeObject, unlinkMonsterObject } from './mkobj.js';
 import { unwieldMonsterWeapon } from './weapon.js';
 import { resolveImmediatePetrification } from './trap.js';

@@ -48,21 +48,21 @@ export interface InventorySelection<T = never> {
     value?: T;
 }
 
-export interface InventoryWindowOptions {
+interface InventoryWindowOptions {
     pickMode?: typeof PICK_NONE | typeof PICK_ONE;
     headingAttr?: number;
     title?: string | null;
     preselectedKey?: string | null;
 }
 
-export interface ChoiceMenuItem extends TextMenuLine {
+interface ChoiceMenuItem extends TextMenuLine {
     key: string;
     marker?: '-' | '*';
 }
 
 export type ChoiceMenuEntry = TextMenuEntry | ChoiceMenuItem;
 
-export interface ChoiceWindowOptions {
+interface ChoiceWindowOptions {
     title: string;
     entries: readonly ChoiceMenuEntry[];
 }
@@ -93,7 +93,7 @@ export interface PageLocalMultiSelectSection<T> {
     items: readonly PageLocalMultiSelectItem<T>[];
 }
 
-export interface MultiSelectSection<T> extends PageLocalMultiSelectSection<T> {
+interface MultiSelectSection<T> extends PageLocalMultiSelectSection<T> {
     items: readonly MultiSelectItem<T>[];
 }
 
@@ -111,7 +111,7 @@ interface MultiSelectWindowBaseOptions {
     signalEscape?: boolean;
 }
 
-export type MultiSelectWindowOptions<T> = MultiSelectWindowBaseOptions & (
+type MultiSelectWindowOptions<T> = MultiSelectWindowBaseOptions & (
     | { pageLocalKeys: true; sections: readonly PageLocalMultiSelectSection<T>[] }
     | { pageLocalKeys?: false; sections: readonly MultiSelectSection<T>[] }
 );
@@ -121,7 +121,7 @@ export interface TextPage {
     cursor?: readonly [number, number];
 }
 
-export interface PagedPickOneMenuOptions<T> {
+interface PagedPickOneMenuOptions<T> {
     rows: readonly TextMenuEntry[];
     choices: ReadonlyMap<string, T>;
     // end_menu()'s prompt, drawn in the menu_headings style above the rows.

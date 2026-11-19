@@ -4,7 +4,6 @@ import { moveloop_core } from '../js/allmain.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, W_AMUL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AMULET_OF_REFLECTION, PICK_AXE } from '../js/object_data.js';
-import { resetInputState } from '../js/input.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { installPagerInput } from './support/pager-input.js';

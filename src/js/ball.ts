@@ -46,14 +46,14 @@ interface BallMoveGeometry {
     chainy: number;
     causeDelay: boolean;
 }
-export interface BallChainMove extends BallMoveGeometry { blocked: false }
-export interface BlockedBallMove extends BallMoveGeometry {
+interface BallChainMove extends BallMoveGeometry { blocked: false }
+interface BlockedBallMove extends BallMoveGeometry {
     blocked: true;
     consumedTurn: boolean;
 }
-export type BallMovePlan = BallChainMove | BlockedBallMove;
-export interface BallMoveOptions { state?: GameState; allowDrag?: boolean }
-export interface BallDropOptions { state?: GameState; publish?: MessagePublisher }
+type BallMovePlan = BallChainMove | BlockedBallMove;
+interface BallMoveOptions { state?: GameState; allowDrag?: boolean }
+interface BallDropOptions { state?: GameState; publish?: MessagePublisher }
 
 export const BCPOS_DIFFER = 0;
 export const BCPOS_CHAIN = 1;

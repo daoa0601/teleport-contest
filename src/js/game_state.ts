@@ -34,7 +34,7 @@ export interface MonsterHelplessnessReason {
     text: string;
 }
 
-export interface ProgramState {
+interface ProgramState {
     beyond_savefile_load?: boolean | number;
     gameover?: boolean;
     in_docrt?: boolean | number;
@@ -150,7 +150,7 @@ export interface QuestStatus {
     leader_m_id: number;
 }
 
-export interface ShopRepossession {
+interface ShopRepossession {
     shopkeeper: Shopkeeper | null;
     location: Position;
 }
@@ -158,7 +158,7 @@ export interface ShopRepossession {
 export type PrayerOutcome = 'moloch' | 'too-soon' | 'angry'
     | 'other-god' | 'pleased' | 'undead';
 
-export interface TutorialState {
+interface TutorialState {
     moves: number;
     hero: Hero;
     inventory: GameObject[];

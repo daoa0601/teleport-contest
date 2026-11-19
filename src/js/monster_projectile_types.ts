@@ -42,8 +42,6 @@ export interface TargetMonsterWeaponVolley extends MonsterWeaponVolleyBase {
     aimedAt: Monster;
 }
 
-export type MonsterWeaponVolley = HeroMonsterWeaponVolley | TargetMonsterWeaponVolley;
-
 export interface MonsterWeaponWield {
     attempted: true;
     launched: false;

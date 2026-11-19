@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 // Native ESM imports of both sides of the floor_object <-> monmove cycle.
 import { game, requirePlayingGame } from '../js/gstate.js';
-import {placeCreatedObject} from '../js/mkobj.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 import { maybeUnhideAt } from '../js/mon.js';
 import { CHEST } from '../js/object_data.js';
 import { MM_IGNOREWATER, MM_NOGRP, NO_MINVENT } from '../js/const.js';
@@ -11,7 +11,7 @@ import { placeMonsterOnMap } from '../js/steed.js';
 import { createMonsterAt } from './support/monsters.js';
 import { floorObjectsAt } from './support/level-state.js';
 import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_NAME, MONSTER_SYMBOL,
 } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { knownObject } from './support/game-objects.js';

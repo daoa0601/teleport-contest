@@ -3,7 +3,7 @@ import type { PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { d, rn2, rnd } from './rng.js';
 
-export type MonsterOffensiveKind =
+type MonsterOffensiveKind =
     | 'ray-wand'
     | 'horn'
     | 'immediate-wand'

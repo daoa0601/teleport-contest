@@ -6,80 +6,53 @@
 // room selection and filling in mkroom.ts; bones.c in bones.ts; the Rogue
 // level (extralev.c) in extralev.ts; stairs.c stairway management in
 // stairs.ts. Level construction uses the game's main random-number stream.
-import { stack_object } from './invent.js';
 import {
-    RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS,
-    FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, GEM_CLASS, SPBOOK_no_NOVEL,
+    RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS,
+    GEM_CLASS, SPBOOK_no_NOVEL,
 } from './objclass.js';
-import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
-import { rotCorpse } from './dig.js';
-import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, mkcorpstat, set_corpsenm, rndmonnum, rndmonnumAdj, linkObjectToMonsterInventory, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, updateIceObjectTimersAt, addBuriedObject } from './mkobj.js';
-import { restoreMonsterInventoryOwnership } from './mon.js';
+import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, mkcorpstat, curseObjectState, deallocateObject, objectWeight, placeCreatedObject, addBuriedObject } from './mkobj.js';
 import { oinit, objectMaterial } from './o_init.js';
-import type { GameObject, ObjectWhere } from './object_types.js';
-import type { Monster, MonsterBirthState, PetData } from './monster_types.js';
+import type { GameObject } from './object_types.js';
+import type { Monster, MonsterBirthState } from './monster_types.js';
 import { isRoom } from './map_types.js';
-import type { Position, Room, Trap, ActiveSpecialLevel, ArrivalRegion, Rectangle, StairRegion, Stairway } from './map_types.js';
-import type { GameState, PlayingGameState, Fruit } from './game_state.js';
-import type { DungeonBranch, DungeonLocation } from './dungeon_types.js';
-import { restoreLevelTimers, stopLevelTimer } from './timeout.js';
-import type { DueObjectTimer } from './timeout.js';
-import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, mintrap, resetUtrap, maketrap } from './trap.js';
-import { roguePlayerName, setMonsterGivenName } from './do_name.js';
+import type { Position, Room, Trap, ActiveSpecialLevel } from './map_types.js';
+import type { GameState, PlayingGameState } from './game_state.js';
+import type { DungeonBranch } from './dungeon_types.js';
+import { deleteTrap, fillPitWithBoulderAt, mintrap, resetUtrap, maketrap } from './trap.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { makemon, mkclass, setMimicAppearance, setMonsterMalign } from './makemon.js';
-import { addFruit } from './message_types.js';
-import { set_tin_variety } from './eat.js';
-import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './steed.js';
-import { nameObjectFromTopten } from './topten.js';
-import { normalDemon } from './minion.js';
-import { randomMonsterRelocation } from './teleport.js';
-import { restoreLevelChains, restoreMonsterWormHeads, validMonsterWormBodies } from './restore.js';
-import { restoreLevelPetHistory } from './restore.js';
+import { makemon, mkclass, setMimicAppearance } from './makemon.js';
+import { monsterAtPosition } from './steed.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { panic } from './end.js';
-import { PanicTermination } from './panic_termination.js';
-import { finishHeroDeath } from './end.js';
-import { LUA_SOURCES } from './generated/lua_sources.js';
-import { buriedBallToPunishment, buryObject, unearthFloorObjectsAt } from './dig.js';
+import { buriedBallToPunishment } from './dig.js';
 import { GameMap } from './game.js';
-import { ageStoresFuel } from './pickup.js';
-import { decodeBonesPayload } from './bones_validation.js';
-import { encodeSavedGraph } from './saved_graph.js';
-import type { BonesPayload } from './bones_validation.js';
 import { rn2, rnd, rn1 } from './rng.js';
-import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shknam.js';
-import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, IS_WALL, IS_STWALL, COULD_SEE, IN_SIGHT, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_stronghold, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, AIR, TRICKED, A_NONE, A_LAWFUL, AM_SHRINE, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, MM_ASLEEP, MM_NOGRP, MM_EPRI, MM_ESHK, MM_IGNOREWATER, MM_NOCOUNTBIRTH, MM_NOMSG, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, HEALTHY_TIN, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, is_hole, is_pit, TAINT_AGE } from './const.js';
+import { COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, IS_WALL, IS_STWALL, COULD_SEE, IN_SIGHT, IS_DOOR, IS_OBSTRUCTED, IS_FURNITURE, IS_POOL, In_endgame, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, W_NONDIGGABLE, FILL_NORMAL, ICE, MOAT, POOL, WATER, A_LAWFUL, Align2amask, MM_NOGRP, MM_IGNOREWATER, G_GONE, TT_BURIEDBALL, is_hole, is_pit, TAINT_AGE } from './const.js';
 import { isok } from './cmd.js';
 import { init_rect, rnd_rect } from './rect.js';
-import { Is_botlevel, depth as depth_of_level, dungeonDepth, inducedAlignment, is_branchlev, ledgerNo, level_difficulty, placeHeroOnLevel, specialLevelAt, u_on_rndspot, canFallThrough, In_quest, In_mines, In_V_tower, In_hell, Invocation_lev } from './dungeon.js';
-import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, oc_level } from './object_data.js';
-import { MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
-import { nhgetch } from './input.js';
-import { flush_screen, newsym, back_to_glyph, canOverwriteTerrain, set_wall_state } from './display.js';
-import { pline, plineWithContinuation, impossible } from './pline.js';
-import { premap_detect, convertSecretDoor } from './detect.js';
-import { deleteEngravingAt, makeEngravingAt, make_grave, randomEngraving, restoreEngravings, sanitizeEngravings, wipeEngravingAt } from './engrave.js';
-import { addObjectToMonsterInventory } from './steal.js';
-import { insideShopRoomAt, addShopDamage, fixShopDamage, deleteObject } from './shk.js';
-import { PM_SOLDIER, antholeMonsterType, do_mkroom, roomHasStair, somex, somey, somexyspace, insideRoom } from './mkroom.js';
-import { bound_digging, generateAstralLevel, generateBigRoom, generateDungeonMazeFile, generateElementalPlane, generateFakeWizardLevel, generateKnoxLevel, generateLuaQuestLevel, generateMedusaLevel, generateMinesEnd, generateMinetown, generateOracleLevel, generateRandomMaze, generateSokobanLevel, generateSpecialAndFixup, generateVladsTowerLevel, generateWizardLevel, isLuaQuestPrototype, mazeFloorPoint, mkportal, place_lregion, setLevelTerrainType, wallification } from './mkmaze.js';
-import { getbones, levelAllowsBones } from './bones.js';
+import { Is_botlevel, depth as depth_of_level, is_branchlev, level_difficulty, specialLevelAt, canFallThrough, In_quest, In_mines, In_V_tower, In_hell } from './dungeon.js';
+import { LARGE_BOX, CHEST, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, MELON, CREAM_PIE, GOLD_PIECE, ROCK, BOULDER, STATUE, oc_level } from './object_data.js';
+import { MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
+import { flush_screen, newsym, back_to_glyph, set_wall_state } from './display.js';
+import { plineWithContinuation, impossible } from './pline.js';
+import { makeEngravingAt, make_grave, randomEngraving, wipeEngravingAt } from './engrave.js';
+import { deleteObject } from './shk.js';
+import { PM_SOLDIER, antholeMonsterType, do_mkroom, roomHasStair, somex, somey, somexyspace } from './mkroom.js';
+import { bound_digging, generateAstralLevel, generateBigRoom, generateDungeonMazeFile, generateElementalPlane, generateFakeWizardLevel, generateKnoxLevel, generateLuaQuestLevel, generateMedusaLevel, generateMinesEnd, generateMinetown, generateOracleLevel, generateRandomMaze, generateSokobanLevel, generateSpecialAndFixup, generateVladsTowerLevel, generateWizardLevel, isLuaQuestPrototype, mazeFloorPoint, mkportal, setLevelTerrainType, wallification } from './mkmaze.js';
+import { getbones } from './bones.js';
 import { makeroguerooms, makerogueghost } from './extralev.js';
-import { restoreLevelRegions } from './region.js';
 import { beginObjectBurn } from './timeout.js';
 import { vision_note_blocker_change, vision_reset_new_level } from './vision.js';
-import { goodPosition, enexto, enexto_gpflags } from './teleport.js';
-import { isIceAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
-import { addToContainer, beginLuaThemerooms, callLuaThemerooms, check_room, create_room, dig_corridor, fill_special_room, fillVault, finishLevelTrapConstruction, load_special, medusaPetrifiable, putGeneratedMonsterInventoryInStatue, reset_xystart_size, themerooms_generate } from './sp_lev.js';
+import { enexto_gpflags } from './teleport.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
+import { addToContainer, beginLuaThemerooms, callLuaThemerooms, check_room, create_room, dig_corridor, fill_special_room, fillVault, finishLevelTrapConstruction, load_special, reset_xystart_size, themerooms_generate } from './sp_lev.js';
 import type { MutableNumber, SpecialTrapOptions } from './sp_lev.js';
-import { finishHeroLiquidMonsterDeath, finishMonsterLiquidDeath, purgeDeadMonsters, removeMonsterFromGame, resolveMonsterLiquid, revealMonsterAppearance, sendMonsterToLimbo } from './mon.js';
+import { finishHeroLiquidMonsterDeath, finishMonsterLiquidDeath, resolveMonsterLiquid, revealMonsterAppearance } from './mon.js';
 import type { HeroLiquidMonsterDeathOutcome, MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
 import { fractureRock } from './zap.js';
 import { flushPendingTopline } from './topl.js';
 import { stairway_add, stairway_free_all } from './stairs.js';
-import { switchHeroTerrain, roomsAt } from './hack.js';
-import { is_domestic } from './mondata.js';
+import { roomsAt } from './hack.js';
 
 export const G_NOGEN = 0x0200;
 export const G_IGNORE = 0x8000;
@@ -1357,7 +1330,6 @@ function place_niche(aroom: Room): { dy: number; xx: number; yy: number } | null
 
 // C mklev.c:makeniche():
 async function makeniche(trap_type: number): Promise<void> {
-    const g = game;
     const level = requireGameLevel();
     let vct = 8;
     while (vct--) {

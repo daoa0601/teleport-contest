@@ -5,7 +5,6 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { THRONE, DUST } from '../js/const.js';
 import { deferredDecor } from '../js/pickup.js';
 import { makeEngravingAt } from '../js/engrave.js';
-import { resetInputState } from '../js/input.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { setPropertyTimeout } from '../js/potion.js';
 import { GOLD_PIECE } from '../js/object_data.js';

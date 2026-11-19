@@ -486,7 +486,7 @@ function catchFoodName(food: GameObject, state: GameState): string {
 // Monster level migration: departure, limbo, and arrival.
 // C refs: dog.c migrate_to_level(), mon_leave(), losedogs(), mon_arrive(),
 // mon_catchup_elapsed_time(), update_mlstmv(), discard_migrations().
-export type MonsterMigrationKind = 'level-fall-migration' | 'magic-portal-migration'
+type MonsterMigrationKind = 'level-fall-migration' | 'magic-portal-migration'
     | 'level-migration' | 'limbo-migration' | 'shop-return';
 
 export interface MonsterMigrationOptions {
@@ -512,7 +512,7 @@ export interface MonsterMigrationResult<
 
 // C dog.c mon_arrive()'s `when` argument.
 export const WIZ_ARRIVE = -1; // C dog.c mon_arrive(mtmp, -1) from resurrect()
-export type MonsterArrivalPhase = typeof WIZ_ARRIVE | typeof MON_ARRIVE_BEFORE_YOU
+type MonsterArrivalPhase = typeof WIZ_ARRIVE | typeof MON_ARRIVE_BEFORE_YOU
     | typeof MON_ARRIVE_WITH_YOU | typeof MON_ARRIVE_AFTER_YOU;
 
 const PM_LONG_WORM_MIGRATION = 114;
@@ -1072,8 +1072,6 @@ export function discardMigrations(state: GameState = game): void {
 
 // C dog.c:keepdogs(), keep_mon_accessible(), and mondata.c:levl_follower().
 
-const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
-
 // C dog.c:keepdogs()
 // The caller skips this entire transaction when iflags.nofollowers is
 // set.  Returned monsters are detached from the old level in native
@@ -1183,7 +1181,7 @@ export const APPORT = 4;
 export const POISON = 5;
 export const UNDEF = 6;
 export const TABU = 7;
-export type FoodQuality = typeof DOGFOOD | typeof CADAVER | typeof ACCFOOD
+type FoodQuality = typeof DOGFOOD | typeof CADAVER | typeof ACCFOOD
     | typeof MANFOOD | typeof APPORT | typeof POISON | typeof UNDEF | typeof TABU;
 
 const SILVER = 14;

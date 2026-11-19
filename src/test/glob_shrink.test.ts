@@ -9,15 +9,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { A_CON, A_STR, ICE, W_WEP, OBJECT_TIMER_KIND } from '../js/const.js';
-import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
+import { requireGameLevel, game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mkobj.js';
 import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { shipObject } from '../js/dokick.js';
 import {
-    GOLD_PIECE, GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING,
-    GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, SACK,
+    GOLD_PIECE, GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, SACK,
 } from '../js/object_data.js';
 import { claimNextDueObjectTimer, objectTimers, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 

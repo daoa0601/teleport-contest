@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
-import { COLNO, LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROWNO, ROOM, STONE, TT_PIT, W_AMUL } from '../js/const.js';
+import { COLNO, LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROWNO, STONE, TT_PIT, W_AMUL } from '../js/const.js';
 import { setHeroGrip } from '../js/mon.js';
 import { installPagerInput } from './support/pager-input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

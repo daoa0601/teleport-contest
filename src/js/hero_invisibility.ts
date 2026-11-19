@@ -2,7 +2,6 @@
 // invisibility case.  potion.c self_invis_message() and peffect_invisibility()
 // live in potion.ts.
 
-import { heroIsHallucinating } from './senses.js';
 import { TIMEOUT } from './const.js';
 import { newsym } from './display.js';
 import { formatFeltMessage, plineWithContinuation as pline } from './pline.js';
@@ -10,8 +9,7 @@ import { game } from './gstate.js';
 import { MUMMY_WRAPPING } from './object_data.js';
 import { ownedObjectName } from './objnam.js';
 import {
-    hasIntrinsicProperty, propertyHasOtherSources,
-    propertyIsActive, propertyIsBlocked, refreshProperty,
+    hasIntrinsicProperty, propertyHasOtherSources, propertyIsActive, propertyIsBlocked, refreshProperty,
 } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';

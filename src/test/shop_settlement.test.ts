@@ -94,7 +94,7 @@ void test('settlement frees all used-up bill objects but leaves a rival live deb
 });
 
 void test('settlement clears buried and contained ownership only for the relevant shop', async () => {
-    const { west, east } = await twoShops();
+    const { west } = await twoShops();
     requirePlayingGame(game);
     const westChest = await floorObject(CHEST, 10, 10, { initialize: false, no_charge: true });
     const westContent = await knownObject(DAGGER, { no_charge: true });

@@ -5,7 +5,6 @@ function isWalkableTerrain(type) {
     return type === ROOM || type === CORR || type === LADDER;
 }
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { CORPSE } from '../js/object_data.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

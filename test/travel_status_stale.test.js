@@ -9,7 +9,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { continueRun } from '../js/hack.js';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';

@@ -149,7 +149,7 @@ void test('the vegetarian alignment penalty remains Monk-specific', async () => 
     requirePlayingGame(game);
     game.u.ualign = { type: -1, record: 10, abuse: 0 };
     game.u.uconduct = {};
-    const meatball = await addInventoryObject(MEATBALL, {
+    await addInventoryObject(MEATBALL, {
         age: game.moves,
     });
     pushKey('a');
@@ -165,7 +165,7 @@ void test('rotten carried meat retains the preceding Monk guilt outcome', async 
     const messages = acknowledgeMealMessages();
     game.u.ualign = { type: 0, record: 10, abuse: 0 };
     game.u.uconduct = {};
-    const meatball = await addInventoryObject(MEATBALL, {
+    await addInventoryObject(MEATBALL, {
         age: game.moves,
         cursed: true,
     });

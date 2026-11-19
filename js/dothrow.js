@@ -4,7 +4,7 @@
 // throwit(), thitmonst(), walk_path(), and throwing_weapon(); throw_obj()'s
 // per-missile handoff to the flight owners.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, FOOD_CLASS, BALL_CLASS, VENOM_CLASS, } from './objclass.js';
-import { objectClassForType, objectSkill, objectBaseDirection, objectMagic, objectUnique, AKLYS, AMULET_OF_YENDOR, BOOMERANG, BOULDER, WAR_HAMMER, BULLWHIP, CORPSE, EGG, SLING, FAKE_AMULET_OF_YENDOR, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, ROCK, RUBBER_HOSE, OBJ_NAME, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, } from './object_data.js';
+import { objectClassForType, objectSkill, objectBaseDirection, objectMagic, objectUnique, AKLYS, AMULET_OF_YENDOR, BOOMERANG, BOULDER, WAR_HAMMER, BULLWHIP, CORPSE, EGG, SLING, FAKE_AMULET_OF_YENDOR, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, ROCK, RUBBER_HOSE, OBJ_NAME, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isAxe, isWetTowel, launcherMatchesAmmo, objectIsCrackable, objectClass, isPick, } from './object_properties.js';
 import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage } from './pline.js';
@@ -72,7 +72,7 @@ import { objectShedsLight } from './light.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, dropBall } from './ball.js';
-import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsFlyer, monsterIsSlithy, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem, eyecount, befriendWithObj, is_domestic, is_elf, is_orc, your_race, canBlnd, } from './mondata.js';
+import { monsterObjectPronoun, monsterDigests, monsterHatesBlessings, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem, eyecount, befriendWithObj, is_elf, is_orc, your_race, canBlnd, } from './mondata.js';
 import { detachHeroGold, heroGoldObject } from './sit.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { requireShopGame } from './shop_types.js';
@@ -820,8 +820,6 @@ export async function resolveMapPotionThrow({ state = game, item, objectClass, s
 // Moving a monster after a forceful hit.
 // C refs: dothrow.c:will_hurtle()/mhurtle()/mhurtle_to_doom()/mhitm_knockback().
 // ---------------------------------------------------------------------------
-const S_EYE = 5;
-const S_LIGHT = 25;
 const PM_GRID_BUG = 116;
 // Part of C dothrow.c:mhurtle_step(): the silent stoning finisher
 // (minstapetrify(TRUE)).

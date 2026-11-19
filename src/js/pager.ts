@@ -3,139 +3,14 @@
 
 import { ROCK_CLASS } from './objclass.js';
 import {
-
-    A_NONE,
-
-    ALTAR,
-
-    AM_SANCTUM,
-
-    Amask2align,
-
-    BEAR_TRAP,
-
-    BOLT_LIM,
-
-    BUFSZ,
-
-    CMDQ_KEY,
-
-    COLNO,
-
-    CORR,
-
-    CQ_CANNED,
-
-    D_BROKEN,
-
-    D_TRAPPED,
-
-    def_warnsyms,
-
-    DRAWBRIDGE_UP,
-
-    GRAVE,
-
-    HOLE,
-
-    ICE,
-
-    Is_airlevel,
-
-    Is_astralevel,
-
-    Is_rogue_level,
-
-    Is_waterlevel,
-
-    is_hole,
-
-    is_pit,
-
-    LAVAPOOL,
-
-    LAVAWALL,
-
-    LEVEL_TIMER_KIND,
-
-    LOOK_ONCE,
-
-    LOOK_QUICK,
-
-    LOOK_VERBOSE,
-
-    M_AP_FURNITURE,
-
-    M_AP_MONSTER,
-
-    M_AP_OBJECT,
-
-    M_AP_TYPE,
-
-    MONSEEN_DETECT,
-
-    MONSEEN_INFRAVIS,
-
-    MONSEEN_NORMAL,
-
-    MONSEEN_SEEINVIS,
-
-    MONSEEN_TELEPAT,
-
-    MONSEEN_WARNMON,
-
-    MONSEEN_XRAYVIS,
-
-    MOAT,
-
-    PIT,
-
-    POOL,
-
-    ROCKTRAP,
-
-    ROWNO,
-
-    DOOR, IS_WALL,
-
-    SCORR,
-
-    STONE,
-
-    STRAT_WAITMASK,
-
-    TER_DETECT,
-
-    TER_MAP,
-
-    TER_MON,
-
-    TER_OBJ,
-
-    TREE,
-
-    TRAP_EXPLANATIONS,
-
-    TRAPPED_CHEST,
-
-    TRAPPED_DOOR,
-
-    TT_BURIEDBALL,
-
-    TT_INFLOOR,
-
-    TT_LAVA,
-
-    Upolyd,
-
-    VIBRATING_SQUARE,
-
-    WATER,
-
-    WEB,
-
-    D_CLOSED, D_LOCKED, M_AP_F_DKNOWN, SDOOR,
-
+    A_NONE, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, D_BROKEN,
+    D_TRAPPED, def_warnsyms, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, Is_airlevel, Is_astralevel, Is_rogue_level,
+    Is_waterlevel, is_hole, is_pit, LAVAPOOL, LAVAWALL, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE,
+    M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL,
+    MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, MOAT, PIT, POOL, ROCKTRAP, ROWNO,
+    IS_WALL, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS,
+    TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WATER, WEB,
+    M_AP_F_DKNOWN, SDOOR,
 } from './const.js';
 import {
     canSpotHeroSelf, cmapSymbolAppearance, glyphAt, monsterClassSymbol, objectClassSymbol,
@@ -162,8 +37,8 @@ import type { GameObject } from './object_types.js';
 import type { GlyphMetadata } from './display.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import {
-    cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText, showKeyBindings,
-    promptDirection, restoreCommandMap, showExtendedCommandList,
+    cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, isok, keyText,
+    showKeyBindings, promptDirection, restoreCommandMap, showExtendedCommandList,
 } from './cmd.js';
 import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNo } from './query.js';
@@ -190,7 +65,7 @@ import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
 import { DEC_TO_UNICODE } from './terminal.js';
 import { trappedChestAt, trappedDoorAt } from './detect.js';
-import { clearMessageWindow, displayMessageWindow } from './topl.js';
+import { clearMessageWindow } from './topl.js';
 import { KEY_HELP } from './keyhelp_data.js';
 import { HELP_FILES } from './help_files.js';
 import { option_help } from './message_types.js';
@@ -1097,7 +972,7 @@ function screenDescription(x: number, y: number): ScreenDescription {
         count, firstMatch, needsDetail };
 }
 
-export interface ScreenLook {
+interface ScreenLook {
     found: number;
     outStr: string;
     firstMatch: string;
@@ -1266,7 +1141,7 @@ export async function lookatDescription(x: number, y: number): Promise<string> {
 // C pager.c:look_all(), look_traps(), look_engrs(), look_region_nearby().
 // ---------------------------------------------------------------------------
 
-export type LookListKind = 'monsters' | 'objects' | 'traps' | 'engravings';
+type LookListKind = 'monsters' | 'objects' | 'traps' | 'engravings';
 
 // C pager.c:look_all(), look_traps(), look_engrs(): the farlook quick lists
 // and their "No ... are shown" refusals.

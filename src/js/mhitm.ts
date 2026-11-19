@@ -12,20 +12,22 @@ import type { PlayingGameState, GameState } from './game_state.js';
 import type { MapLocation, Position } from './map_types.js';
 import type {
     RandomBelow, RollOne, RollDice, MonsterCallLog, AttackTuple, MonsterMeleeAttack, MonsterAttackHit,
-    MonsterCombatAttack, MonsterCombatResult, MonsterCombatDeath, MonsterWieldAction,
+    MonsterCombatAttack, MonsterCombatResult, MonsterCombatDeath,
 } from './monster_action_types.js';
 import type { MessagePublisher } from './pline.js';
 import type {
-    MonsterCombatDamageResult, MonsterCombatEffectContext, MonsterCombatEffectResult, ResolveMonsterCombatDamage,
+    MonsterCombatDamageResult, MonsterCombatEffectContext, MonsterCombatEffectResult,
+    ResolveMonsterCombatDamage,
 } from './monster_combat_effect_types.js';
 import type {
     MonsterDeathOptions, MonsterDeathResult, MonsterPetrificationResult, PetrificationContactOptions,
 } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import {
-    canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, monsterVisible, newsym, shieldeff,
+    canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, monsterVisible, newsym,
+    shieldeff,
 } from './display.js';
 import { formatHeardMessage, plineWithContinuation } from './pline.js';
 import { artifactById } from './artifact.js';
@@ -54,18 +56,17 @@ import { cansee } from './vision.js';
 import {
     applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled,
     finishMonsterLiquidDeath, grantMonsterCorpseIntrinsic, healMonster, monstersInFmonOrder,
-    prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification,
-    turnGolemToStone,
+    prepareMonsterPetrification, resolveMonsterLiquid, finishMonsterPetrification, turnGolemToStone,
 } from './mon.js';
-import { displayLiquidName, monsterName, monsterName as canonicalMonsterName, namelessMonsterName, monsterTypeName } from './do_name.js';
+import { displayLiquidName, monsterName, monsterName as canonicalMonsterName, namelessMonsterName } from './do_name.js';
 import { possessiveName, dist2, distmin } from './hacklib.js';
 import {
     exposeEngulfedDefenderForDeath, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt,
 } from './steed.js';
 import {
-    monsterObjectPronoun, monsterPossessive, formCanBecomeStoneGolem, monsterStagger, monsterHasAcidResistance,
-    monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance,
-    monsterHasMagicResistance, monsterCanTeleport, is_shapeshifter,
+    monsterObjectPronoun, monsterPossessive, formCanBecomeStoneGolem, monsterStagger,
+    monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance,
+    monsterHasStoneResistance, monsterHasMagicResistance, monsterCanTeleport, is_shapeshifter,
 } from './mondata.js';
 import { monsterResistsEffect } from './zap.js';
 import { finishHeroMonsterKillOutcome } from './mon.js';
@@ -83,9 +84,8 @@ import { getmattk } from './mhitu.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { trapAt, mintrap, damageObjectWithAcid, erodeObject } from './trap.js';
 import {
-    applyMonsterCombatBlindness, mhitm_adtyping, passiveAttack, passiveDamage,
-    shadeMiss, mhitm_ad_phys, mhitm_knockback,
-    effectResult, erodeArmor,
+    applyMonsterCombatBlindness, mhitm_adtyping, passiveAttack, passiveDamage, shadeMiss, mhitm_ad_phys,
+    mhitm_knockback, effectResult, erodeArmor,
 } from './uhitm.js';
 import { mon_reflects } from './muse.js';
 import { finishMonsterEating } from './dogmove.js';
@@ -93,7 +93,7 @@ import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js
 import { updateMonsterRegions } from './region.js';
 import { recordHeroKillConduct } from './end.js';
 import { objectMaterial } from './o_init.js';
-import { makePlural, verbForSubject } from './objnam.js';
+import { makePlural } from './objnam.js';
 import { learnObjectType } from './o_init.js';
 import { minimalObjectName, objectCombatName, pluralizeObjectNoun } from './objnam.js';
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from './object_data.js';
@@ -101,12 +101,9 @@ import { drainObjectEnchantment } from './zap.js';
 import { snuffMonsterInventoryLights } from './light.js';
 import { could_seduce } from './mhitu.js';
 import {
-    AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN,
-    AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL,
-    AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM,
-    AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE,
-    AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC,
-    AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
+    AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DGST, AD_DRIN, AD_ELEC, AD_ENCH, AD_FIRE, AD_PLYS, AD_RBRE,
+    AD_RUST, AD_STCK, AD_STUN, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL,
+    AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { goodPosition } from './teleport.js';
@@ -493,7 +490,7 @@ interface MonsterPuddingSplitOptions {
     random?: typeof rn2;
 }
 
-export interface MonsterPuddingSplitResult {
+interface MonsterPuddingSplitResult {
     split: boolean;
     heroDied: boolean;
     aggressorDied: boolean;
@@ -1022,7 +1019,7 @@ interface CombatExplosionOptions {
     resolveDamage?: ResolveMonsterCombatDamage;
 }
 
-export interface MonsterCombatExplosionResult {
+interface MonsterCombatExplosionResult {
     mask: number;
     heroDied: boolean;
     damage: number;
@@ -1038,7 +1035,7 @@ export async function resolveMonsterCombatExplosion(
 ): Promise<MonsterCombatExplosionResult> {
     requirePlayingGame(state);
     if (attacker.mcan) return { mask: M_ATTK_MISS, heroDied: false, damage: 0 };
-    const [, damageType, dice, sides] = attack;
+    const [, damageType] = attack;
     if (cansee(attacker.mx, attacker.my)) {
         await publish(`${monsterName(attacker, { state, capitalized: true })} explodes!`);
     } else {
@@ -1261,7 +1258,7 @@ export async function finishMonsterDigestion(attacker: Monster, {
 
 // A monster's passive response to another monster's melee attack.
 // C mhitm.c:passivemm() and paralyze_monst().
-export interface MonsterContactPassiveResult {
+interface MonsterContactPassiveResult {
     stopped: boolean;
     hit: boolean | undefined;
     damage?: number;

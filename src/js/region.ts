@@ -43,27 +43,26 @@ const GAS_MINOR = 1;
 export const GAS_OK = 2;
 
 const PM_FOG_CLOUD = 106;
-const PM_STEAM_VORTEX = 110;
 const PM_VROCK = 295;
 const PM_HEZROU = 296;
 
 export type GasTolerance = typeof GAS_BAD | typeof GAS_MINOR | typeof GAS_OK;
 
-export interface HeroGasDamage {
+interface HeroGasDamage {
     kind: 'hero-gas';
     resisted: false;
     damage: number;
     died?: boolean;
 }
 
-export interface MonsterGasDeath {
+interface MonsterGasDeath {
     monster: Monster;
     survived: boolean;
     corpse?: GameObject | null;
     heroDied?: boolean;
 }
 
-export interface MonsterGasDamage {
+interface MonsterGasDamage {
     kind: 'monster-gas';
     monster: Monster;
     resisted: false;
@@ -73,7 +72,7 @@ export interface MonsterGasDamage {
     death?: MonsterGasDeath;
 }
 
-export type RegionEvent = HeroGasDamage | MonsterGasDamage
+type RegionEvent = HeroGasDamage | MonsterGasDamage
     | { kind: 'hero-gas'; resisted: true; damage: 0 }
     | { kind: 'monster-gas'; monster: Monster; resisted: true; damage: 0 };
 
@@ -82,7 +81,7 @@ type WakeNearGas = (
     publish: MessagePublisher,
 ) => void | Promise<void>;
 
-export interface RegionTurnOptions {
+interface RegionTurnOptions {
     publish?: MessagePublisher;
     rollOne?: (sides: number) => number;
     wake?: WakeNearGas;
