@@ -50,7 +50,7 @@ import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { recordObjectKnowledge } from './u_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, erosionMatters, simpleArmorName, suitSimpleName, cloakSimpleName, helmSimpleName, glovesSimpleName, bootsSimpleName, shieldSimpleName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
-import { chooseInventoryObject, compactInventoryLetters, bucCategory, wearingArmor } from './invent.js';
+import { chooseInventoryObject, getobj, compactInventoryLetters, bucCategory, wearingArmor } from './invent.js';
 import type { InventoryClassification } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
@@ -275,8 +275,11 @@ export async function removeWornItem(action: 'remove' | 'take off', itemAction =
     } else {
         const suggested = game.inventory.filter(candidate => equipmentClassification(candidate, action, itemAction) === GETOBJ_SUGGEST);
         const letters = compactInventoryLetters(suggested.map(candidate => candidate.invlet).join(''));
-        inventoryPrompt = `What do you want to ${action}? [${letters ? `${letters} or ?*` : '*'}] `;
-        object = await chooseInventoryObject(action, candidate => equipmentClassification(candidate, action, itemAction));
+        // Worn armor and accessories take no count, so there is no split_otmp tail.
+        const selection = await getobj(action, candidate => equipmentClassification(candidate, action, itemAction));
+        object = selection.object;
+        if (selection.object === null || !selection.fromMenu)
+            inventoryPrompt = `What do you want to ${action}? [${letters ? `${letters} or ?*` : '*'}] `;
     }
     if (!object) {
         // do_wear.c:dotakeoff()/doremring() return ECMD_CANCEL when

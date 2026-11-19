@@ -899,7 +899,7 @@ export async function getobj(word, classify, { forcePrompt = false, allowCount =
                         && admitsChoice(classify(candidate)));
                     if (object)
                         return {
-                            cancelled: false, object, none: false,
+                            cancelled: false, object, none: false, fromMenu: false,
                             count: count !== null && count > 0 && count < object.quan ? count : null,
                         };
                 }
@@ -1102,7 +1102,7 @@ export async function getobj(word, classify, { forcePrompt = false, allowCount =
         // split_otmp: an explicit zero count selects nothing.
         if (count === 0)
             return { ...CANCELLED, count: 0 };
-        return { cancelled: false, object, none: false, count };
+        return { cancelled: false, object, none: false, count, fromMenu: !answered };
     }
 }
 // C invent.c:silly_thing().
