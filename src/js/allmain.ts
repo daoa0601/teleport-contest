@@ -1,7 +1,7 @@
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
 import { dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot, In_hell } from './dungeon.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, nomul, overexertHeroHp, finishDestinationSpotEffects, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness, heroGoldAmount } from './hack.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, nomul, overexertHeroHp, finishDestinationSpotEffects, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness } from './hack.js';
 import { recorderLocalEpochSeconds, fixedCalendar, friday13th, sessionIsNight } from './calendar.js';
 import { plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, rhack, dolookaround } from './cmd.js';
@@ -289,15 +289,14 @@ export async function restoregamePreamble() {
 // arrival, modeled here as a hand-rolled level transition combining Lua
 // state transfer and that arrival.  Destination construction and arrival
 // precede the entry pager, but that pager still projects the source graph.
-// deferred_goto() prints dfr_pre_msg without blocking (do.c:2082 pline1,
-// painting the pre-sequestration status); the --More-- acknowledgment
-// comes later from goto_level()'s docrt() -> cls() ->
-// display_nhwindow(WIN_MESSAGE) (display.c:2196, wintty.c:1874), after
-// tutorial(TRUE) -> nh.gamestate() has sequestered the hero's state but
-// before any bot() repaint, so the status under "Entering the
-// tutorial.--More--" keeps its last pre-sequestration paint; the port's
-// fused pager flushes inside vpline() instead and pins that display with
-// _statusGoldOverride.
+// deferred_goto() prints dfr_pre_msg without blocking unless the message
+// is configured MSGTYPE=stop (do.c:2082 pline1; pline.c:283 blocks inside
+// pline1, before goto_level() sequesters anything).  The default
+// --More-- acknowledgment instead comes from goto_level()'s docrt() ->
+// cls() -> display_nhwindow(WIN_MESSAGE) (display.c:2196, wintty.c:1874),
+// after tutorial(TRUE) -> nh.gamestate() has sequestered the hero's state
+// but before any bot() repaint, so the status under "Entering the
+// tutorial.--More--" keeps its last pre-sequestration paint either way.
 // Tutorial inventory is deliberately sequestered until a later portal
 // restores the saved game state.
 async function maybeDoTutorial(): Promise<void> {
@@ -340,19 +339,11 @@ async function maybeDoTutorial(): Promise<void> {
 
     game.u.ucamefrom = { ...oldDepth };
     // goto_level() sequesters the hero's state as soon as the destination
-    // dungeon is known (do.c:1494-1496, tutorial(TRUE) -> nh.gamestate()),
-    // before mklev() and before docrt()'s --More-- acknowledgment below.
-    // The gold display is pinned to the wallet until the arrival repaint:
-    // C prints dfr_pre_msg without blocking (do.c:2082 pline1, pline.c
-    // vpline() painting the pre-sequestration status) and the --More-- is
-    // reached later from docrt() -> cls() -> display_nhwindow(WIN_MESSAGE)
-    // (display.c:2196, wintty.c:1874 more()), with no bot() in between,
-    // so the status under that pager stays at its last pre-sequestration
-    // paint.  The port's fused pager flushes inside vpline() instead, so
-    // pin the gold here as the fountain gold-loss display does.
-    const wallet = heroGoldAmount(game);
-    await currentLuaLifecycle().changeTutorialMode(game, true);
-    game._statusGoldOverride = wallet;
+    // dungeon is known (do.c:1494-1496, tutorial(TRUE) -> nh.gamestate());
+    // the sequestering call itself is placed below the entry pager, at
+    // the start of the goto_level() body this hand-rolled transition
+    // inlines around, so both of the pager's input boundaries observe the
+    // state C shows at them (see the comment there).
     game.u.uz = { ...target };
     // C's tutorial entry runs through goto_level(), which records the
     // reached level for the destination dungeon (do.c:1678-1685) before
@@ -401,6 +392,20 @@ async function maybeDoTutorial(): Promise<void> {
     oldHero.ux0 = oldPosition.x0;
     oldHero.uy0 = oldPosition.y0;
     await plineWithContinuation('Entering the tutorial.');
+    // pline1(dfr_pre_msg) has returned: vpline() flushed the screen while
+    // the hero still carried the gold and wore the armor, so the status
+    // painted for this pager is the pre-sequestration one.  The pager
+    // blocks only in C's own two ways: MSGTYP_STOP blocks inside pline1
+    // itself (pline.c:283 display_nhwindow(WIN_MESSAGE, TRUE)), before
+    // goto_level() sequesters anything, so that boundary still sees the
+    // intact inventory and spells; otherwise the acknowledgment waits for
+    // docrt() -> cls() -> display_nhwindow(WIN_MESSAGE) inside goto_level()
+    // (display.c:2196, wintty.c:1874 more()), by which point tutorial(TRUE)
+    // -> nh.gamestate() has sequestered the state (do.c:1494-1496).
+    // Placing the sequestration between those two boundaries reproduces
+    // both, and no bot() runs in between, so the displayed wallet stays
+    // stale until the arrival's post-docrt flush (do.c:1845-1846).
+    await currentLuaLifecycle().changeTutorialMode(game, true);
     await flushPendingTopline();
 
     await checkSpecialRoom({ newLevel: true });
@@ -418,9 +423,6 @@ async function maybeDoTutorial(): Promise<void> {
     game._pending_message = '';
     vision_reset_new_level();
     await docrt();
-    // goto_level()'s flush after docrt() (do.c:1845-1846) is C's first
-    // post-sequestration status paint; the tutorial wallet shows there.
-    delete game._statusGoldOverride;
     // goto_level()'s first-visit tail precedes room entry and the arrival engraving.
     await enterNewLevelTail(target);
     await checkSpecialRoom();

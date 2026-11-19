@@ -29,6 +29,7 @@ import { completeHeroStartup } from './support/startup.js';
 
 import type { TerminalCell } from '../js/terminal.js';
 import { initializeMonsterVitals } from '../js/allmain.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 void test('tutorial entry retains the old armor class until its entry message is acknowledged', async () => {
     const engine = await runSegment({
@@ -186,6 +187,52 @@ void test('the tutorial entry pager keeps the starting gold in the status line',
         'the title status row must not change across the tutorial entry pager');
     assert.equal(entry[23], beforeMenu[23],
         'the status row must keep the starting gold until the pager is dismissed');
+});
+
+void test('a MSGTYPE=stop tutorial entry pager acknowledges before the state is sequestered', async () => {
+    const engine = await runSegment({
+        seed: 1901573816,
+        datetime: '20261012090000',
+        nethackrc: 'OPTIONS=name:Holdout,role:tourist,race:human,gender:male,align:neutral,!legacy,!autopickup,pettype:none\n'
+            + 'MSGTYPE=stop "Entering the tutorial"',
+        moves: '', storage: memoryStorage(),
+    });
+    // With MSGTYPE=stop, vpline() blocks in
+    // display_nhwindow(WIN_MESSAGE, TRUE) inside pline1(dfr_pre_msg)
+    // (pline.c:283, do.c:2084) before deferred_goto() proceeds into
+    // goto_level(); tutorial(TRUE) -> nh.gamestate() has not run yet, so
+    // the hero still carries the starting inventory, gold included, at
+    // that acknowledgment boundary, and the status painted by vpline()'s
+    // own flush_screen(1) is likewise the pre-sequestration one.
+    const statusRow = (): string => {
+        const display = engine.state.nhDisplay;
+        assert.ok(display);
+        return display.grid[23]?.map(cell => cell.ch).join('') ?? '';
+    };
+    let entryStatus: string | null = null;
+    let entryGold = 0;
+    for (let phase = 0; phase < 10; phase++) {
+        const display = engine.state.nhDisplay;
+        assert.ok(display);
+        const screen = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+        if (screen.includes('Entering the tutorial.')) {
+            entryStatus = statusRow();
+            entryGold = heroGoldAmount(engine.state);
+            break;
+        }
+        engine.inputGate.feed(screen.includes('Do you want a tutorial?') ? 'y' : ' ');
+        await engine.runUntilInputNeeded();
+    }
+    assert.ok(entryStatus !== null, 'startup must reach the tutorial entry message');
+    assert.ok(engine.state.inventory.length > 0,
+        'a MSGTYPE=stop entry pager blocks before goto_level() sequesters the inventory');
+    assert.ok(entryGold > 0, 'the starting gold is still carried at that boundary');
+    assert.match(entryStatus, new RegExp(`\\$:${entryGold}\\b`),
+        'the status under a MSGTYPE=stop entry pager shows the carried gold');
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    assert.equal(engine.state.inventory.length, 0,
+        'acknowledging the pager lets goto_level() sequester the inventory');
 });
 
 void test('entering the tutorial stores equipment and returning restores the same items', async t => {
