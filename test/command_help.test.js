@@ -4,6 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { option_help } from '../js/message_types.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { RECORDED_CONFIG_FILE } from './support/config-file.js';
 void test('whatdoes describes the command currently bound to the requested key', async () => {
     const input = freshTurnRoom();
     game.commandBindings.bindKey('!'.charCodeAt(0), 'search');
@@ -225,6 +226,11 @@ void test('option help lists booleans, compound descriptions, and configuration 
         }
         const text = pages.join('\n');
         assert.match(text, /NetHack Options Help:/);
+        // The pager wraps the config file onto its own line and cuts it at 79 columns.
+        const lines = text.split('\n').map(line => line.trimEnd());
+        const intro = lines.indexOf('Set options as OPTIONS=<options> in');
+        assert.ok(intro >= 0, 'option help explains where options are set');
+        assert.equal(lines[intro + 1], RECORDED_CONFIG_FILE.slice(0, 79));
         assert.match(text, /Boolean options .*negated/);
         assert.match(text, /autopickup,/);
         assert.match(text, /Compound options:/);

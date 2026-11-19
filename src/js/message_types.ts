@@ -63,7 +63,7 @@ import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
 import { attributeName, colorAttrToString, colorName, matchAttributeName,
     matchColorName, parseColorAttr, parseMenuColoring, queryAttr, queryColorMenu } from './coloratt.js';
-import { cutConfigBytes } from './cfgfiles.js';
+import { cutConfigBytes, get_configfile } from './cfgfiles.js';
 import {
     BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
     MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP,
@@ -3313,8 +3313,7 @@ export function parseAutopickupException(
 export async function option_help(): Promise<void> {
     const lines = [
         '', '                 NetHack Options Help:', '',
-        // Replay configuration supplies contents without a host file path.
-        'Set options as OPTIONS=<options> in .nethackrc',
+        `Set options as OPTIONS=<options> in ${get_configfile()}`,
         'or use `NETHACKOPTIONS="<options>"\' in your environment',
         '(<options> is a list of options separated by commas)',
         'or press "O" while playing and use the menu.', '',
