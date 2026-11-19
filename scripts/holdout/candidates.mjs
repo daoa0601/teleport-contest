@@ -27,7 +27,34 @@ function characterAt(index) {
     }
     return itemAt(ordered, index % ordered.length);
 }
-export function makeCandidate(index, seeds, kinds, recipes) {
+function chance(percent) { return randomInt(100) < percent; }
+function publicOptions(debug) {
+    const options = [];
+    if (chance(14))
+        options.push('!legacy');
+    // The debug setup types #levelchange at once, so it must not meet the tutorial question.
+    if (debug || chance(27))
+        options.push('!tutorial');
+    if (chance(86))
+        options.push('symset:DECgraphics');
+    if (chance(80))
+        options.push(`suppress_alert:${chance(12) ? '3.3.1' : '3.4.3'}`);
+    const pickup = randomInt(100);
+    if (pickup < 61)
+        options.push('!autopickup');
+    else if (pickup < 66)
+        options.push('autopickup');
+    for (const [option, percent] of [['time', 18], ['color', 18], ['showexp', 18], ['lit_corridor', 14],
+        ['pushweapon', 14], ['msg_window:reversed', 9], ['pettype:none', 7], ['!splash_screen', 7],
+        ['!verbose', 5], ['runmode:walk', 5], ['mention_walls', 3]]) {
+        if (chance(percent))
+            options.push(option);
+    }
+    if (!debug && chance(25))
+        options.push('disclose:yi ya yv yg yc yo');
+    return options.join(',');
+}
+export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed') {
     const rotation = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', ...(kinds.includes('deep') ? ['deep'] : [])];
@@ -70,8 +97,9 @@ export function makeCandidate(index, seeds, kinds, recipes) {
         spec.targetKeys = randomInt(ranges[0], ranges[1] + 1);
         const variants = ['!autopickup,runmode:teleport', 'autopickup,runmode:walk',
             '!autopickup,runmode:run', 'autopickup,showexp', '!autopickup,showexp'];
-        spec.options = itemAt(variants, Math.floor(index / 10) % variants.length);
-        const rc = `OPTIONS=name:Holdout,role:${character.role},race:${character.race},gender:${character.gender},align:${character.align},!legacy,!tutorial,!news,symset:DECgraphics,time,${spec.options}\n`;
+        spec.options = optionMix === 'public' ? publicOptions(kind === 'deep' || kind === 'deepwide')
+            : `!legacy,!tutorial,!news,symset:DECgraphics,time,${itemAt(variants, Math.floor(index / 10) % variants.length)}`;
+        const rc = `OPTIONS=name:Holdout,role:${character.role},race:${character.race},gender:${character.gender},align:${character.align}${spec.options ? `,${spec.options}` : ''}\n`;
         // 'deep' plays the narrow explore policy at a debug-mode depth;
         // 'deepwide' plays the wide policy over the same setup.
         const driver = { kind: kind === 'deep' ? 'explore' : kind === 'deepwide' ? 'wide' : kind,

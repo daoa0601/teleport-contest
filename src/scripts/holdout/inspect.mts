@@ -114,8 +114,10 @@ export function inspectCandidate(spec: CandidateSpec, recorded: Session) {
         }
         metrics.recipeChecks = evidence.checks.map(check => check.check);
     }
-    if (spec.kind !== 'recipe' && metrics.maxTurn < 5
-        && !metrics.endings.includes('process-exit')) {
+    // Without the time option the status line has no turn counter; count
+    // gameplay screens instead.
+    const advanced = metrics.maxTurn > 0 ? metrics.maxTurn >= 5 : metrics.gameplayScreens >= 8;
+    if (spec.kind !== 'recipe' && !advanced && !metrics.endings.includes('process-exit')) {
         throw new Error('policy did not advance at least four game turns');
     }
     return metrics;

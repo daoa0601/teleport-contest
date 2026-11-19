@@ -6,7 +6,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { RECIPE_NAMES } from './holdout/recipes.mjs';
 import { selectRecipes } from './holdout/recipe-selection.mjs';
 import { inspectCandidate, summarizeCorpus } from './holdout/inspect.mjs';
-import { GENERATOR_KINDS, makeCandidate, parseKind } from './holdout/candidates.mjs';
+import { GENERATOR_KINDS, makeCandidate, parseKind, type OptionMix } from './holdout/candidates.mjs';
 import { decodeManifest, type GeneratorKind, type HoldoutManifest } from './holdout/types.mjs';
 import { decodeSession, errorMessage, hasErrorCode, objectValue, arrayValue, numberValue } from './lib/session-types.mjs';
 
@@ -18,6 +18,7 @@ interface GeneratorOptions {
     resume: boolean;
     kinds: GeneratorKind[];
     recipes?: string[];
+    optionMix: OptionMix;
 }
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -37,7 +38,7 @@ process.on('SIGTERM', stopChildren);
 
 function options(argv: readonly string[]): GeneratorOptions | null {
     const opts: GeneratorOptions = { count: 500, jobs: 2, out: path.join(ROOT, '.cache/holdout-dev/mixed'),
-        maxAttempts: 0, resume: false, kinds: ['recipe', 'fuzz', 'explore'] };
+        maxAttempts: 0, resume: false, kinds: ['recipe', 'fuzz', 'explore'], optionMix: 'fixed' };
     let requestedMaxAttempts: number | null = null;
     for (let index = 0; index < argv.length; index++) {
         const flag = argv[index];
@@ -51,6 +52,10 @@ function options(argv: readonly string[]): GeneratorOptions | null {
         else if (flag === '--max-attempts') requestedMaxAttempts = Number(value);
         else if (flag === '--kinds') opts.kinds = value.split(',').map(parseKind);
         else if (flag === '--recipes') opts.recipes = selectRecipes(value);
+        else if (flag === '--options') {
+            if (value !== 'fixed' && value !== 'public') throw new Error('--options must be fixed or public');
+            opts.optionMix = value;
+        }
         else throw new Error(`unknown option ${flag}`);
     }
     for (const key of ['count', 'jobs'] as const) {
@@ -152,7 +157,7 @@ async function record(input: string, output: string, install: string): Promise<v
 async function main(): Promise<void> {
     const opts = options(process.argv.slice(2));
     if (!opts) {
-        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide,deepwide] [--recipes NAME,...] [--max-attempts N]');
+        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide,deepwide] [--recipes NAME,...] [--options fixed|public] [--max-attempts N]');
         return;
     }
     const lock = await reserveOutput(opts);
@@ -217,7 +222,7 @@ async function main(): Promise<void> {
                 && manifest.attempts < opts.maxAttempts) {
                 inFlight++;
                 const index = manifest.attempts++;
-                const candidate = makeCandidate(index, seeds, opts.kinds, opts.recipes ?? RECIPE_NAMES);
+                const candidate = makeCandidate(index, seeds, opts.kinds, opts.recipes ?? RECIPE_NAMES, opts.optionMix);
                 const { spec, session } = candidate;
                 const planPath = path.join(opts.out, 'plans', `${spec.id}.json`);
                 const partial = path.join(runtime, `${spec.id}.partial.json`);
