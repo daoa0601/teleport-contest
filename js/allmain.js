@@ -22,7 +22,7 @@ import { heroCanTeleport, teleportHero, askTeleportDestination } from './telepor
 import { moveMonsterNextToHero } from './mon.js';
 import { runDueTimers } from './timeout.js';
 import { askKeepRestoredSave } from './restore.js';
-import { finishScheduledLevelChange } from './do.js';
+import { enterNewLevelTail, finishScheduledLevelChange } from './do.js';
 import { heroHasOlfaction, monsterIsEel } from './mondata.js';
 import { MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
@@ -362,6 +362,8 @@ async function maybeDoTutorial() {
     game._pending_message = '';
     vision_reset_new_level();
     await docrt();
+    // goto_level()'s first-visit tail precedes room entry and the arrival engraving.
+    await enterNewLevelTail(target);
     await checkSpecialRoom();
     await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     // maybe_do_tutorial() redraws after deferred_goto(), acknowledging the

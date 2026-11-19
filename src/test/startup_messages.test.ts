@@ -109,6 +109,27 @@ void test('declining the tutorial erases the acknowledged welcome before command
     assert.equal(engine.state.moves, 1);
 });
 
+void test('entering the tutorial chronicles the newly entered level', async () => {
+    // C maybe_do_tutorial() goes through goto_level(), whose new-level tail
+    // logs "entered level 1, the Tutorial" (do.c:1958-1959).
+    const engine = await runSegment({
+        seed: 381,
+        datetime: '20260801120000',
+        nethackrc: 'OPTIONS=name:Iris,role:Rogue,race:human,gender:female,align:chaotic,!legacy,!autopickup,pettype:none',
+        moves: '', storage: memoryStorage(),
+    });
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    engine.inputGate.feed('y');
+    await engine.runUntilInputNeeded();
+    for (let page = 0; page < 5 && visibleRows(engine).join('\n').includes('--More--'); page++) {
+        engine.inputGate.feed(' ');
+        await engine.runUntilInputNeeded();
+    }
+    assert.deepEqual(gameLogEvents(engine.state).map(event => event.text),
+        ['Iris the chaotic female human Rogue entered the dungeon', 'entered level 1, the Tutorial']);
+});
+
 void test('explore startup announces its mode after the wrapped welcome', async () => {
     const engine = await startWithLongWelcome({ explore: true });
     assert.match(visibleRows(engine)[1] ?? '', /Archeologist\.--More--$/);
