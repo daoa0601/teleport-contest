@@ -45,16 +45,12 @@ void test('tutorial entry retains the old armor class until its entry message is
         await engine.runUntilInputNeeded();
     }
     assert.equal(entryFound, true, 'startup must reach the tutorial entry message');
-    // deferred_goto() prints the entry pager before goto_level()
-    // sequesters anything (do.c:2082-2090), so the pager moment still
-    // carries the starting gear and the armor class it displays.
-    assert.ok(engine.state.inventory.length > 0, 'the inventory is sequestered only after the pager is acknowledged');
+    // C sequesters the inventory before the --More-- acknowledgment (the
+    // pager is reached from docrt() inside goto_level(), after
+    // tutorial(TRUE) -> nh.gamestate()), but bot() has not repainted yet,
+    // so the displayed armor class is still the armored one.
+    assert.equal(engine.state.inventory.length, 0);
     assert.equal(engine.state.u.uac, startingArmorClass);
-    // After the acknowledgment, goto_level() runs tutorial(TRUE) ->
-    // nh.gamestate() before the next input boundary.
-    engine.inputGate.feed(' ');
-    await engine.runUntilInputNeeded();
-    assert.equal(engine.state.inventory.length, 0, 'acknowledging the pager sequesters the starting inventory');
     // C's goto_level() bookkeeping marks the tutorial dungeon's reached
     // level, so the disclosure heading shows no empty level range.
     const tutorialDnum = engine.state.dungeons.findIndex(dungeon => dungeon.dname === 'The Tutorial');
@@ -135,14 +131,14 @@ void test('the tutorial entry pager keeps the starting gold in the status line',
         nethackrc: 'OPTIONS=name:Holdout,role:tourist,race:human,gender:male,align:neutral,!legacy,!autopickup,pettype:none',
         moves: '', storage: memoryStorage(),
     });
-    // C deferred_goto() prints dfr_pre_msg before calling goto_level()
-    // (do.c:2082-2083), and the hero's gold is only sequestered inside
-    // goto_level() by tutorial(TRUE) -> nh.gamestate() (do.c:1494-1496,
-    // nhlib.lua tutorial_enter).  vpline() flushes the screen before the
-    // message shows (pline.c: "flush_screen(1)"), so the status line the
-    // "Entering the tutorial.--More--" pager displays still reports the
-    // pre-tutorial wallet; only the flush after the arrival's docrt()
-    // repaints it (do.c:1845-1846).
+    // C deferred_goto() prints dfr_pre_msg without blocking (do.c:2082);
+    // the --More-- is reached from docrt() inside goto_level()
+    // (display.c:2196 -> wintty.c:1874 more()), after tutorial(TRUE) ->
+    // nh.gamestate() has sequestered the gold (do.c:1494-1496,
+    // nhlib.lua tutorial_enter) but before any bot() repaint, so the
+    // status line under that pager still shows the last
+    // pre-sequestration paint; "Tutorial:1 $:0" first appears after the
+    // arrival's post-docrt flush (do.c:1845-1846).
     const screenRows = () => {
         const display = engine.state.nhDisplay;
         assert.ok(display);

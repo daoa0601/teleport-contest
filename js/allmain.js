@@ -1,7 +1,7 @@
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core, stop_occupation().
 import { dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot, In_hell } from './dungeon.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, nomul, overexertHeroHp, finishDestinationSpotEffects, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness } from './hack.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, nomul, overexertHeroHp, finishDestinationSpotEffects, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom, finishHeroHelplessness, heroGoldAmount } from './hack.js';
 import { recorderLocalEpochSeconds, fixedCalendar, friday13th, sessionIsNight } from './calendar.js';
 import { plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, rhack, dolookaround } from './cmd.js';
@@ -262,11 +262,15 @@ export async function restoregamePreamble() {
 // arrival, modeled here as a hand-rolled level transition combining Lua
 // state transfer and that arrival.  Destination construction and arrival
 // precede the entry pager, but that pager still projects the source graph.
-// deferred_goto() prints dfr_pre_msg before goto_level() starts
-// (do.c:2082-2083), so the sequestering below (tutorial(TRUE) ->
-// nh.gamestate(), do.c:1494-1496) must not precede that pager either:
-// the status line under "Entering the tutorial.--More--" still reports
-// the pre-tutorial wallet until the arrival repaints it.
+// deferred_goto() prints dfr_pre_msg without blocking (do.c:2082 pline1,
+// painting the pre-sequestration status); the --More-- acknowledgment
+// comes later from goto_level()'s docrt() -> cls() ->
+// display_nhwindow(WIN_MESSAGE) (display.c:2196, wintty.c:1874), after
+// tutorial(TRUE) -> nh.gamestate() has sequestered the hero's state but
+// before any bot() repaint, so the status under "Entering the
+// tutorial.--More--" keeps its last pre-sequestration paint; the port's
+// fused pager flushes inside vpline() instead and pins that display with
+// _statusGoldOverride.
 // Tutorial inventory is deliberately sequestered until a later portal
 // restores the saved game state.
 async function maybeDoTutorial() {
@@ -304,6 +308,20 @@ async function maybeDoTutorial() {
         billObjects: game.billObjects ?? [],
     });
     game.u.ucamefrom = { ...oldDepth };
+    // goto_level() sequesters the hero's state as soon as the destination
+    // dungeon is known (do.c:1494-1496, tutorial(TRUE) -> nh.gamestate()),
+    // before mklev() and before docrt()'s --More-- acknowledgment below.
+    // The gold display is pinned to the wallet until the arrival repaint:
+    // C prints dfr_pre_msg without blocking (do.c:2082 pline1, pline.c
+    // vpline() painting the pre-sequestration status) and the --More-- is
+    // reached later from docrt() -> cls() -> display_nhwindow(WIN_MESSAGE)
+    // (display.c:2196, wintty.c:1874 more()), with no bot() in between,
+    // so the status under that pager stays at its last pre-sequestration
+    // paint.  The port's fused pager flushes inside vpline() instead, so
+    // pin the gold here as the fountain gold-loss display does.
+    const wallet = heroGoldAmount(game);
+    await currentLuaLifecycle().changeTutorialMode(game, true);
+    game._statusGoldOverride = wallet;
     game.u.uz = { ...target };
     // C's tutorial entry runs through goto_level(), which records the
     // reached level for the destination dungeon (do.c:1678-1685) before
@@ -352,12 +370,6 @@ async function maybeDoTutorial() {
     oldHero.uy0 = oldPosition.y0;
     await plineWithContinuation('Entering the tutorial.');
     await flushPendingTopline();
-    // goto_level() sequesters the hero's state only after deferred_goto()
-    // has printed dfr_pre_msg (do.c:1494-1496 below the pline1 at
-    // do.c:2082-2083), so the pager above still displays the pre-tutorial
-    // status line: vpline() flushes the screen before showing the message,
-    // while the hero's gold is still carried.
-    await currentLuaLifecycle().changeTutorialMode(game, true);
     await checkSpecialRoom({ newLevel: true });
     game.level = tutorialLevel;
     game.stairs = tutorialStairs;
@@ -372,6 +384,9 @@ async function maybeDoTutorial() {
     game._pending_message = '';
     vision_reset_new_level();
     await docrt();
+    // goto_level()'s flush after docrt() (do.c:1845-1846) is C's first
+    // post-sequestration status paint; the tutorial wallet shows there.
+    delete game._statusGoldOverride;
     // goto_level()'s first-visit tail precedes room entry and the arrival engraving.
     await enterNewLevelTail(target);
     await checkSpecialRoom();
