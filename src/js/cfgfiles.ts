@@ -406,6 +406,16 @@ function parseConfigLine(
         result, addError, addRawError);
 }
 
+// The recorder's HOME (docs/recording-environment.md): the harness wrote each
+// session's nethackrc to $HOME/.nethackrc before launching NetHack.
+const RECORDING_HOME = '/Users/davidbau/git/mazesofmenace/teleport/maud/test/comparison/c-harness/results';
+
+// C cfgfiles.c:get_configfile(): fopen_config_file() leaves configfile naming
+// the UNIX default "$HOME/.nethackrc" it opened; messages print it verbatim.
+export function get_configfile(): string {
+    return `${RECORDING_HOME}/.nethackrc`;
+}
+
 export interface ConfigurationSources {
     fileName?: string;
     nethackOptions?: string | null;
@@ -437,7 +447,7 @@ export function parseNethackrc(rc: string, sources: ConfigurationSources = {}): 
         configErrors: [],
         flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: { wc2_petattr: C_ATR_INVERSE }, commandBindings: new CommandBindings(),
     };
-    const fileReport: ConfigurationErrorReport = { source: sources.fileName || '.nethackrc', errors: [] };
+    const fileReport: ConfigurationErrorReport = { source: sources.fileName || get_configfile(), errors: [] };
     parseConfiguration(rc, result, fileReport, true);
     result.configErrors.push(fileReport);
     result.commandBindings.finishConfiguration();

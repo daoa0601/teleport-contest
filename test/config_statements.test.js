@@ -18,6 +18,7 @@ import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
+import { errorsInConfigFile } from './support/config-file.js';
 const PLAY = 'OPTIONS=!legacy,!tutorial,!autopickup,name:Traveler';
 async function start(nethackrc) {
     return runSegment({
@@ -36,7 +37,7 @@ void test('an unrecognized statement reports the line and waits for acknowledgme
     const engine = await start([PLAY, 'FOO=bar'].join('\n'));
     assert.match(screen(engine), /FOO=bar/);
     assert.match(screen(engine), / \* Line 2: Unknown config statement\./);
-    assert.match(screen(engine), /1 error in \.nethackrc\./);
+    assert.match(screen(engine), errorsInConfigFile(1));
     assert.match(screen(engine), /Hit return to continue:/);
     assert.equal(engine.state.moves, 0);
     engine.inputGate.feed('\n');
@@ -46,7 +47,7 @@ void test('an unrecognized statement reports the line and waits for acknowledgme
 void test('a statement without a delimiter is not a config statement', async () => {
     const engine = await start([PLAY, 'OPTIONS'].join('\n'));
     assert.match(screen(engine), / \* Line 2: Not a config statement, missing '='\./);
-    assert.match(screen(engine), /1 error in \.nethackrc\./);
+    assert.match(screen(engine), errorsInConfigFile(1));
 });
 void test('a section header before any CHOOSE is an error but not fatal', async () => {
     const engine = await start([PLAY, '[alpha]', 'NAME=Nobody'].join('\n'));
@@ -136,7 +137,7 @@ void test('WARNINGS syntax errors wait for a return without a counted summary', 
     const engine = await start([PLAY, 'WARNINGS=x'].join('\n'));
     assert.match(screen(engine), /^Syntax error in WARNINGS$/m);
     assert.match(screen(engine), /Hit return to continue:/);
-    assert.doesNotMatch(screen(engine), /error in \.nethackrc\./);
+    assert.doesNotMatch(screen(engine), /errors? in \/Users\/davidbau\//);
     assert.equal(engine.state.moves, 0);
     engine.inputGate.feed('\n');
     await engine.runUntilInputNeeded();
@@ -156,7 +157,7 @@ void test('raw diagnostics keep their position among counted errors', async () =
     text = screen(engine);
     assert.match(text, /^Syntax error in WARNINGS$/m);
     assert.match(text, / \* Line 2: Unknown config statement\./);
-    assert.match(text, /1 error in \.nethackrc\./);
+    assert.match(text, errorsInConfigFile(1));
     assert.ok(text.indexOf('Syntax error in WARNINGS')
         < text.indexOf('Unknown config statement'));
     assert.match(text, /Hit return to continue:/);
@@ -254,7 +255,7 @@ void test('a long AUTOCOMPLETE diagnostic keeps its prefix and counts as early r
     const engine = await start(`${PLAY}\nAUTOCOMPLETE=${command}`);
     const text = screen(engine);
     assert.match(text, /^Bad autocomplete: invalid extended command 'unknown_/);
-    assert.doesNotMatch(text, /\.\.\.|discarded_suffix|error in \.nethackrc\./);
+    assert.doesNotMatch(text, /\.\.\.|discarded_suffix|errors? in \/Users\/davidbau\//);
     assert.match(text, /Hit return to continue:/);
     assert.equal(engine.state.earlyRawMessages, 2);
     assert.equal(engine.state.moves, 0);

@@ -13,7 +13,7 @@ import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
 import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './allmain.js';
 import { initializeFruitRegistry } from './message_types.js';
-import { displayConfigurationErrors, parseNethackOptions, parseNethackrc } from './cfgfiles.js';
+import { displayConfigurationErrors, get_configfile, parseNethackOptions, parseNethackrc } from './cfgfiles.js';
 import type { NethackConfiguration } from './cfgfiles.js';
 import { rawPrint } from './input.js';
 import { genl_player_selection, plnamesuffix } from './role.js';
@@ -258,7 +258,7 @@ export class Engine {
         this._seed = opts.seed || 0;
         this._datetime = opts.datetime || null;
         this._nethackrc = opts.nethackrc || '';
-        this._nethackrcFileName = opts.nethackrcFileName || '.nethackrc';
+        this._nethackrcFileName = opts.nethackrcFileName || get_configfile();
         this._nethackOptions = opts.nethackOptions ?? null;
         // Save files, bones, and records share this Web Storage interface in
         // both the browser and headless engine.

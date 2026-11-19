@@ -49,7 +49,7 @@ import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
 import { attributeName, colorAttrToString, colorName, matchAttributeName, matchColorName, parseColorAttr, parseMenuColoring, queryAttr, queryColorMenu } from './coloratt.js';
-import { cutConfigBytes } from './cfgfiles.js';
+import { cutConfigBytes, get_configfile } from './cfgfiles.js';
 import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PICK_NONE, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, def_warnsyms, STONE, } from './const.js';
 import { editSymset } from './options.js';
 // C options.c:ask_do_tutorial(). Empty acceptance rebuilds the menu with
@@ -3305,8 +3305,7 @@ export function parseAutopickupException(value, addError) {
 export async function option_help() {
     const lines = [
         '', '                 NetHack Options Help:', '',
-        // Replay configuration supplies contents without a host file path.
-        'Set options as OPTIONS=<options> in .nethackrc',
+        `Set options as OPTIONS=<options> in ${get_configfile()}`,
         'or use `NETHACKOPTIONS="<options>"\' in your environment',
         '(<options> is a list of options separated by commas)',
         'or press "O" while playing and use the menu.', '',

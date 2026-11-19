@@ -6,6 +6,7 @@ import { Engine, runSegment } from '../js/jsmain.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { parseNethackrc } from '../js/cfgfiles.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { errorsInConfigFile } from './support/config-file.js';
 const CHARACTER = 'OPTIONS=name:Traveler,role:ranger,race:human,gender:male,align:neutral';
 const PLAY = 'OPTIONS=!legacy,!tutorial,!autopickup';
 async function start(options) {
@@ -30,7 +31,7 @@ function assertPlainAcknowledgment(engine) {
 void test('an unknown pet type is reported before game creation and waits for acknowledgment', async () => {
     const engine = await start('OPTIONS=pettype:lizard');
     assert.match(screen(engine), / \* Line 3: Unrecognized pet type 'lizard'\./);
-    assert.match(screen(engine), /1 error in \.nethackrc\./);
+    assert.match(screen(engine), errorsInConfigFile(1));
     assert.match(screen(engine), /Hit return to continue:/);
     assert.doesNotMatch(screen(engine), /--More--/);
     assert.equal(engine.state.moves, 0);
@@ -57,7 +58,7 @@ for (const option of ['pettype', 'pet:']) {
     void test(`a missing value for ${option} reports the supplied option spelling`, async () => {
         const engine = await start(`OPTIONS=${option}`);
         assert.ok(screen(engine).includes(` * Line 3: Missing parameter for '${option}'.`));
-        assert.match(screen(engine), /1 error in \.nethackrc\./);
+        assert.match(screen(engine), errorsInConfigFile(1));
     });
 }
 for (const option of ['dogname', 'catname', 'horsename']) {
@@ -65,13 +66,13 @@ for (const option of ['dogname', 'catname', 'horsename']) {
         void test(`negated ${option}${suffix} reports the native negation error`, async () => {
             const engine = await start(`OPTIONS=!${option}${suffix}`);
             assert.ok(screen(engine).includes(` * Line 3: The ${option} option may not both have a value and be negated.`));
-            assert.match(screen(engine), /1 error in \.nethackrc\./);
+            assert.match(screen(engine), errorsInConfigFile(1));
         });
     }
     void test(`${option} longer than the option limit is rejected before copying the name`, async () => {
         const engine = await start(`OPTIONS=${option}:${'a'.repeat(129)}`);
         assert.match(screen(engine), / \* Line 3: Option too long, max length is 128 characters\./);
-        assert.match(screen(engine), /1 error in \.nethackrc\./);
+        assert.match(screen(engine), errorsInConfigFile(1));
         engine.inputGate.feed('\n');
         await engine.runUntilInputNeeded();
         assert.equal(engine.state.flags[option], undefined);
@@ -91,7 +92,7 @@ for (const option of ['dogname', 'catname', 'horsename']) {
     void test(`a repeated ${option} warns but still replaces the name`, async () => {
         const engine = await start(`OPTIONS=${option}:Sirius\nOPTIONS=${option}:Orion`);
         assert.ok(screen(engine).includes(`Line 4: compound option specified multiple times: ${option}.`));
-        assert.match(screen(engine), /1 error in \.nethackrc\./);
+        assert.match(screen(engine), errorsInConfigFile(1));
         engine.inputGate.feed('\n');
         await engine.runUntilInputNeeded();
         assert.equal(engine.state.flags[option], 'Orion');
@@ -105,7 +106,7 @@ void test('pet errors accumulate right to left and echo each source line only on
     const cat = text.indexOf('Line 5: The catname option');
     const pet = text.indexOf("Line 5: Unrecognized pet type 'lizard'.");
     assert.ok(dog >= 0 && dog < cat && cat < pet, text);
-    assert.match(text, /3 errors in \.nethackrc\./);
+    assert.match(text, errorsInConfigFile(3));
 });
 void test('a duplicate pet option warns and still applies the later physical line', async () => {
     const engine = await start('OPTIONS=pettype:cat\nOPTIONS=pet:dog');
@@ -118,7 +119,7 @@ for (const options of ['pettype:cat,pet:dog', 'pet:cat,pettype:dog']) {
     void test(`a duplicate in ${options} retains the pet alias in its warning`, async () => {
         const engine = await start(`OPTIONS=${options}`);
         assert.match(screen(engine), /Line 3: compound option specified multiple times: pettype \(via alias: pet\)\./);
-        assert.match(screen(engine), /1 error in \.nethackrc\./);
+        assert.match(screen(engine), errorsInConfigFile(1));
         engine.inputGate.feed('\n');
         await engine.runUntilInputNeeded();
         assert.equal(engine.state.preferred_pet, 'c');
@@ -129,7 +130,7 @@ void test('a pet alias applies to remaining duplicate warnings on its line and r
     const text = screen(engine);
     assert.equal(text.split('Line 3: compound option specified multiple times: pettype (via alias: pet).').length - 1, 2);
     assert.match(text, /Line 4: compound option specified multiple times: pettype\.\n/);
-    assert.match(text, /3 errors in \.nethackrc\./);
+    assert.match(text, errorsInConfigFile(3));
     engine.inputGate.feed('\n');
     await engine.runUntilInputNeeded();
     assert.equal(engine.state.preferred_pet, '');
@@ -138,7 +139,7 @@ for (const alias of ['permablind', '!permadeaf', 'prayconfirm', 'male', 'charact
     void test(`a later ${alias} alias adds the pet alias to a duplicate warning`, async () => {
         const engine = await start(`OPTIONS=pettype:cat,pettype:dog,${alias}`);
         assert.match(screen(engine), /Line 3: compound option specified multiple times: pettype \(via alias: pet\)\./);
-        assert.match(screen(engine), /1 error in \.nethackrc\./);
+        assert.match(screen(engine), errorsInConfigFile(1));
     });
 }
 void test('an alias to the left of duplicate pet options does not affect their warning', async () => {
@@ -192,14 +193,14 @@ for (const source of ['file', 'environment']) {
 }
 void test('each configuration source applies settings before its own acknowledgment', async () => {
     const engine = await startEnvironment('pettype:cat,dogname:Wags,!catname', 'OPTIONS=pettype:none,catname:Mews,!dogname');
-    assert.match(screen(engine), /1 error in \.nethackrc\./);
+    assert.match(screen(engine), errorsInConfigFile(1));
     assert.equal(engine.state.preferred_pet, 'n');
     assert.equal(engine.state.flags.catname, 'Mews');
     assert.equal(engine.state.flags.dogname, undefined);
     engine.inputGate.feed('\n');
     await engine.runUntilInputNeeded();
     assert.match(screen(engine), /1 error in NETHACKOPTIONS\./);
-    assert.match(screen(engine), /1 error in \.nethackrc\./);
+    assert.match(screen(engine), errorsInConfigFile(1));
     assert.equal(engine.state.preferred_pet, 'c');
     assert.equal(engine.state.flags.catname, 'Mews');
     assert.equal(engine.state.flags.dogname, 'Wags');
@@ -263,7 +264,7 @@ void test('a continued option line reports its final physical line and echoes it
     assert.match(text, /\n   pettype:lizard\n/);
     assert.match(text, /Line 4: Unrecognized pet type 'lizard'\./);
     assert.match(text, /Line 4: The dogname option/);
-    assert.match(text, /2 errors in \.nethackrc\./);
+    assert.match(text, errorsInConfigFile(2));
     assert.doesNotMatch(text, /OPTIONS=!dogname/);
 });
 void test('spaces before a continuation remain part of a pet name', async () => {
@@ -338,13 +339,13 @@ void test('a long source echo is shortened with an ellipsis and keeps its final 
     assert.match(screen(engine), /aaa\.\.\.END\n/);
     assert.match(screen(engine), /Option too long, max length is 128 characters\./);
     assert.ok(engine.display);
-    assert.equal(engine.display.cursorRow, 10);
+    assert.equal(engine.display.cursorRow, 11);
     assert.equal(engine.display.cursorCol, 'Hit return to continue: '.length);
 });
 for (const standout of [false, true]) {
     void test(`startup acknowledgments stay plain when file standout=${standout} and the environment reverses it`, async () => {
         const engine = await startEnvironment(`${standout ? '!' : ''}standout,pettype:lizard`, `OPTIONS=${standout ? '' : '!'}standout,pettype:lizard`);
-        assert.match(screen(engine), /1 error in \.nethackrc\./);
+        assert.match(screen(engine), errorsInConfigFile(1));
         assertPlainAcknowledgment(engine);
         engine.inputGate.feed('\n');
         await engine.runUntilInputNeeded();
@@ -363,7 +364,7 @@ void test('a pet name exceeding the file buffer is skipped before option parsing
     const engine = await start(`OPTIONS=dogname:${'a'.repeat(1100)}`);
     // Native rejects an overfull fgets buffer before config_error_nextline().
     assert.match(screen(engine), /Line 2: Line too long, skipping\./);
-    assert.match(screen(engine), /1 error in \.nethackrc\./);
+    assert.match(screen(engine), errorsInConfigFile(1));
     engine.inputGate.feed('\n');
     await engine.runUntilInputNeeded();
     assert.equal(engine.state.flags.dogname, undefined);
