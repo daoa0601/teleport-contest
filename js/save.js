@@ -1,39 +1,22 @@
 // save.js — Web-Storage-backed save.
 // C refs: save.c. The restore.c dorecover()/restgamestate() flow lives in
 // restore.ts.
-import { resetErinys } from './monster_data.js';
 import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
-import { clearMessageWindow, displayMessageWindow, rememberToplines } from './topl.js';
+import { clearMessageWindow, rememberToplines } from './topl.js';
 import { tty_exit_nhwindows } from './wintty.js';
-import { docrt, reglyphSymbolSet } from './display.js';
+import { docrt } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { doneObjectCleanup } from './end.js';
-import { restoreSavedLightSources } from './light.js';
 import { promptChoice, promptYesNo } from './query.js';
-import { requireInitializedHero } from './hero_types.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { encodeSavedGraph } from './saved_graph.js';
-import { decodeSavedGame } from './persistent_state_validation.js';
-import { cmdq_clear } from './cmd.js';
 import { nomul } from './hack.js';
-import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
-import { rollQuestFigureGenders } from './role.js';
-import { resolveDungeonIdentities } from './dungeon.js';
-import { purgeDeadMonsters, restoreMonsterInventoryOwnership } from './mon.js';
-import { CQ_CANNED, CQ_REPEAT, FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING, Upolyd } from './const.js';
-import { vision_reset_new_level } from './vision.js';
-import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
-import { weaponNeedsBashingMessage } from './wield.js';
-import { GRAPPLING_HOOK, PICK_AXE } from './object_data.js';
+import { copyPersistentState, SAVE_VERSION } from './state_schema.js';
+import { purgeDeadMonsters } from './mon.js';
+import { FULL_MOON, LUCKMAX, LUCKMIN } from './const.js';
+import { rewindEngravingsForSave } from './engrave.js';
 import { forgetTempleEntry } from './priest.js';
-import { restore_waterlevel } from './mkmaze.js';
-import { restoreLevelRegions } from './region.js';
-import { oinit } from './o_init.js';
-import { restoreScheduledLevelChange } from './do.js';
-import { recorderRestoredTime } from './calendar.js';
-import { restoreSavedTimers } from './timeout.js';
-import { restoreLevelChains, restoreMessageHistory, restoreMonsterWormHeads, validMonsterWormBodies, } from './restore.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 // Port only: derives the storage key from the player name.

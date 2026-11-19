@@ -1,7 +1,7 @@
 // Persistent hero properties and the sources which grant them.
 // C ref: prop.h intrinsic and extrinsic property masks.
 import { game } from './gstate.js';
-import { I_SPECIAL, TIMEOUT, TT_PIT, W_ART, W_ARTI } from './const.js';
+import { I_SPECIAL, TIMEOUT, W_ART, W_ARTI } from './const.js';
 import { MUMMY_WRAPPING } from './object_data.js';
 import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
 import { monsterIsFlyer, monsterIsSwimmer } from './mondata.js';

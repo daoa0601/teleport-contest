@@ -5,7 +5,7 @@
 // dorecover()/restgamestate() (restoreGame), and
 // restore_msghistory(); mon.c hide_monst(), whose only native caller is
 // getlev().
-import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { game, requireGameLevel } from './gstate.js';
 import { saveKey } from './save.js';
 import { eachObjectInBonesGraph, eachTopLevelBonesObject, sanitizeMonsterName, shiftBonesDestinations, } from './bones.js';
 import { decodeSavedGame } from './persistent_state_validation.js';
@@ -35,11 +35,11 @@ import { consumeInventoryItem } from './invent.js';
 import { objectName, pluralizeObjectNoun } from './objnam.js';
 import { deleteTrap } from './trap.js';
 import { PanicTermination } from './panic_termination.js';
-import { attemptMonsterRestrap, hideMonsterUnder } from './mon.js';
+import { hideMonsterUnder } from './mon.js';
 import { monsterHidesUnder } from './mondata.js';
-import { MONSTER_ALIGNMENT, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_ALIGNMENT } from './monster_data.js';
 import { isok } from './cmd.js';
-import { AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, ismnum, MAGIC_PORTAL, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, mon_offmap, NON_PM, CQ_CANNED, CQ_REPEAT, DEFUNCT_MONSTER, M_AP_NOTHING, PL_NSIZ, Upolyd, } from './const.js';
+import { AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, ismnum, MAGIC_PORTAL, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, MAX_NUM_WORMS, mon_offmap, NON_PM, CQ_CANNED, CQ_REPEAT, DEFUNCT_MONSTER, M_AP_NOTHING, PL_NSIZ, Upolyd, } from './const.js';
 import { GRAPPLING_HOOK, ICE_BOX, PICK_AXE, SLIME_MOLD } from './object_data.js';
 import { validSavedHeroAlignment } from './character_validation.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';

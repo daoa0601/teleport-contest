@@ -52,7 +52,7 @@ void test('a bullwhip can snatch a cursed secondary weapon because it is not wel
     setTwoWeaponCombat(true);
     const input = resetInputState();
     installPagerInput(input, { expected: /soldier|whip|dagger/, limit: 6 });
-    const turn = await takeMonsterTurn(monster, game, range => range === 4 ? 3 : range === 2 ? 1 : 0);
+    await takeMonsterTurn(monster, game, range => range === 4 ? 3 : range === 2 ? 1 : 0);
 
     assert.equal(secondary.ocarry, monster);
     assert.equal(game.uwep, primary);
@@ -77,7 +77,7 @@ void test('monster bullwhip messages omit the wielded corpse species', async () 
         const messages: string[] = [];
         input.beforeRead = () => { messages.push(game._pending_message); };
         installPagerInput(input, { expected: /soldier|whip|corpse/, limit: 6 });
-        const turn = await takeMonsterTurn(monster, game, range => range === 4 ? destination : 0);
+        await takeMonsterTurn(monster, game, range => range === 4 ? destination : 0);
         messages.push(game._pending_message);
 
         assert.ok(messages.some(message => message.includes("The bullwhip wraps around the corpse you're wielding!")),

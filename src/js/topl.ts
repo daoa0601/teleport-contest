@@ -5,10 +5,10 @@
 import { game } from './gstate.js';
 import { bot } from './botl.js';
 import { _buildScreenOutput, writeMapRow } from './wintty.js';
-import { plineWithContinuation, setTopline } from './pline.js';
+import { setTopline } from './pline.js';
 import type { ToplineOptions } from './pline.js';
 import { nhgetch } from './input.js';
-import { COLNO, ROWNO, MAX_MSG_HISTORY, PICK_NONE, PICK_ONE, QBUFSZ } from './const.js';
+import { COLNO, ROWNO, MAX_MSG_HISTORY, QBUFSZ } from './const.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 import { readchar, keyText } from './cmd.js';
 import { flush_screen } from './display.js';
@@ -51,7 +51,7 @@ export function clearMessageWindow(coveredRows?: number) {
 
 export const CTRL_P = 16;
 
-export type MessageWindowMode = 's' | 'c' | 'f' | 'r';
+type MessageWindowMode = 's' | 'c' | 'f' | 'r';
 
 // Port only: decode the runtime message-history mode option.
 // iflags.prevmsg_window holds the option's first letter; initoptions

@@ -113,8 +113,8 @@ import {
 import { On_stairs } from './stairs.js';
 import { body_part, heroSpecies } from './polyself.js';
 
-export interface SpellCastOptions { atSelf?: boolean; force?: boolean; state?: GameState; }
-export interface SpellCastResult { spentTime: boolean; heroDied: boolean; }
+interface SpellCastOptions { atSelf?: boolean; force?: boolean; state?: GameState; }
+interface SpellCastResult { spentTime: boolean; heroDied: boolean; }
 
 // C spell.c:known_spell()
 export function knownSpell(otyp: number, state: GameState = game): 'unknown' | 'fresh' | 'stale' | 'forgotten' {
@@ -779,7 +779,7 @@ export function identifySpellbooks(state: GameState): void {
 // ── spell.c admission: rejectcasting(), spelleffects_check(), spell_backfire(),
 //    percent_success() ──
 type SpellReference = Pick<MemorizedSpell, 'otyp'>;
-export interface SpellAdmission { allowed: boolean; spentTime: boolean; energy: number; }
+interface SpellAdmission { allowed: boolean; spentTime: boolean; energy: number; }
 
 const HEALING_BONUS_SPELLS = new Set([
     SPE_HEALING, SPE_EXTRA_HEALING, SPE_CURE_BLINDNESS,

@@ -5,44 +5,14 @@
 // shopkeeper runtime behavior lives in shk.ts.
 
 import {
-    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS,
-    FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS,
-    GEM_CLASS,
+    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS,
+    SPBOOK_CLASS, WAND_CLASS, GEM_CLASS,
 } from './objclass.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import {
-
-    CORR,
-
-    D_ISOPEN,
-
-    D_LOCKED,
-
-    D_NODOOR,
-
-    D_TRAPPED,
-
-    DUST,
-
-    HEALTHY_TIN,
-
-    IS_ROOM,
-
-    MM_ESHK,
-
-    PL_NSIZ,
-
-    ROOM,
-
-    RLOC_NOMSG,
-
-    ROOMOFFSET,
-
-    SDOOR,
-
-    SHOPBASE,
-
+    CORR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DUST, HEALTHY_TIN, IS_ROOM, MM_ESHK, PL_NSIZ, ROOM,
+    RLOC_NOMSG, ROOMOFFSET, SDOOR, SHOPBASE,
 } from './const.js';
 import { convertSecretDoor } from './detect.js';
 import { specialLevelAt, In_mines } from './dungeon.js';
@@ -71,7 +41,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position, Room } from './map_types.js';
 import type { ShopType } from './data_types.js';
-import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import type { Shopkeeper } from './shop_types.js';
 import { roomsAt } from './hack.js';
 import { objectWeight } from './mkobj.js';

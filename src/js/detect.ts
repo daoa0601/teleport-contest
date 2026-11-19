@@ -66,7 +66,7 @@ import { body_part, heroPolyGender } from './polyself.js';
 
 type DetectionTrap = Pick<Trap, 'ttyp' | 'tx' | 'ty'>;
 
-export type AutomaticSearchResult = boolean | { statueTrap: Position };
+type AutomaticSearchResult = boolean | { statueTrap: Position };
 
 // C detect.c:trap_detect(), detect_obj_traps(), display_trap_map(), sense_trap().
 // The caller owns strange_feeling's naming prompt and source consumption.
@@ -79,9 +79,9 @@ const HERE = 1, ELSEWHERE = 2;
 // Physical source consumption and trycall() belong to the caller.
 export interface DetectionResult { result: 0 | 1; known: boolean; strangeFeeling: boolean; }
 
-export interface DetectionOptions { state?: GameState; }
+interface DetectionOptions { state?: GameState; }
 
-export interface DetectionObject {
+interface DetectionObject {
     otyp: number;
     oclass: number;
     quan: number;

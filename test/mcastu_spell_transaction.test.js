@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_ANGRY, MMOVE_DONE, M_SEEN_MAGR, NO_MINVENT } from '../js/const.js';
-import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { mcastSpell, movementSpellContext } from '../js/mcastu.js';

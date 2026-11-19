@@ -84,11 +84,11 @@ import { withIndefiniteArticle } from './objnam.js';
 
 import { showDisclosureOverlay } from './windows.js';
 
-export type MapPositionPickType = typeof LOOK_TRADITIONAL | typeof LOOK_QUICK
+type MapPositionPickType = typeof LOOK_TRADITIONAL | typeof LOOK_QUICK
     | typeof LOOK_ONCE | typeof LOOK_VERBOSE;
-export type PositionDescription = (x: number, y: number) => string | null | undefined | Promise<string | null | undefined>;
-export type ValidLocation = (x: number, y: number) => boolean;
-export interface MapPositionSelection extends Position {
+type PositionDescription = (x: number, y: number) => string | null | undefined | Promise<string | null | undefined>;
+type ValidLocation = (x: number, y: number) => boolean;
+interface MapPositionSelection extends Position {
     pickType: MapPositionPickType;
 }
 export interface MapPositionOptions {

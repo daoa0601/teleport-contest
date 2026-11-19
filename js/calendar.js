@@ -92,7 +92,7 @@ export function fixedCalendar(datetime) {
     const date = recorderLocalDate(datetime);
     if (!date)
         return { moonphase: null, friday13: false };
-    const { year, month, day, weekday } = date;
+    const { year, month, day } = date;
     const diy = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 1)) / 86400000);
     const goldn = ((year - 1900) % 19) + 1;
     let epact = (11 * goldn + 18) % 30;

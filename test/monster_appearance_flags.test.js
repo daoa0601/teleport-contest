@@ -48,7 +48,7 @@ void test('cancellation still puts a revealed known object mimic to sleep', asyn
 void test('a breath ray reports missing a known monster disguise', async () => {
     await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
-    const mimic = await knownMonsterDisguise();
+    await knownMonsterDisguise();
     requirePlayingGame(game);
     const messages = [];
     initRng(2n);

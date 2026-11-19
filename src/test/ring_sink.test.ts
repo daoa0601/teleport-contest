@@ -1,4 +1,4 @@
-import {placeCreatedObject} from '../js/mkobj.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 import type { KnownObjectOverrides } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
@@ -7,7 +7,6 @@ import assert from 'node:assert/strict';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { ROOM, SINK } from '../js/const.js';
 import { dropRingIntoSink } from '../js/do.js';
-import { initRng, rn2 } from '../js/rng.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

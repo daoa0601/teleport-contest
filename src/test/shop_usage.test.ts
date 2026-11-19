@@ -1,6 +1,6 @@
 import { requireScreenRow } from './support/screen.js';
 import type { KnownObjectOverrides } from './support/game-objects.js';
-import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
+import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';

@@ -6,7 +6,7 @@ import { W_ARM, LEVEL_TIMER_KIND } from '../js/const.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
 import { roles } from '../js/role.js';
 import { requireScreenRow } from './support/screen.js';
-import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
+import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import { planInput } from './support/planned-input.js';
 import assert from 'node:assert/strict';
@@ -28,7 +28,6 @@ import { addInventoryObject, chargedWand, floorObject, knownObject, } from './su
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
-import { finishHeroMonsterKill } from '../js/mon.js';
 void test('a digging zap changes terrain without retaining its answered direction query', async () => {
     const level = freshGameplayRoom();
     requirePlayingGame(game);

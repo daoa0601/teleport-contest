@@ -13,7 +13,7 @@ import { MAGIC_PORTAL } from '../js/const.js';
 // quest case is onquest() (do.c:1892).  The special message is freed once
 // delivered, so a later return to the level cannot repeat it.
 function questArrivalRoom() {
-    const { source, destination } = freshConnectedLevels({ role: 'healer' });
+    const { destination } = freshConnectedLevels({ role: 'healer' });
     const cache = game._levelCache;
     assert.ok(cache);
     game.dungeons.push(createDungeon({ dname: 'The Quest' }));

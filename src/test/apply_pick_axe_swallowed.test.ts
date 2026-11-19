@@ -13,7 +13,6 @@ import { setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
-import type { GameObject } from '../js/object_types.js';
 
 async function engulfedTwoWeaponHero() {
     const input = freshTurnRoom();

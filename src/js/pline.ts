@@ -13,7 +13,6 @@ import {
 import { nhgetch, rawPrint, writeRawText } from './input.js';
 import { BUFSZ, LL_NONE, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PLNMSG_UNKNOWN, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
-import { NO_COLOR } from './terminal.js';
 import { diagnosticReason, fuzzerMode } from './diagnostics.js';
 import { panic } from './end.js';
 import { paniclog } from './novel_tribute.js';

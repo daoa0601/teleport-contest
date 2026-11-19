@@ -103,7 +103,7 @@ void test('gold detection finds coins nested in a monster inventory without empt
     assert.equal(box.contents?.includes(coins), true);
 });
 void test('blessed treasure detection observes nested and buried objects, then remembers only the floor top', async () => {
-    const level = await detectionRoom();
+    await detectionRoom();
     requirePlayingGame(game);
     const buried = await floorObject(APPLE, 30, 10, { dknown: false });
     addBuriedObject(buried, 30, 10);

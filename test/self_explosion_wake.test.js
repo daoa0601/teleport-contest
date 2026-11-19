@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { game, requireGameLevel } from '../js/gstate.js';
+import { requireGameLevel } from '../js/gstate.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { resolveMonsterSelfExplosion } from '../js/mhitu.js';
 import { AD_BLND, AT_EXPL } from '../js/monster_attack_types.js';

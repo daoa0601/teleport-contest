@@ -28,7 +28,6 @@ import { heroGoldAmount, monsterGoldAmount } from '../js/hack.js';
 
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 
-const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 
 
 function monsterLevel(species: number): number {
@@ -224,7 +223,7 @@ void test('dropped gold pays debt before establishing credit', async t => {
 });
 
 void test('an out-of-stock item draws no interest', async t => {
-    const { shopkeeper } = await sellShop(t, [],
+    await sellShop(t, [],
         { shoptype: SHOPBASE + 3 });
     requirePlayingGame(game); // potion shop
     const dagger = await floorObject(DAGGER, 10, 10);

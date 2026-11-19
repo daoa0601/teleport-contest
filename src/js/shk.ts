@@ -8,17 +8,15 @@
 // customer, and hero.
 
 import {
-    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS,
-    FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS,
-    COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS,
+    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS,
+    SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS,
 } from './objclass.js';
 import {
-    objectBaseWeight, objectBaseCost, objectMagic, objectCharged, BAG_OF_TRICKS, BRASS_LANTERN,
-    CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY,
-    LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, DUNCE_CAP,
-    OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK,
-    MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER,
-    ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE,
+    objectBaseWeight, objectBaseCost, objectMagic, objectCharged, BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE,
+    CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, MAGIC_FLUTE, MAGIC_LAMP,
+    MAGIC_MARKER, OBJECT_NAMES, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS,
+    PICK_AXE, DWARVISH_MATTOCK, MIRROR, POT_WATER, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK,
+    LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE,
 } from './object_data.js';
 import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -28,21 +26,8 @@ import type { Monster, ShopBillEntry, MonsterFlag } from './monster_types.js';
 import { isRoom } from './map_types.js';
 import type { Room, Position, Trap, ShopDamage, MapLocation } from './map_types.js';
 import {
-
-    formatFeltMessage,
-
-    pline,
-
-    plineWithContinuation,
-
-    publishHeardMessage,
-
-    recordGameLogEvent,
-
-    verbalize,
-
+    formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, verbalize,
     impossible,
-
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
@@ -61,8 +46,9 @@ import {
 } from './mondata.js';
 import { hiddenGold } from './vault.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
-import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval,
-    pricedInventoryLine, oOn } from './invent.js';
+import {
+    currency, mergable, addInventoryItem, countContents, finishInventoryRemoval, pricedInventoryLine, oOn,
+} from './invent.js';
 import {
     simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming,
     simpleObjectNameWithArticle, objectDescription, paymentObjectDescription,
@@ -81,7 +67,7 @@ import { moveSpecial, specialMoverSeesHero } from './priest.js';
 import { dropObjectAtHero } from './do.js';
 import {
     splitObjectStack, deallocateObject, linkObjectToMonsterInventory, mksobj, unlinkObject, nextIdent,
-    nextObjectId, objectWeight, quantity, placeObject, remove_object, billDummyObject, floorPileAt,
+    objectWeight, quantity, placeObject, remove_object, billDummyObject, floorPileAt,
 } from './mkobj.js';
 import { recordAchievement } from './insight.js';
 import { getObjectLocation } from './zap.js';
@@ -139,16 +125,6 @@ export function insideShopRoomAt(state: GameState, x: number, y: number): ShopRo
     return room ? { room, roomno } : null;
 }
 
-// Part of C shk.c:costly_spot(), shkcatch(): the first in_rooms shop at a
-// spot.
-// C callers using *in_rooms() select the first matching shop. Membership
-// checks must use the full roomsAt() list instead.
-function firstShopRoomAt(state: GameState, x: number, y: number): ShopRoom | null {
-    const roomno = roomsAt(state.level, x, y, SHOPBASE)[0];
-    if (roomno === undefined) return null;
-    const room = roomForRoomno(state.level, roomno);
-    return room ? { room, roomno } : null;
-}
 
 // C shk.c:inhishop().
 // C inhishop() includes the room boundary, unlike inside_shop().  Monster
@@ -526,7 +502,7 @@ export function repriceDiscoveredGems(otyp: number, state: GameState = game): vo
     }
 }
 
-export interface BilledObject {
+interface BilledObject {
     resident: BilledShopkeeper;
     entry: ShopBillEntry;
 }
@@ -3237,7 +3213,6 @@ export async function minimumShopPurchase(resident: Monster, state: GameState = 
 // Also C shk.c:bp_to_obj(): the inlined o_id lookup for each bill entry.
 export async function itemizedShopBill(resident: Monster | null | undefined, state: GameState = game): Promise<ShopBillItem[]> {
     if (!hasShopBill(resident)) return [];
-    const objects = objectsInTimerGraph(state);
     const bill: ShopBillItem[] = [];
     for (const [billIndex, entry] of resident.eshk.bill.entries()) {
         const object = bpToObj(entry, state);
@@ -3488,7 +3463,6 @@ function containerContentsKnown(object: GameObject): boolean {
 
 // Part of C shk.c:buy_container(): the container's billed purchases.
 function containedPurchases(resident: BilledShopkeeper, container: GameObject, state: GameState): GameObject[] {
-    const objects = objectsInTimerGraph(state);
     const purchases: GameObject[] = [];
     for (const entry of resident.eshk.bill) {
         const object = bpToObj(entry, state);
@@ -4037,7 +4011,7 @@ type SellAnswer = 'y' | 'n' | 'a' | 'q';
 
 type SaleQuery = (question: string, defaultAnswer: 'y' | 'n') => SellAnswer | Promise<SellAnswer>;
 
-export type ShopSaleResult = { sold: false }
+type ShopSaleResult = { sold: false }
     | { sold: true; credit: number }
     | { sold: true; offer: number };
 
@@ -4434,7 +4408,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
 // its prompt offers 'x'; mode 1 pages through them, re-reading the bill like
 // the native two-call sequence. These commands inspect inventory without
 // taking time; the invent.c report commands they extend live in invent.ts.
-export interface BillLine { object: GameObject | null; quantity: number; price: number }
+interface BillLine { object: GameObject | null; quantity: number; price: number }
 
 // C shk.c:doinvbill().
 export function doinvbill(mode: 0): BillLine[];
@@ -4444,7 +4418,6 @@ export function doinvbill(mode: 1): Promise<void>;
 export function doinvbill(mode: 0 | 1): BillLine[] | Promise<void> {
     const keeper = currentShopResident();
     if (!keeper || !shopkeeperInOwnShop(keeper)) return mode === 0 ? [] : Promise.resolve();
-    const objects = [...objectsInTimerGraph(), ...game.billObjects ?? []];
     const lines: BillLine[] = [];
     for (const entry of keeper.eshk.bill ?? []) {
         const object = bpToObj(entry);

@@ -151,7 +151,7 @@ export async function markQuestNemesisDead(
     return true;
 }
 
-export type QuestArrival = {
+type QuestArrival = {
     page?: QuestText | null;
     line?: string | null;
     text?: QuestText | null;

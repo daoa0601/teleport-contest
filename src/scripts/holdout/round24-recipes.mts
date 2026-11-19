@@ -164,9 +164,6 @@ function create(monster: string): SessionAction[] { return [keys('\x07'), answer
 function clearMonsters(): SessionAction[] {
     return [...wish('blessed scroll of genocide'), identify(), choose('of genocide', 'r*'), answer('What class of monsters', '*\r')];
 }
-function wait(turns: number): SessionAction[] {
-    return Array.from({ length: turns }, () => [keys('m.'), answer('Call ', '\r'), answer('Die?', 'n')]).flat();
-}
 function identify(): SessionAction { return keys('\t\t\r'); }
 function choose(target: string, openKeys: string): SessionAction { return { type: 'select-menu-entry', target, openKeys, dismissMore: true }; }
 function answer(prompt: string, value: string): SessionAction { return { type: 'answer-prompt', prompt, value, dismissMore: true }; }

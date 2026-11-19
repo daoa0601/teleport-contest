@@ -7,158 +7,43 @@
 // halves. Effects own their exceptions to scroll disposal.
 
 import {
-    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, SCROLL_CLASS,
-    SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS,
-    CHAIN_CLASS,
+    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS,
+    GEM_CLASS, BALL_CLASS, CHAIN_CLASS,
 } from './objclass.js';
-import { OBJ_NAME,
-    objectMerge, objectMagic, objectCharged, BAG_OF_TRICKS, BELL_OF_OPENING,
+import {
+    OBJ_NAME, objectMerge, objectMagic, objectCharged, BAG_OF_TRICKS, BELL_OF_OPENING,
     BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CORNUTHAUM,
-    CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM,
-    ELVEN_MITHRIL_COAT, ELVEN_SHIELD, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN,
-    GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, HEAVY_IRON_BALL, HORN_OF_PLENTY, LEASH, LOADSTONE,
-    MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, OIL_LAMP,
-    POT_WATER, ROCK, ALCHEMY_SMOCK, CANDY_BAR, HAWAIIAN_SHIRT, SCR_AMNESIA, SCR_BLANK_PAPER,
-    SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR, SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON,
-    SCR_FIRE, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT,
-    SCR_REMOVE_CURSE, SCR_SCARE_MONSTER, SCR_STINKING_CLOUD, SCR_TELEPORTATION,
-    SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES, SLING, SPE_BLANK_PAPER,
-    SPE_BOOK_OF_THE_DEAD, SPE_CAUSE_FEAR, SPE_CHARM_MONSTER, SPE_CONFUSE_MONSTER,
-    SPE_CREATE_MONSTER, SPE_DETECT_FOOD, SPE_IDENTIFY, SPE_MAGIC_MAPPING, SPE_NOVEL,
+    CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT,
+    ELVEN_SHIELD, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
+    HEAVY_IRON_BALL, HORN_OF_PLENTY, LEASH, LOADSTONE, MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER,
+    OBJECT_NAMES, OIL_LAMP, POT_WATER, ROCK, ALCHEMY_SMOCK, CANDY_BAR, SCR_AMNESIA, SCR_BLANK_PAPER,
+    SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR, SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON, SCR_FIRE,
+    SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SCR_REMOVE_CURSE,
+    SCR_SCARE_MONSTER, SCR_STINKING_CLOUD, SCR_TELEPORTATION, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALE_MAIL,
+    SILVER_DRAGON_SCALES, SLING, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CAUSE_FEAR, SPE_CHARM_MONSTER,
+    SPE_CONFUSE_MONSTER, SPE_CREATE_MONSTER, SPE_DETECT_FOOD, SPE_IDENTIFY, SPE_MAGIC_MAPPING, SPE_NOVEL,
     SPE_REMOVE_CURSE, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING,
-    WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, YELLOW_DRAGON_SCALES,
-    objectDirection, } from './object_data.js';
+    WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, YELLOW_DRAGON_SCALES, objectDirection,
+} from './object_data.js';
 import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { is_shield } from './object_properties.js';
-import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, some_armor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
+import { adjustArmorAttributeBonus, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, some_armor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
 import { explode } from './explode.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove, heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 
 import {
-
-    A_CON,
-
-    A_STR,
-
-    A_WIS,
-
-    ACCESSIBLE,
-
-    COLNO,
-
-    CORR,
-
-    D_CLOSED,
-
-    D_LOCKED,
-
-    DOOR,
-
-    EXPL_FIERY,
-
-    G_EXTINCT,
-
-    G_GENOD,
-
-    G_NOCORPSE,
-
-    G_GONE,
-
-    GETOBJ_DOWNPLAY,
-
-    GETOBJ_EXCLUDE,
-
-    GETOBJ_EXCLUDE_SELECTABLE,
-
-    GETOBJ_SUGGEST,
-
-    In_endgame,
-
-    IS_AIR,
-
-    IS_OBSTRUCTED,
-
-    Is_earthlevel,
-
-    Is_rogue_level,
-
-    Is_waterlevel,
-
-    Luck,
-
-    M_SEEN_FIRE,
-
-    MM_EDOG,
-
-    MM_FEMALE,
-
-    MM_MALE,
-
-    MM_MINVIS,
-
-    MM_NOEXCLAM,
-
-    MM_NOMSG,
-
-    NO_MINVENT,
-
-    PLNMSG_TOWER_OF_FLAME,
-
-    POLY_REVERT,
-
-    ROWNO,
-
-    SDOOR,
-
-    SPE_LIM,
-
-    TT_BURIEDBALL,
-
-    Upolyd,
-
-    W_ARMH,
-
-    W_ART,
-
-    W_ARTI,
-
-    W_BALL,
-
-    W_CHAIN,
-
-    WT_IRON_BALL_INCR,
-
-    HAND,
-
-    HEAD,
-
-    LEG,
-
-    STOMACH,
-
-    LL_CONDUCT,
-
-    LL_GENOCIDE,
-
+    A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, CORR, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD,
+    G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
+    In_endgame, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Is_waterlevel, Luck, M_SEEN_FIRE,
+    MM_EDOG, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME,
+    POLY_REVERT, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN,
+    WT_IRON_BALL_INCR, HAND, HEAD, LEG, STOMACH, LL_CONDUCT, LL_GENOCIDE,
 } from './const.js';
-import { canSpotMonster, flashGlyphAt, map_invisible, newsym, shieldeff, transientMonsterGlyph } from './display.js';
+import { canSpotMonster, map_invisible, newsym, shieldeff } from './display.js';
 import { isok } from './cmd.js';
 import {
-
-    formatFeltMessage,
-
-    formatHeardMessage,
-
-    pline as syncPline,
-
-    plineWithContinuation,
-
-    plineWithContinuation as pline,
-
-    recordGameLogEvent,
-
-    impossible,
-
+    formatFeltMessage, formatHeardMessage, pline as syncPline, plineWithContinuation,
+    plineWithContinuation as pline, recordGameLogEvent, impossible,
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { revealSecretDoor, detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';
@@ -192,7 +77,7 @@ import { APRON_MESSAGES, CANDY_WRAPPERS, HAWAIIAN_BACKGROUNDS, HAWAIIAN_MOTIFS, 
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { deleteObject, updateUnpaidObjectPrice } from './shk.js';
 import { dropCursedSecondaryWeapon, chwepon, objectEnchantment, setWeaponEnchantment } from './wield.js';
-import { cansee, couldsee, clearAreaCells, vision_recalc } from './vision.js';
+import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { finishHeroDeath as defaultHeroDeath, finishHeroDeath as finishNativeHeroDeath } from './end.js';
 import { listGenocided } from './insight.js';
@@ -205,8 +90,8 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { ceilingName, levelHasCeiling, In_quest } from './dungeon.js';
 import {
     MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
-    nameToMonster, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName,
-    monsterHidesUnder, monsterIsAmorphous, monsterIsDemon, monsterIsFemale, monsterIsHider, monsterIsHuman,
+    nameToMonster, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName, monsterHidesUnder,
+    monsterIsAmorphous, monsterIsDemon, monsterIsFemale, monsterIsHider, monsterIsHuman,
     monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampire, monsterIsWhirly, monsterPassesWalls,
     heroCanChant, monsterDigests,
 } from './mondata.js';
@@ -217,8 +102,10 @@ import { recordLiteracy } from './literacy.js';
 import { promptYesNo } from './query.js';
 import { getLine } from './windows.js';
 import { readOrdinaryObject } from './readable_objects.js';
-import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters, removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages,
-    finishHeroMonsterKillOutcome, flashCreatedMonster,
+import {
+    angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters,
+    removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages, finishHeroMonsterKillOutcome,
+    flashCreatedMonster,
 } from './mon.js';
 import { monsterResistsEffect } from './zap.js';
 import { initializePet, tameMonster } from './dog.js';
@@ -239,8 +126,8 @@ import { monsterCensus } from './minion.js';
 import type { HeroGenocideCause } from './polyself.js';
 import type { MonsterNameGender } from './mondata.js';
 
-export type ScrollLevelChange = (...args: Parameters<typeof changeLevel>) => unknown;
-export type ScrollMonsterKill = NonNullable<RoomLightOptions['finishMonsterKill']>;
+type ScrollLevelChange = (...args: Parameters<typeof changeLevel>) => unknown;
+type ScrollMonsterKill = NonNullable<RoomLightOptions['finishMonsterKill']>;
 
 export interface ScrollEffectOptions {
     state?: GameState | undefined;
@@ -392,9 +279,9 @@ export function learnScroll(source: Pick<GameObject, 'otyp' | 'oclass'>, {
 // halves), stripspe(), p_glow1()..p_glow3(), wand_explode().
 // ---------------------------------------------------------------------------
 
-export interface RechargeResult { heroDied: boolean; damage?: number }
-export interface RingRechargeResult extends RechargeResult { damage: number }
-export interface RechargeRingOptions {
+interface RechargeResult { heroDied: boolean; damage?: number }
+interface RingRechargeResult extends RechargeResult { damage: number }
+interface RechargeRingOptions {
     publish?: MessagePublisher;
     random?: typeof rn2;
     rollOne?: typeof rnd;
@@ -649,7 +536,7 @@ export async function explodeWand(wand: GameObject, extraCharges = 0, state: Gam
     await exerciseAttribute(A_STR, false, state);
 }
 
-export interface RoomLightOptions {
+interface RoomLightOptions {
     radius?: number;
     source?: GameObject;
     finishMonsterKill?: FinishMonsterKill;
@@ -1874,7 +1761,7 @@ interface HeroBoulderOptions extends FallingBoulderOptions {
     skipSwallower?: boolean;
 }
 
-export interface FallingBoulderResult {
+interface FallingBoulderResult {
     dropped: true;
     heroDied: boolean;
 }

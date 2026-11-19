@@ -20,7 +20,7 @@ import { startHeroSickness } from '../js/potion.js';
 import { makeHeroVomiting } from '../js/potion.js';
 import { startHeroSliming } from '../js/potion.js';
 import { startHeroPetrification } from '../js/stoning.js';
-import { addInventoryObject, artifactObject, chargedWand, knownObject } from './support/game-objects.js';
+import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';

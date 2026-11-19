@@ -402,7 +402,6 @@ void test('flicking a whip at a yielding pet stops without snapping or striking 
 
     await applyInventoryObject(whip, 'l ');
 
-    const prose = [...messages, game._pending_message].join('\n');
     assert.match(game._pending_message ?? '', /You stop\..*is in the way/);
     assert.doesNotMatch(game._pending_message ?? '', /Snap/);
     // force_attack() keeps its safepet displacement: the pet is unharmed.

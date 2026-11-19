@@ -40,7 +40,7 @@ import {
     is_lord, is_minion, monsterIsDemon, is_ndemon, is_dlord, is_dprince, summonEnvironment,
 } from './mondata.js';
 
-export interface MonsterSummoningResult {
+interface MonsterSummoningResult {
     count: number;
     created: Monster[];
 }

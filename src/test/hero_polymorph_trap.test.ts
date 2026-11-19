@@ -8,7 +8,6 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
 import { dotrap } from '../js/trap.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { flushPendingTopline } from '../js/topl.js';
 
 import { IRON_SHOES, KICKING_BOOTS } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

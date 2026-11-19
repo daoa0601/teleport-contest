@@ -5,7 +5,7 @@ import { definitionInteger, definitionString, optionalDefinitionString } from '.
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
-import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER, FOOT } from './const.js';
+import { CLOUD, IS_AIR, IS_ROOM, IS_WALL, Is_earthlevel, Is_firelevel, MAX_TYPE, SDOOR, DRAWBRIDGE_UP, VAULT, FOOT } from './const.js';
 import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, Is_stronghold, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SIZEOF_CEMETERY, SIZEOF_MAPSEEN, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './windows.js';
 import { SHOP_TYPES } from './shknam.js';
@@ -19,7 +19,6 @@ import { cmapToType } from './mkroom.js';
 import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import { shopResident, shopkeeperInOwnShop } from './shk.js';
 import { monsterAtPosition } from './steed.js';
-import { CmapSymbol } from './glyph_numbers.js';
 import { drawbridgeUnderlyingType, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -30,7 +29,6 @@ import { formatKiller } from './topten.js';
 import { isok } from './cmd.js';
 import { panic } from './end.js';
 import { displayLiquidName } from './do_name.js';
-import { onQuestStart } from './quest.js';
 import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
 import { finishHeroDeath } from './end.js';
 import { body_part } from './polyself.js';
@@ -960,7 +958,6 @@ function branchDefinition(value, path) {
 function levelDefinition(value, path) {
     const source = definitionRecord(value, path);
     const flags = definitionFlags(source.flags, `${path}.flags`);
-    const alignment = definitionAlignment(source.alignment, `${path}.alignment`);
     return {
         name: definitionString(source.name, `${path}.name`),
         base: definitionInteger(source.base, `${path}.base`),
@@ -978,7 +975,6 @@ function levelDefinition(value, path) {
 function dungeonDefinition(value, path) {
     const source = definitionRecord(value, path);
     const flags = definitionFlags(source.flags, `${path}.flags`);
-    const alignment = definitionAlignment(source.alignment, `${path}.alignment`);
     return {
         name: definitionString(source.name, `${path}.name`),
         base: definitionInteger(source.base, `${path}.base`),

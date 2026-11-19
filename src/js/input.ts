@@ -3,19 +3,11 @@
 
 import { KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { game } from './gstate.js';
-import { NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS } from './command_data.js';
-import { rn1, rn2, rnd } from './rng.js';
 import type { TerminalReadKeyOptions } from './terminal.js';
 import type { Position } from './map_types.js';
 import { isok } from './cmd.js';
 import { randomKey, resetFuzzerCommandState } from './cmd.js';
-
-export interface CommandDirection {
-    readonly dx: number;
-    readonly dy: number;
-    readonly dz: number;
-}
-export interface MapClick extends Position { button: 1 | 2 }
+interface MapClick extends Position { button: 1 | 2 }
 export const MAP_CLICK_KEY = 256;
 
 export interface CharacterInput {
@@ -28,7 +20,7 @@ export type InputState = 'other' | 'command' | 'direction' | 'position';
 export interface KeyReader {
     readKey(options?: TerminalReadKeyOptions): Promise<number>;
 }
-export interface InputGateOptions {
+interface InputGateOptions {
     beforeRead?: (() => void | Promise<void>) | null;
     display?: KeyReader | null;
 }

@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { game } from '../js/gstate.js';
 import { ROCK } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/explode.js';
 import { floorObject } from './support/game-objects.js';

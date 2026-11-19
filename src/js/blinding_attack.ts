@@ -90,7 +90,7 @@ function creamPieBlindMessage(state: GameState, wasBlind: boolean): string {
         : "Yecch!  You've been creamed.";
 }
 
-export interface HeroThrownBlindness {
+interface HeroThrownBlindness {
     blindIncrement: number;
     wasBlind: boolean;
     message: string;

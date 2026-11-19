@@ -143,7 +143,7 @@ void test('a silver weapon sears a lycanthropic hero in melee', async () => {
     soldier.muy = 10;
     await equipMonsterObject(soldier, silverDagger, W_WEP);
 
-    const action = await takeMonsterTurn(
+    await takeMonsterTurn(
         soldier,
         game,
         () => 1,

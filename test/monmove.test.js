@@ -109,7 +109,7 @@ void test('a silver weapon sears a lycanthropic hero in melee', async () => {
     soldier.mux = 10;
     soldier.muy = 10;
     await equipMonsterObject(soldier, silverDagger, W_WEP);
-    const action = await takeMonsterTurn(soldier, game, () => 1, (count, sides) => count * sides, range => range);
+    await takeMonsterTurn(soldier, game, () => 1, (count, sides) => count * sides, range => range);
     // C dmgval() asks the hero's human form about silver, so lycanthropy
     // adds no d20: d8 weapon attack plus d4 dagger at their maximum.
     assert.equal(game.u.uhp, 88);

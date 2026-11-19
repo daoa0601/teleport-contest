@@ -45,7 +45,7 @@ for (const [target, message] of [
     [1, "A gush of water hits Sirius's left foreleg!"],
 ]) {
     void test(`a rust trap preserves a pet's given name when targeting ${target}`, async () => {
-        const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP, {
+        const { monster } = await freshMonsterTrapRoom(RUST_TRAP, {
             monster: { species: 'little dog' },
         });
         setMonsterGivenName(monster, 'Sirius');

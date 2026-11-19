@@ -119,7 +119,7 @@ for (const defenderKind of ['covered cobra', 'disguised mimic']) {
             input.feed(' ');
         };
         initRng(1n);
-        const ready = await takeMonsterTurn(captain, game);
+        await takeMonsterTurn(captain, game);
         assert.equal(captain.mw, horn);
         assert.equal(horn.where, 'minvent');
         assert.equal(defender.mhp, health, 'readying the weapon cannot damage the defender');

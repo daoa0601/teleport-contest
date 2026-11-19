@@ -11,7 +11,7 @@
 // mstatusline(), ustatusline().
 import { OBJ_NAME, objectPropertyName } from './object_data.js';
 import { levitationAtWill, propertyTimeout, hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked } from './properties.js';
-import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
+import { isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { heroIsHallucinating, blindfolded, heroIsBlind, heroIsDeaf, permanentBlind, blindnessBlocked } from './senses.js';
 import { makePlural, withIndefiniteArticle, simpleObjectName, simpleObjectNameWithArticle, simpleObjectTypeName, simpleArmorName } from './objnam.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
@@ -19,7 +19,7 @@ import { expiredFatally } from './timeout.js';
 import { gameLogEvents, pline, recordGameLogEvent } from './pline.js';
 import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, ATR_NONE, showInventoryWindow } from './windows.js';
 import { showTextWindow } from './wintty.js';
-import { G_GENOD, A_NONE, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, BASICENLIGHTENMENT, ENL_GAMEINPROGRESS, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MAGICENLIGHTENMENT, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
+import { G_GENOD, A_NONE, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, BASICENLIGHTENMENT, ENL_GAMEINPROGRESS, ENL_GAMEOVERDEAD, MAGICENLIGHTENMENT, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
 import { fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
 import { SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE, OBJECT_NAMES, RIN_PROTECTION, ROBE, TOWEL, } from './object_data.js';
 import { canAdvanceHeroSkill, ensureHeroSkills, skillName, skillLevelName, weaponDescription, weaponSkillType, } from './weapon.js';

@@ -7,7 +7,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CON, A_STR, ICE, W_WEP, OBJECT_TIMER_KIND } from '../js/const.js';
-import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
+import { requireGameLevel, game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mkobj.js';

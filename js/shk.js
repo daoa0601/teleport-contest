@@ -7,7 +7,7 @@
 // (shknam.ts); this module owns the live relationship among room, resident,
 // customer, and hero.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
-import { objectBaseWeight, objectBaseCost, objectMagic, objectCharged, BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE, } from './object_data.js';
+import { objectBaseWeight, objectBaseCost, objectMagic, objectCharged, BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, MIRROR, POT_WATER, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE, } from './object_data.js';
 import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
@@ -23,7 +23,7 @@ import { depth, sameDungeonLevel } from './dungeon.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun, is_elf, monsterHasEyes, monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire, monsterPassesWalls, resistConflict, } from './mondata.js';
 import { hiddenGold } from './vault.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
-import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval, pricedInventoryLine, oOn } from './invent.js';
+import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval, pricedInventoryLine, oOn, } from './invent.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming, simpleObjectNameWithArticle, objectDescription, paymentObjectDescription, } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
@@ -36,7 +36,7 @@ import { A_CHA, A_WIS, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, PL_
 import { isok, commandResultCancelled, setMulti } from './cmd.js';
 import { moveSpecial, specialMoverSeesHero } from './priest.js';
 import { dropObjectAtHero } from './do.js';
-import { splitObjectStack, deallocateObject, linkObjectToMonsterInventory, mksobj, unlinkObject, nextIdent, nextObjectId, objectWeight, quantity, placeObject, remove_object, billDummyObject, floorPileAt, } from './mkobj.js';
+import { splitObjectStack, deallocateObject, linkObjectToMonsterInventory, mksobj, unlinkObject, nextIdent, objectWeight, quantity, placeObject, remove_object, billDummyObject, floorPileAt, } from './mkobj.js';
 import { recordAchievement } from './insight.js';
 import { getObjectLocation } from './zap.js';
 import { objectsInTimerGraph, stopObjectTimers } from './timeout.js';
@@ -81,17 +81,6 @@ const FIRST_REAL_GEM = OBJECT_NAMES.indexOf('dilithium crystal');
 export function insideShopRoomAt(state, x, y) {
     const roomno = insideShop(state, x, y);
     if (roomno === null)
-        return null;
-    const room = roomForRoomno(state.level, roomno);
-    return room ? { room, roomno } : null;
-}
-// Part of C shk.c:costly_spot(), shkcatch(): the first in_rooms shop at a
-// spot.
-// C callers using *in_rooms() select the first matching shop. Membership
-// checks must use the full roomsAt() list instead.
-function firstShopRoomAt(state, x, y) {
-    const roomno = roomsAt(state.level, x, y, SHOPBASE)[0];
-    if (roomno === undefined)
         return null;
     const room = roomForRoomno(state.level, roomno);
     return room ? { room, roomno } : null;
@@ -3111,7 +3100,6 @@ export async function minimumShopPurchase(resident, state = game) {
 export async function itemizedShopBill(resident, state = game) {
     if (!hasShopBill(resident))
         return [];
-    const objects = objectsInTimerGraph(state);
     const bill = [];
     for (const [billIndex, entry] of resident.eshk.bill.entries()) {
         const object = bpToObj(entry, state);
@@ -3383,7 +3371,6 @@ function containerContentsKnown(object) {
 }
 // Part of C shk.c:buy_container(): the container's billed purchases.
 function containedPurchases(resident, container, state) {
-    const objects = objectsInTimerGraph(state);
     const purchases = [];
     for (const entry of resident.eshk.bill) {
         const object = bpToObj(entry, state);
@@ -4304,7 +4291,6 @@ export function doinvbill(mode) {
     const keeper = currentShopResident();
     if (!keeper || !shopkeeperInOwnShop(keeper))
         return mode === 0 ? [] : Promise.resolve();
-    const objects = [...objectsInTimerGraph(), ...game.billObjects ?? []];
     const lines = [];
     for (const entry of keeper.eshk.bill ?? []) {
         const object = bpToObj(entry);

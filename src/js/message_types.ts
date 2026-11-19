@@ -12,8 +12,7 @@ import { game } from './gstate.js';
 import type { CharacterFacet, CharacterFilters } from './role.js';
 import { clearrolefilter, createCharacterFilters, setrolefilter } from './role.js';
 import { randomCharacterOption, str2align, str2gend, str2race, str2role } from './role.js';
-import { NATIVE_COMMANDS } from './command_data.js';
-import { changeCommandAutocompletions, countCommandAutocompletions, setCommandAutocomplete } from './cmd.js';
+import { changeCommandAutocompletions, countCommandAutocompletions } from './cmd.js';
 import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import type { MenuColoringRule } from './coloratt.js';
 import type { ConfigurationErrorReport } from './cfgfiles.js';
@@ -21,7 +20,7 @@ import { displayHelpFile } from './pager.js';
 import { displayPagerText } from './wintty.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
-import { rn2, rnd } from './rng.js';
+import { rnd } from './rng.js';
 import { isTextOption, textOptionValue, cInteger, optionError } from './option_values.js';
 import { readSymFile, isDefaultSymsetName } from './novel_tribute.js';
 import { featureAlertVersion } from './extversion.js';
@@ -40,8 +39,7 @@ import { OBJECT_NAMES, getObjectClassBounds } from './object_data.js';
 import type { Fruit, GameState } from './game_state.js';
 import { bot, checkGoldSymbol, reassessStatusFields } from './botl.js';
 import {
-    docrt, flush_screen,
-    reglyph_darkroom, reglyphBoulderSymbols,
+    docrt, flush_screen, reglyph_darkroom, reglyphBoulderSymbols,
 } from './display.js';
 import { currentBoulderSymbol } from './symbols.js';
 import { clearMessageWindow, displayMessageWindow } from './topl.js';
@@ -61,17 +59,17 @@ import { mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf, visible
 import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
-import { attributeName, colorAttrToString, colorName, matchAttributeName,
-    matchColorName, parseColorAttr, parseMenuColoring, queryAttr, queryColorMenu } from './coloratt.js';
+import {
+    attributeName, colorAttrToString, colorName, matchAttributeName, parseColorAttr, queryAttr,
+    queryColorMenu,
+} from './coloratt.js';
 import { cutConfigBytes, get_configfile } from './cfgfiles.js';
 import {
-    BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
-    MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP,
-    PICK_NONE, PICK_ONE, PL_PSIZ,
-    PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
-    PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
-    PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, def_warnsyms,
-    STONE,
+    BUFSZ, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
+    MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PICK_NONE,
+    PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE,
+    PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM,
+    PARANOID_TRAP, PARANOID_WERECHANGE, def_warnsyms, STONE,
 } from './const.js';
 import { editSymset } from './options.js';
 
@@ -2035,7 +2033,7 @@ const TOGGLE_BOOLEAN_NAMES: readonly string[] = (() => {
 })();
 
 
-export type MessageType = typeof MSGTYP_NORMAL | typeof MSGTYP_NOREP
+type MessageType = typeof MSGTYP_NORMAL | typeof MSGTYP_NOREP
     | typeof MSGTYP_NOSHOW | typeof MSGTYP_STOP;
 
 export interface MessageTypeRule {

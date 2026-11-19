@@ -4,8 +4,8 @@
 
 import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, VENOM_CLASS, RANDOM_CLASS } from './objclass.js';
 import {
-    objectBaseDirection, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP,
-    ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE,
+    objectBaseDirection, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP, ACID_VENOM,
+    BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE,
 } from './object_data.js';
 import { monsterHasMagicResistance } from './mondata.js';
 import { burnArmorByFire, igniteItems, deleteTrap, petrifyMonsterFromContact, trapAt } from './trap.js';
@@ -20,11 +20,12 @@ import type { DeathHandler, OrdinaryDeathOptions } from './end.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { nomul, roomsAt } from './hack.js';
 import { heroFormSticks, heroSpecies, applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
-import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages,
-    finishHeroMonsterKillOutcome, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt,
-    wakeAttackedMonster, finishHeroMonsterKill,
+import {
+    angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance,
+    wakeMonstersNearWithMessages, finishHeroMonsterKillOutcome, finishEnvironmentalMonsterDeath,
+    hideHeroUnder, maybeUnhideAt, wakeAttackedMonster, finishHeroMonsterKill,
 } from './mon.js';
-import type { MonsterExplosionOptions, MonsterDeathHandler, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './mon.js';
+import type { MonsterDeathHandler, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './mon.js';
 import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPC2, AD_SPEL, AT_ENGL, AT_SPIT, AT_WEAP } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME } from './monster_data.js';
@@ -73,7 +74,7 @@ import { shouldMulchMissile, breakFloorObject, rangedTargetHitBonus } from './do
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { endObjectBurn, burnAwayHeroSlime } from './timeout.js';
 
-export interface ExplosionOptions {
+interface ExplosionOptions {
     state?: GameState;
     publish?: MessagePublisher;
     die?: DeathHandler;
@@ -548,7 +549,7 @@ function explosionDeathCause(type: number, objectClass: number, description: str
         ? KILLED_BY_AN : KILLED_BY };
 }
 
-export interface ScatterOptions {
+interface ScatterOptions {
     state?: GameState;
     onlyObject?: GameObject | null;
     mayDestroy?: boolean;
@@ -1044,7 +1045,7 @@ export async function scatterFloorObjects(
     return moved;
 }
 
-export interface FireExplosionOptions extends ExplosionOptions {
+interface FireExplosionOptions extends ExplosionOptions {
     rollDice?: typeof d;
 }
 
@@ -1091,7 +1092,7 @@ async function explosionStyleForDamage(damageType: DamageType, state: GameState)
 // mhitm.c explmm(), and mon.c corpse_chance()'s AT_BOOM death path all end
 // here; the corpse_chance() caller arrives with the monster already dead,
 // matching mon_explodes()'s DEADMONSTER() guard.
-export interface MonsterExplodesOptions {
+interface MonsterExplodesOptions {
     state?: GameState;
     publish?: MessagePublisher;
     random?: typeof rn2;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { GlyphOffset, altarToGlyph, cmapToGlyph, detectedMonnumToGlyph, explosionToGlyph, glyphIsCmapZap, glyphIsDetectedMonster, glyphIsInvisible, glyphIsMonster, glyphIsObject, glyphIsPet, glyphIsStatue, glyphIsSwallow, glyphIsTrap, glyphIsWarning, glyphIsBody, glyphToExplosion, glyphToMon, glyphToObj, glyphToSwallow, glyphToTrap, glyphToWarning, monnumToGlyph, petnumToGlyph, riddenMonnumToGlyph, warningToGlyph, } from '../js/glyph_numbers.js';
+import { GlyphOffset, altarToGlyph, cmapToGlyph, detectedMonnumToGlyph, explosionToGlyph, glyphIsCmapZap, glyphIsInvisible, glyphIsMonster, glyphIsObject, glyphIsPet, glyphIsStatue, glyphIsSwallow, glyphIsTrap, glyphIsWarning, glyphIsBody, glyphToExplosion, glyphToMon, glyphToObj, glyphToSwallow, glyphToTrap, glyphToWarning, monnumToGlyph, petnumToGlyph, riddenMonnumToGlyph, warningToGlyph, } from '../js/glyph_numbers.js';
 import { swallowToGlyph, zapdirToGlyph } from '../js/display.js';
 import { glyphToCmapSymbol } from '../js/glyphs.js';
 import { AM_CHAOTIC, AM_LAWFUL, AM_MASK, AM_NEUTRAL, AM_SANCTUM, FEMALE, MALE, WARNCOUNT } from '../js/const.js';

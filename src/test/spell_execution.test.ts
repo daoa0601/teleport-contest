@@ -1,7 +1,7 @@
 import { answerPrompts } from './support/input-boundaries.js';
 import type { RoleKey } from '../js/role.js';
 import type { InitializedHero } from '../js/hero_types.js';
-import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
+import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
@@ -31,10 +31,6 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { trainSpellSkill } from './support/spells.js';
 
 const HALBERD = OBJECT_NAMES.indexOf('halberd');
-
-function visibleText() {
-    return requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
-}
 
 async function caster(type: number | null, { role = 'wizard', hero = {} }: { role?: RoleKey; hero?: Partial<InitializedHero> } = {}) {
     await freshObjectRoom({ role, gameplaySeed: 41n, hero: {

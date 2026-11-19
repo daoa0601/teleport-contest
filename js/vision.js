@@ -2,7 +2,7 @@
 // C ref: vision.c Algorithm C shadow-casting.
 import { monsterHasMapPosition } from './steed.js';
 import { game } from './gstate.js';
-import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, TEMP_LIT, } from './const.js';
+import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, SVALL, IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, TEMP_LIT, } from './const.js';
 import { canSeeMonster, monsterVisible, newsym, seeMonsterWithInfrared, senseWithTelepathy, set_seenv, } from './display.js';
 import { wormKnown } from './worm.js';
 import { heroDetectsMonsters } from './senses.js';
@@ -11,8 +11,7 @@ import { noticeAllMonsters } from './hack.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { objectLightRadius, doLightSources } from './light.js';
-import { objectsInTimerGraph } from './timeout.js';
+import { doLightSources } from './light.js';
 import { isMoatAt, isPoolAt } from './dbridge.js';
 import { isRoom } from './map_types.js';
 import { monsterPerceives } from './mondata.js';

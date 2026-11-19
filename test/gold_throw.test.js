@@ -189,7 +189,7 @@ void test('a sleeping greedy monster catches the purse and abandons its meal', a
 });
 void test('the ordinary catch anger probe can turn a peaceful greedy monster hostile', async () => {
     freshGameplayRoom();
-    const purse = await carriedGold(11, 29034);
+    await carriedGold(11, 29034);
     const leprechaun = await createGoldMonster({
         mpeaceful: 1,
     });

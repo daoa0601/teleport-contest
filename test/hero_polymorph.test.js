@@ -18,7 +18,7 @@ import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CLOAK_OF_PROTECTION, HAWAIIAN_SHIRT, LEATHER_ARMOR, LONG_SWORD, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from '../js/object_data.js';
-import { roles, races } from '../js/role.js';
+import { races } from '../js/role.js';
 import { heroIsSliming, startHeroSliming } from '../js/potion.js';
 import { heroIsPetrifying, startHeroPetrification } from '../js/stoning.js';
 import { setPrimaryWeapon } from '../js/wield.js';
@@ -29,11 +29,6 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installHeroChainedToBuriedBall, installPolymorphedHero, installPunishedHero, installSwallowedHero, } from './support/hero-state.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
-function requiredRole(predicate) {
-    const role = roles.find(predicate);
-    assert.ok(role, 'native role exists');
-    return role;
-}
 function requiredRace(predicate) {
     const race = races.find(predicate);
     assert.ok(race, 'native race exists');

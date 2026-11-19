@@ -5,7 +5,7 @@ import { createMonsterAt } from './support/monsters.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
 import { aligns } from '../js/role.js';
 import { createSpecialLevel, createDungeon } from './support/topology.js';
-import { loadScoreRecords, SCORE_RECORD_STORAGE_KEY } from '../js/topten.js';
+import { loadScoreRecords } from '../js/topten.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -35,7 +35,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import {saveMonsterTraits, placeCreatedObject} from '../js/mkobj.js';
+import { saveMonsterTraits, placeCreatedObject } from '../js/mkobj.js';
 
 async function freshAltar({ alignment = 0, high = false, hero = {}, ...room }: ObjectRoomOptions & { alignment?: number; high?: boolean } = {}) {
     await freshObjectRoom({

@@ -140,7 +140,7 @@ export interface PropertySources {
     blockedByFloat?: boolean;
 }
 
-export type PropertyTimeout = typeof PROPERTY_TIMEOUT_FIELDS[PropertyName];
+type PropertyTimeout = typeof PROPERTY_TIMEOUT_FIELDS[PropertyName];
 
 export type HeroPropertyState =
     Partial<Record<Exclude<PropertyName, 'invulnerable'>, boolean>>
@@ -161,7 +161,7 @@ export type HeroPropertyState =
 
 // Property queries also run during character initialization, before combat
 // attributes exist. They require only this narrow part of the hero state.
-export interface PropertyHero extends HeroPropertyState {
+interface PropertyHero extends HeroPropertyState {
     utrap?: number;
     utraptype?: number;
     usteed?: { mnum: number } | null;

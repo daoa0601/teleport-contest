@@ -19,13 +19,14 @@ import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
-    AKLYS, AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, CLUB, CORPSE, DAGGER, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, SHIELD_OF_DRAIN_RESISTANCE, WAN_MAGIC_MISSILE,
+    AKLYS, AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, CLUB, CORPSE, DAGGER, LANCE, LONG_SWORD,
+    OBJECT_NAMES, POT_PARALYSIS, SHIELD_OF_DRAIN_RESISTANCE, WAN_MAGIC_MISSILE,
 } from '../js/object_data.js';
 import { startHeroSickness } from '../js/potion.js';
 import { makeHeroVomiting } from '../js/potion.js';
 import { startHeroSliming } from '../js/potion.js';
 import { startHeroPetrification } from '../js/stoning.js';
-import { addInventoryObject, artifactObject, chargedWand, knownObject } from './support/game-objects.js';
+import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';

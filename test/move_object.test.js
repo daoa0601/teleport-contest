@@ -9,7 +9,7 @@ import { MM_IGNOREWATER, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { placeMonsterOnMap } from '../js/steed.js';
 import { createMonsterAt } from './support/monsters.js';
 import { floorObjectsAt } from './support/level-state.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, } from '../js/monster_data.js';
+import { MONSTER_NAME, MONSTER_SYMBOL, } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { knownObject } from './support/game-objects.js';
 import { moveObject } from '../js/hack.js';

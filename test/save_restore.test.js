@@ -38,7 +38,7 @@ import { freshConnectedLevels } from './support/connected-levels.js';
 import { finishHeroMonsterKill } from '../js/mon.js';
 void test('save and restore preserve entity identity across every loaded level', async () => {
     const storage = memoryStorage();
-    const level = await freshObjectRoom({ moves: 12 });
+    await freshObjectRoom({ moves: 12 });
     requirePlayingGame(game);
     const cachedLevel = new GameMap();
     const pet = await createMonsterAt('little dog', 11, 10);

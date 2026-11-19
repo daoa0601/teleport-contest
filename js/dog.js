@@ -971,7 +971,6 @@ export function discardMigrations(state = game) {
     state._migratingMonsters = queue.filter(monster => monster.iswiz || In_endgame(monster.migrationDestination));
 }
 // C dog.c:keepdogs(), keep_mon_accessible(), and mondata.c:levl_follower().
-const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 // C dog.c:keepdogs()
 // The caller skips this entire transaction when iflags.nofollowers is
 // set.  Returned monsters are detached from the old level in native

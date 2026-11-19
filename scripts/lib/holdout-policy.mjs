@@ -390,18 +390,6 @@ function walkableAt(rows, x, y, bottom, blocked, petCells) {
         return false;
     return true;
 }
-/** A neighbor cell worth reaching: unknown terrain (not yet bumped) or a
- *  closed door that might open onto new space. */
-function isFrontierNeighbor(rows, x, y, bottom, blockedCells) {
-    if (blockedCells?.has(`${x},${y}`))
-        return false;
-    const c = cellAt(rows, x, y, bottom);
-    if (c === ' ')
-        return true;
-    if (c === '+' && isDoorLike(rows, x, y, bottom))
-        return true;
-    return false;
-}
 function frontierBfs(rows, hero, bottom, blocked, blockedCells, petCells, wantDoor) {
     // BFS over known walkable cells toward the closest cell adjacent to a
     // closed door (wantDoor) or to unknown terrain.

@@ -1,7 +1,7 @@
 import { addInventoryObject } from './support/game-objects.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ROOM, SHOPBASE, W_WEP, OBJECT_TIMER_KIND } from '../js/const.js';
+import { ROOM, SHOPBASE, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game, requirePlayingGame, requireGameLevel } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';

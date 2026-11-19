@@ -43,7 +43,7 @@ void test('an elven cloak adds no stealth discovery when the hero already has in
 
 void test('wearing a cloak of protection discovers its type without another visible effect', async () => {
     await freshObjectRoom();
-    const messages = captureMessages();
+    captureMessages();
     const cloak = await addInventoryObject(OBJECT_NAMES.indexOf('cloak of protection'), { typeKnown: false });
     pushKeys(cloak.invlet);
 
@@ -55,7 +55,7 @@ void test('wearing a cloak of protection discovers its type without another visi
 
 void test('an alchemy smock grants both poison and acid resistance and removes both', async () => {
     await freshObjectRoom();
-    const messages = captureMessages();
+    captureMessages();
     const smock = await addInventoryObject(OBJECT_NAMES.indexOf('alchemy smock'));
     pushKeys(`${smock.invlet}     `);
 

@@ -14,14 +14,14 @@ import {
 import { uppercase } from './hacklib.js';
 import type { NativeCommand } from './cmd.js';
 
-export interface KeyBinding {
+interface KeyBinding {
     key: number;
     command: NativeCommand | null;
     user: boolean;
     parameter: string | null;
 }
 
-export interface MovementBinding {
+interface MovementBinding {
     direction: number;
     mode: number;
     dx: number;

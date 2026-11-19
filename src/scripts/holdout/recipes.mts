@@ -218,11 +218,6 @@ function buildNethackrc({ character, playerName, extraOptions, tutorialPrompt, s
     return `${lines.join('\n')}\n`;
 }
 
-function key(...parts: string[]) {
-    return parts.join('');
-}
-
-
 
 /**
  * Build a v5 session skeleton for one recipe.

@@ -10,12 +10,12 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { finishScheduledLevelChange } from '../js/do.js';
-import { ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, PIT, ROCKTRAP, ROOM, SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD, TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, Upolyd, VIBRATING_SQUARE, LAVAPOOL, TT_BEARTRAP, TT_LAVA, } from '../js/const.js';
+import { ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, PIT, ROCKTRAP, ROOM, SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD, TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, Upolyd, VIBRATING_SQUARE, LAVAPOOL, TT_LAVA, } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { GameMap } from '../js/game.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mkobj.js';
-import { AMULET_OF_LIFE_SAVING, ARROW, HEAVY_IRON_BALL, IRON_SHOES, ORCISH_HELM, ROCK, SCR_IDENTIFY, STATUE, } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, ARROW, IRON_SHOES, ORCISH_HELM, ROCK, SCR_IDENTIFY, STATUE, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import { addInventoryObject, floorObject, } from './support/game-objects.js';
@@ -83,7 +83,7 @@ void test('a trapped hero cannot swap places with a pet', async () => {
     assert.deepEqual([dog.mx, dog.my], [11, 10]);
 });
 void test('the hero can move while staying within a buried ball chain', async () => {
-    const level = freshGameplayRoom();
+    freshGameplayRoom();
     requireFixtureGame(game);
     await installHeroChainedToBuriedBall({ x: 10, y: 10 });
     game.u.utrap = 3;

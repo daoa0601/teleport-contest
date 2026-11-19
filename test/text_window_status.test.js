@@ -10,7 +10,6 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
 import { recordAchievement } from '../js/insight.js';
 import { ACH_SHOP } from '../js/const.js';
 import { freshTurnRoom } from './support/playable-room.js';

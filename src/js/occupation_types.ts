@@ -53,7 +53,7 @@ export interface FoodContext {
     hungerStateBeforeMeal?: number;
 }
 
-export interface CommandOccupation {
+interface CommandOccupation {
     key: 'command';
     text: string;
     binding: CommandBinding;
@@ -65,7 +65,7 @@ export interface DiggingOccupation {
     didDigMessage: boolean;
 }
 
-export interface StudyOccupation {
+interface StudyOccupation {
     key: 'study-book';
     text: string;
 }
@@ -103,7 +103,7 @@ export interface WipeFaceOccupation {
 // C svc.context.engraving plus the running occupation.  The progress fields
 // belong to this engraving attempt only; a stopped attempt discards them,
 // matching how native resumes no occupation after restore or interruption.
-export interface EngraveOccupation {
+interface EngraveOccupation {
     key: 'engrave';
     text: 'engraving';
     remainingText: string;
@@ -122,7 +122,7 @@ export interface FoodOccupation {
     text: string;
 }
 
-export interface TakeoffOccupation {
+interface TakeoffOccupation {
     key: 'takeoff';
     text: 'disrobing' | 'disarming';
 }
@@ -136,7 +136,7 @@ export interface TrapSetting {
     forceBungle: boolean;
 }
 
-export interface TrapSettingOccupation {
+interface TrapSettingOccupation {
     key: 'set-trap';
     text: 'setting the trap';
 }

@@ -391,7 +391,7 @@ export async function makeSpecialDrawbridge(x: number, y: number, direction: num
     return true;
 }
 
-export interface DrawbridgeSquare extends Position {
+interface DrawbridgeSquare extends Position {
     location: MapLocation;
 }
 

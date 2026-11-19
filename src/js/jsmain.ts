@@ -27,7 +27,7 @@ import { discardTutorialState } from './tutorial_state.js';
 import { COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B, COPYRIGHT_BANNER_C,
     COPYRIGHT_BANNER_D, MAX_MSG_HISTORY } from './const.js';
 
-export interface EngineOptions {
+interface EngineOptions {
     seed?: number;
     datetime?: string | null;
     nethackrc?: string;
@@ -39,7 +39,7 @@ export interface EngineOptions {
     observeInput?: InputObserver | null;
 }
 
-export interface SegmentInput {
+interface SegmentInput {
     seed: number;
     datetime: string;
     nethackrc: string;
@@ -50,14 +50,14 @@ export interface SegmentInput {
     observeInput?: InputObserver | null;
 }
 
-export type InputObserver = (state: GameState) => void;
+type InputObserver = (state: GameState) => void;
 
-export type EngineRunResult =
+type EngineRunResult =
     | { kind: 'stopped' }
     | { kind: 'input-needed' }
     | { kind: 'panicked'; reason: string; stack: string | undefined };
 
-export type CaptureCursor = [column: number, row: number, visible: 1] | null;
+type CaptureCursor = [column: number, row: number, visible: 1] | null;
 
 export interface AnimationFrame {
     screen: string;

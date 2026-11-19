@@ -15,13 +15,13 @@ import {
     BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BOULDER, BRASS_LANTERN, BULLWHIP, CAN_OF_GREASE,
     CANDELABRUM_OF_INVOCATION, CORPSE, CREAM_PIE, CREDIT_CARD, CRYSTAL_BALL, EGG, EUCALYPTUS_LEAF,
     EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, LOCK_PICK,
-    LUMP_OF_ROYAL_JELLY, MAGIC_LAMP, MAGIC_MARKER, MAGIC_WHISTLE, MIRROR, OIL_LAMP, POT_OIL, SADDLE, SKELETON_KEY,
-    SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_JUMPING, SPE_NOVEL, STATUE, STETHOSCOPE, TALLOW_CANDLE,
-    TIN, TIN_OPENER, TIN_WHISTLE, TINNING_KIT, TOUCHSTONE, TOWEL, UNICORN_HORN, WAN_CANCELLATION, WAN_COLD,
-    WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING,
-    WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING,
-    WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING,
-    WAX_CANDLE,
+    LUMP_OF_ROYAL_JELLY, MAGIC_LAMP, MAGIC_MARKER, MAGIC_WHISTLE, MIRROR, OIL_LAMP, POT_OIL, SADDLE,
+    SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_JUMPING, SPE_NOVEL, STATUE,
+    STETHOSCOPE, TALLOW_CANDLE, TIN, TIN_OPENER, TIN_WHISTLE, TINNING_KIT, TOUCHSTONE, TOWEL, UNICORN_HORN,
+    WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE,
+    WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH,
+    WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING,
+    WAN_WISHING, WAX_CANDLE,
 } from './object_data.js';
 import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './sounds.js';
 import { OBJ_DESCR, objectTypeColor, learnObjectType, objectMaterial, objectTypeKnown } from './o_init.js';
@@ -41,7 +41,7 @@ import {
     commandResultCancelled, commandResultFailed, commandResultSpentTime, cmdq_add_ec, cmdq_add_key, setMulti,
     isok, paranoidQuery, confusePromptDirection, promptDirection,
 } from './cmd.js';
-import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, CQ_CANNED, D_CLOSED, D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, KILLED_BY, LANDMINE, LEVEL_TIMER_KIND, LUCKMIN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TREE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, W_NONPASSWALL, WEAK, xdir, ydir, IS_WATERWALL, LAVAWALL, HAND, FACE, FINGER, LEG, FOOT, HEAD, STOMACH, NOSE } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, CQ_CANNED, D_CLOSED, D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, KILLED_BY, LANDMINE, LEVEL_TIMER_KIND, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TREE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, W_NONPASSWALL, WEAK, xdir, ydir, IS_WATERWALL, LAVAWALL, HAND, FACE, FINGER, LEG, FOOT, HEAD, STOMACH, NOSE } from './const.js';
 import { use_container, pickupFloorObject, handlesPetrifyingCorpseBareHanded } from './pickup.js';
 import { useCrystalBall, convertSecretDoor, findit, openit } from './detect.js';
 import {
@@ -51,8 +51,8 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, feel_newsym, glyphAt, m
 import type { GlyphMetadata } from './display.js';
 import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction, objectMonsterName, monsterTypeName } from './do_name.js';
 import {
-    attachEggHatchTimer, killEgg, beginObjectBurn, endObjectBurn, objectTimers, stopLevelTimer, stopObjectTimer,
-    scheduleObjectTimer,
+    attachEggHatchTimer, killEgg, beginObjectBurn, endObjectBurn, objectTimers, stopLevelTimer,
+    stopObjectTimer, scheduleObjectTimer,
 } from './timeout.js';
 import type { DueObjectTimer } from './timeout.js';
 import { heroHasFreeHand, wipeHeroEngraving, heroCanReachFloor } from './engrave.js';
@@ -75,12 +75,11 @@ import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity, distu, mNext2u } from './hack.js';
 import { On_stairs } from './stairs.js';
-import { distmin, possessiveName, dist2 } from './hacklib.js';
+import { possessiveName, dist2 } from './hacklib.js';
 import { applyCaitiffPenalty, prepareAppliedWeaponAttack, do_attack } from './uhitm.js';
 import {
-    setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
-    moveMonsterNextToHero, monsterFliesOrFloats,
-    finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
+    setHeroGrip, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir, moveMonsterNextToHero,
+    monsterFliesOrFloats, finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
 } from './mon.js';
 import {
     makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands,
@@ -90,8 +89,8 @@ import { hurtleHero, hurtleJumpTo, hitMonsterWithAppliedWeapon, walkPathCells } 
 import { heroIsInvisible } from './hero_invisibility.js';
 import { stumbleOntoMimic } from './uhitm.js';
 import {
-    heroIsUnaware, blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating,
-    heroIsUnderwater, setHeroBlindnessTimeout,
+    heroIsUnaware, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, heroIsUnderwater,
+    setHeroBlindnessTimeout,
 } from './senses.js';
 import { heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands, heroIsFlying, body_part, mbodypart } from './polyself.js';
 import { heroStatusLine, monsterStatusLine } from './insight.js';
@@ -106,8 +105,8 @@ import type { InventoryClassification } from './invent.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';
 import { lightRoom } from './read.js';
 import {
-    finishTeleportArrival, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted,
-    monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet,
+    finishTeleportArrival, askTeleportDestination, enexto, heroTeleportRestricted, monsterTeleportRestricted,
+    teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet,
 } from './teleport.js';
 import { pickLock } from './lock.js';
 import { makemonAt, mkclassAligned, useBagOfTricks } from './makemon.js';
@@ -115,49 +114,24 @@ import { makeUndeadNear } from './mkroom.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import type { MapLocation, Position } from './map_types.js';
 import {
-
-    billDummyObject,
-
-    mksobj,
-
-    objectQuantity,
-
-    rejoinObjectStack,
-
-    splitObjectStack,
-
-    unblessObjectState,
-
-    unlinkObject,
-
-    objectWeight,
-
-    isContainer,
-
-    useHornOfPlenty,
-
-    unlinkMonsterObject,
-
-    placeObject,
-
-    remove_object,
-
+    billDummyObject, mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState,
+    unlinkObject, objectWeight, isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object,
     chargeAlteredUnpaidObject,
-
 } from './mkobj.js';
 import {
     is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive,
     monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests,
-    monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid,
-    monsterIsRider, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives,
-    monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, canBlnd, heroCanBlow,
-    monsterHidesUnder, monsterIsAmorphous, monsterIsEel, monsterIsFlyer, monsterPassesWalls,
+    monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon,
+    monsterIsHumanoid, monsterIsRider, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter,
+    monsterIsWhirly, monsterPerceives, monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning,
+    touchPetrifies, canBlnd, heroCanBlow, monsterHidesUnder, monsterIsAmorphous, monsterIsEel, monsterIsFlyer,
+    monsterPassesWalls,
 } from './mondata.js';
 import { wakeAttackedMonster } from './mon.js';
 import { makeMonsterFlee, isAccessibleAt, closedDoor } from './monmove.js';
 import type { RandomBelow } from './monster_action_types.js';
 import { AD_BLND, AT_ENGL, AT_WEAP } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import {
@@ -170,23 +144,8 @@ import {
     simpleObjectTypeName, singularObjectName, withIndefiniteArticle,
 } from './objnam.js';
 import {
-
-    formatFeltMessage,
-
-    formatHeardMessage,
-
-    formatSeenMessage,
-
-    pline as syncPline,
-
-    plineWithContinuation,
-
-    plineWithContinuation as pline,
-
-    publishHeardMessage,
-
-    impossible,
-
+    formatFeltMessage, formatHeardMessage, formatSeenMessage, pline as syncPline, plineWithContinuation,
+    plineWithContinuation as pline, publishHeardMessage, impossible,
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { propertyIsActive } from './properties.js';
@@ -1763,7 +1722,7 @@ export async function dojump(): Promise<void> {
     game.context.move = result.spentTime ? 1 : 0;
 }
 
-export interface JumpResult {
+interface JumpResult {
     spentTime: boolean;
     heroDied: boolean;
 }
@@ -2116,10 +2075,10 @@ const STUNNED = 'stun';
 
 const DEAF = 'deafness';
 
-export type HornTrouble = typeof SICK | typeof BLIND | typeof HALLUCINATING
+type HornTrouble = typeof SICK | typeof BLIND | typeof HALLUCINATING
     | typeof VOMITING | typeof CONFUSED | typeof STUNNED | typeof DEAF;
 
-export interface UnicornHornOptions {
+interface UnicornHornOptions {
     object?: GameObject | null;
     state?: GameState;
     publish?: MessagePublisher;
@@ -2127,7 +2086,7 @@ export interface UnicornHornOptions {
     rollDice?: typeof d;
 }
 
-export interface UnicornHornResult {
+interface UnicornHornResult {
     used: true;
     spentTime: true;
     caused: HornTrouble | null;
@@ -2301,7 +2260,7 @@ interface FigurineEventBase {
     finished?: true;
 }
 
-export interface FigurineTransformation extends FigurineEventBase, Position {
+interface FigurineTransformation extends FigurineEventBase, Position {
     transformed: true;
     monster: Monster;
     finishPending: boolean;
@@ -2311,7 +2270,7 @@ export interface FigurineTransformation extends FigurineEventBase, Position {
     retryScheduled?: never;
 }
 
-export interface FigurineRetry extends FigurineEventBase {
+interface FigurineRetry extends FigurineEventBase {
     transformed: false;
     monster: null;
     finishPending: false;
@@ -2321,7 +2280,7 @@ export interface FigurineRetry extends FigurineEventBase {
     waterMessages?: never;
 }
 
-export interface FigurineConsumed extends FigurineEventBase {
+interface FigurineConsumed extends FigurineEventBase {
     transformed: false;
     monster: null;
     finishPending: false;
@@ -2329,7 +2288,7 @@ export interface FigurineConsumed extends FigurineEventBase {
     waterMessages: string[];
 }
 
-export type FigurineTimerEvent = FigurineTransformation | FigurineRetry | FigurineConsumed;
+type FigurineTimerEvent = FigurineTransformation | FigurineRetry | FigurineConsumed;
 
 const S_EYE = 5;
 const S_MIMIC = 13;
@@ -3328,7 +3287,7 @@ export async function useWhip(
     return { spentTime: true };
 }
 
-export type PolearmResult =
+type PolearmResult =
     | { heroDied: true }
     | {
           spentTime: boolean;
@@ -3873,14 +3832,14 @@ export async function useRoyalJelly(
     return true;
 }
 
-export interface GrapplingHookOptions {
+interface GrapplingHookOptions {
     state?: GameState;
     ensureWielded: () => WieldToolResult | Promise<WieldToolResult>;
     attackMonster?: typeof hitMonsterWithAppliedWeapon;
     hurtle: (dx: number, dy: number) => unknown;
 }
 
-export interface GrapplingHookResult {
+interface GrapplingHookResult {
     spentTime: boolean;
     resume?: true;
 }

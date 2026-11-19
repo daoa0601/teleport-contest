@@ -1,29 +1,17 @@
 // Object light and burn timers.
-import { SCROLL_CLASS } from './objclass.js';
-import { monsterHasMapPosition } from './steed.js';
-import { wakeMonstersNearWithMessages, finishMonsterKilled, finishHeroMonsterKillOutcome } from './mon.js';
-import { AD_BLND } from './monster_attack_types.js';
-import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
 import { definiteObjectAction, objectNameIsPlural, ownedObjectName } from './objnam.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { beginObjectBurn, endObjectBurn, lightObjectIsGlobal, objectsInTimerGraph } from './timeout.js';
-import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
 import { artifactEmitsLight } from './artifact.js';
-import { COLNO, CORR, COULD_SEE, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS, ROWNO, SIZEOF_LIGHT_SOURCE, TEMP_LIT } from './const.js';
+import { COLNO, COULD_SEE, ROWNO, SIZEOF_LIGHT_SOURCE, TEMP_LIT } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible } from './display.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
-import { rnd } from './rng.js';
-import { impactArtifactLight } from './potion.js';
-import { cansee, clearAreaCells, vision_recalc, clearPath, monsterEmitsLight, circle_data, circle_start, visionRow, visionValue, } from './vision.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { cansee, vision_recalc, clearPath, monsterEmitsLight, circle_data, circle_start, visionRow, visionValue, } from './vision.js';
+import { heroIsBlind } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
 import { getObjectLocation } from './zap.js';
 import { placeObjectSynchronously, remove_object } from './mkobj.js';
-import { roomForRoomno } from './hack.js';
-import { snuffLitObject } from './apply.js';
-import { monsterDigests, monsterIsWhirly } from './mondata.js';
 import { showDisclosureOverlay } from './windows.js';
 // C light.c:41 LSF_SHOW — the only flag set on a live, displayed source.
 const LSF_SHOW = 0x1;

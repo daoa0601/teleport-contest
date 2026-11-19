@@ -11,68 +11,15 @@ import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rn2 } from './rng.js';
 import { FOOD_CLASS } from './objclass.js';
 import {
-
-    BUFSZ,
-
-    COLNO,
-
-    CORPSTAT_INIT,
-
-    DELPHI,
-
-    DISMOUNT_BONES,
-
-    G_NOCORPSE,
-
-    GRAVE,
-
-    HEADSTONE,
-
-    HOLE,
-
-    Is_oracle_level,
-
-    LEAVESTATUE,
-
-    MAGIC_PORTAL,
-
-    MM_NONAME,
-
-    mon_offmap,
-
-    NON_PM,
-
-    NO_MINVENT,
-
-    OBJECT_TIMER_KIND,
-
-    PARANOID_BONES,
-
-    PL_NSIZ,
-
-    RLOC_NOMSG,
-
-    ROOM,
-
-    ROOMOFFSET,
-
-    ROWNO,
-
-    SHOPBASE,
-
-    STONE,
-
-    TRICKED,
-
-    Upolyd,
-
+    BUFSZ, COLNO, CORPSTAT_INIT, DELPHI, DISMOUNT_BONES, G_NOCORPSE, GRAVE, HEADSTONE, HOLE, Is_oracle_level,
+    LEAVESTATUE, MAGIC_PORTAL, MM_NONAME, mon_offmap, NON_PM, NO_MINVENT, OBJECT_TIMER_KIND, PARANOID_BONES,
+    RLOC_NOMSG, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, STONE, TRICKED, Upolyd,
 } from './const.js';
 import { GameMap } from './game.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
-import { pline, plineWithContinuation, impossible } from './pline.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { flush_screen, newsym } from './display.js';
 import { nhgetch } from './input.js';
-import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath } from './end.js';
 import { DTHSZ, formatKiller } from './topten.js';
 import { decodeBonesPayload } from './bones_validation.js';
@@ -88,12 +35,12 @@ import { forgetEngravings, makeEngravingAt, sanitizeEngravings } from './engrave
 import { addObjectToContainer, curseObjectState, fobjChain, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, placeObjectSynchronously, set_corpsenm } from './mkobj.js';
 import { specialLevelAt, Invocation_lev } from './dungeon.js';
 import { bonesLevelId, bonesStorageKey, deleteBonesLevel, openBonesFile } from './novel_tribute.js';
-import { BOOMERANG, BOW, CORPSE, ELVEN_BOW, ICE_BOX, MUMMY_WRAPPING, ORCISH_BOW, SLIME_MOLD, STATUE, YUMI, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, EGG, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, TIN, WAX_CANDLE, objectUsesKnown } from './object_data.js';
+import { BOOMERANG, BOW, CORPSE, ELVEN_BOW, MUMMY_WRAPPING, ORCISH_BOW, SLIME_MOLD, STATUE, YUMI, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, EGG, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, TIN, WAX_CANDLE, objectUsesKnown } from './object_data.js';
 import { definiteName, objectCombatName } from './objnam.js';
 import type { InterfaceFlags } from './flags.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { Fruit, GameState } from './game_state.js';
+import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { clearBypasses } from './worn.js';
 import { isok, paranoidQuery } from './cmd.js';
@@ -109,10 +56,8 @@ import { objectNoLongerHeldSynchronously } from './do.js';
 import { unpunishHero, revivalReplacement, PM_DOPPELGANGER } from './read.js';
 import { depth, is_branchlev, ledgerNo, maxLedgerNo } from './dungeon.js';
 import { isRoom } from './map_types.js';
-import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './role.js';
 import { relocateMonsterTo, enexto } from './teleport.js';
-import type { PropertyName } from './property_types.js';
 import { roomForRoomno } from './hack.js';
 import { likes_gold, likes_gems, likes_objs, likes_magic, monsterIsUndead, giveHeroResistancesToMonster } from './mondata.js';
 

@@ -3,8 +3,8 @@
 // (align_gname, halu_gname, align_gtitle).  Folded from prayer_trouble/
 // divine_wrath/divine_gifts/sacrifice/alignment/turn_undead (pure move, no
 // behavior change).
-import { RANDOM_CLASS, WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_CLASS, GEM_CLASS, } from './objclass.js';
-import { objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_BLANK_PAPER, STATUE, getObjectClassBounds, } from './object_data.js';
+import { WEAPON_CLASS, AMULET_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_CLASS, } from './objclass.js';
+import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_BLANK_PAPER, STATUE, getObjectClassBounds, } from './object_data.js';
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
 import { ringRemovalObstacle, disintegrateWornArmor, clearHeroStrangulation, heroIsStrangled, removeHeroAccessory } from './do_wear.js';

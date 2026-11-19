@@ -7,7 +7,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CON, A_STR, BURNING, DISSOLVED, LAVAPOOL, M_SEEN_FIRE, PARANOID_SWIM, POOL, ROOM, TT_LAVA, WATER } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { bot } from '../js/botl.js';
 import { docrt, flush_screen } from '../js/display.js';
@@ -598,7 +597,7 @@ void test('life saving moves a drowned hero to dry land', async () => {
     const level = poolAtHero();
     requireFixtureGame(game);
     level.requireAt(20, 5).typ = ROOM;
-    const loadstone = await addInventoryObject(LOADSTONE, { cursed: true });
+    await addInventoryObject(LOADSTONE, { cursed: true });
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, {
         oclass: AMULET_CLASS,
         worn: true,

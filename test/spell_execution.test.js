@@ -1,5 +1,5 @@
 import { answerPrompts } from './support/input-boundaries.js';
-import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
+import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
@@ -23,9 +23,6 @@ import { freshObjectRoom } from './support/object-room.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { trainSpellSkill } from './support/spells.js';
 const HALBERD = OBJECT_NAMES.indexOf('halberd');
-function visibleText() {
-    return requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
-}
 async function caster(type, { role = 'wizard', hero = {} } = {}) {
     await freshObjectRoom({ role, gameplaySeed: 41n, hero: {
             ulevel: 30, uen: 200, uenmax: 200, uenpeak: 200,

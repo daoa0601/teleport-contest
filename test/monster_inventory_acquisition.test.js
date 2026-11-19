@@ -12,7 +12,7 @@ import { giveSpecialMonsterObject } from '../js/sp_lev.js';
 import { makemonAt } from '../js/makemon.js';
 import { mksobj } from '../js/mkobj.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { commitPetPickup, petDroppableObject } from '../js/dogmove.js';
+import { petDroppableObject } from '../js/dogmove.js';
 import { linkObjectToMonsterInventory, runClaimedGlobTimer, placeCreatedObject } from '../js/mkobj.js';
 import { removeObjectFromMonsterInventory } from '../js/worn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
@@ -210,7 +210,7 @@ void test('pet mpickobj ownership survives the complete pickup and release cycle
     dagger.blessed = false;
     dagger.cursed = false;
     placeCreatedObject(dagger, pet.mx, pet.my);
-    const pickup = await takeMonsterTurn(pet, game, range => (range > 1 ? 1 : 0), (count, sides) => count * sides, range => Math.max(1, range));
+    await takeMonsterTurn(pet, game, range => (range > 1 ? 1 : 0), (count, sides) => count * sides, range => Math.max(1, range));
     // dog_invent() announces the pickup while the dagger is still on the
     // floor, then extracts it and runs mpickobj() inside the same turn.
     assertMonsterOwns(pet, dagger);

@@ -8,15 +8,13 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROOM } from '../js/const.js';
 import { decodeScreen } from '../frozen/screen-decode.mjs';
 import { game } from '../js/gstate.js';
 
 import { currentConductLines, finalConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
 import {
-    FLINT, FOOD_RATION, POT_WATER, SACK, SPE_FORCE_BOLT, SPE_HEALING,
-    SPE_PROTECTION, TOUCHSTONE, WAN_WISHING,
+    FLINT, FOOD_RATION, POT_WATER, SACK, SPE_FORCE_BOLT, SPE_HEALING, SPE_PROTECTION, TOUCHSTONE,
 } from '../js/object_data.js';
 import { parseNethackrc } from '../js/cfgfiles.js';
 import { roles } from '../js/role.js';

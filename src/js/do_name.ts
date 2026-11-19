@@ -10,15 +10,12 @@
 // naming_categories.ts.
 
 import {
-    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS,
-    FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS,
-    COIN_CLASS, GEM_CLASS, VENOM_CLASS,
+    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS,
+    SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, VENOM_CLASS,
 } from './objclass.js';
 import {
-    objectClassForType, objectBaseWeight, objectUnique, objectMagic, SPE_NOVEL, AMULET_OF_YENDOR,
-    FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, STATUE, TIN, TOWEL,
-    CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS,
-    OBJECT_BASES, OBJECT_NAMES, POT_WATER, SPEED_BOOTS,
+    objectClassForType, objectBaseWeight, SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE,
+    HEAVY_IRON_BALL, STATUE, TIN, TOWEL,
 } from './object_data.js';
 import {
     GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER,
@@ -33,16 +30,14 @@ import { renameDiscoveredType, recordObjectEncounter, rememberType, objectTypeKn
 import { queryLevelAnnotation } from './dungeon.js';
 import { chooseInventoryObject } from './invent.js';
 import {
-    canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible,
-    seeMonsterWithInfrared,
+    canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible, seeMonsterWithInfrared,
 } from './display.js';
 import { getRndLine } from './rumors.js';
 import { BOGUS_MONSTERS } from './random_text_data.js';
 import { repriceDiscoveredGems, objectOwnershipPrefix, updateUnpaidObjectPrice } from './shk.js';
 import {
-    definiteName, makePlural, objectName, objectNameIsPlural, observeObjectForNaming,
-    pluralizeObjectNoun, simpleObjectName, simpleObjectNameWithArticle, verbForSubject,
-    withIndefiniteArticle, type CorpseNameView,
+    definiteName, makePlural, objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObjectNoun,
+    simpleObjectName, simpleObjectNameWithArticle, verbForSubject, withIndefiniteArticle, type CorpseNameView,
 } from './objnam.js';
 import type { GameObject } from './object_types.js';
 import { pline, plineWithContinuation, recordGameLogEvent, impossible } from './pline.js';
@@ -252,7 +247,7 @@ export function objectMonsterName(object: CorpseNameView): string {
         : MONSTER_NAME[species] || 'thing';
 }
 
-export interface MonsterIdentity { name: string; personal: boolean }
+interface MonsterIdentity { name: string; personal: boolean }
 
 // C do_name.c:bogusmon(). get_rnd_line() goes to rumors.ts, which imports
 // this module for mon_nam() the way C's do_name.c and rumors.c call each

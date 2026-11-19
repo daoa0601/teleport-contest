@@ -171,7 +171,7 @@ void test('checking a chest for traps retains its personal name', async () => {
     assert.equal(messages[0], 'You find no traps on the chest named Cache.');
 });
 void test('a named ghost keeps its possessive name when a rock trap runs dry', async () => {
-    const { monster, trap } = await freshMonsterTrapRoom(ROCKTRAP, {
+    const { monster } = await freshMonsterTrapRoom(ROCKTRAP, {
         monster: { species: 'ghost' }, trap: { once: true, tseen: true },
     });
     setMonsterGivenName(monster, 'James');
@@ -195,7 +195,7 @@ void test('a named ghost keeps its possessive name when a projectile trap runs d
     assert.equal(messages[0], "James' ghost triggers a trap but nothing happens.");
 });
 void test('a named monster disguise is retained in a pit message', async () => {
-    const { monster, trap } = await freshMonsterTrapRoom(PIT, { monster: { species: 'kitten' } });
+    const { monster } = await freshMonsterTrapRoom(PIT, { monster: { species: 'kitten' } });
     setMonsterGivenName(monster, 'Mittens');
     requirePlayingGame(game);
     const messages = [];
@@ -215,7 +215,7 @@ void test('a named ghost keeps its possessive name while escaping a bear trap', 
     assert.equal(messages[0], "James' ghost pulls free of the bear trap.");
 });
 void test('an invisible but seen sleeper keeps its invisibility adjective', async () => {
-    const { monster, trap } = await freshMonsterTrapRoom(SLP_GAS_TRAP, {
+    const { monster } = await freshMonsterTrapRoom(SLP_GAS_TRAP, {
         monster: { species: 'kitten' },
     });
     requirePlayingGame(game);

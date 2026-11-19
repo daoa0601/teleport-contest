@@ -53,9 +53,8 @@ void test('a guard arriving over a pending removal message pages with the old ar
         if (/You were wearing/.test(game._pending_message ?? ''))
             seenClasses.push(game.u.uac ?? 10);
     };
-    let coreDone = false;
     let coreFailure = null;
-    const core = moveloop_core().then(() => { coreDone = true; }, failure => { coreFailure = failure; });
+    const core = moveloop_core().then(() => { }, failure => { coreFailure = failure; });
     for (let boundaries = 0; boundaries < 8; boundaries++) {
         const done = await Promise.race([
             core.then(() => true),

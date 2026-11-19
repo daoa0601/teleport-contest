@@ -1,6 +1,6 @@
 import { monsterAtPosition } from '../js/steed.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
-import { requirePlayingGame, requireGameDisplay, game } from '../js/gstate.js';
+import { requirePlayingGame, game } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ACH_INVK, ACH_NOVL } from '../js/const.js';

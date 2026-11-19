@@ -1,4 +1,4 @@
-import { AM_CHAOTIC, AM_LAWFUL, AM_MASK, AM_NEUTRAL, AM_SANCTUM, FEMALE, MALE, MAXEXPCHARS, MAXTCHARS, WARNCOUNT, } from './const.js';
+import { AM_CHAOTIC, AM_LAWFUL, AM_MASK, AM_NEUTRAL, AM_SANCTUM, MALE, MAXEXPCHARS, MAXTCHARS, WARNCOUNT, } from './const.js';
 import { MONSTER_COLOR } from './monster_data.js';
 import { ARROW as FIRST_OBJECT, CORPSE, OBJECT_COLOR, STATUE } from './object_data.js';
 // Pinned defsym.h indices. These select glyphs, independently of tty symbols.

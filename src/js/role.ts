@@ -32,8 +32,8 @@ export type RoleKey =
 export type RaceName = 'human' | 'elf' | 'dwarf' | 'gnome' | 'orc';
 export type AlignmentName = 'lawful' | 'neutral' | 'chaotic';
 export type AlignmentValue = 1 | 0 | -1;
-export type GenderName = 'male' | 'female';
-export type GenderValue = 0 | 1;
+type GenderName = 'male' | 'female';
+type GenderValue = 0 | 1;
 
 export type AttributeValues = [
     strength: number, intelligence: number, wisdom: number,
@@ -807,11 +807,11 @@ export const RACE_SELECTION_RULES: Record<RaceName, { aligns: readonly Alignment
 };
 
 export type RoleChoice = Role | null | undefined;
-export type RaceChoice = Race | null | undefined;
-export type GenderChoice = Gender | null | undefined;
-export type AlignmentChoice = Alignment | null | undefined;
+type RaceChoice = Race | null | undefined;
+type GenderChoice = Gender | null | undefined;
+type AlignmentChoice = Alignment | null | undefined;
 
-export interface CharacterChoices {
+interface CharacterChoices {
     role: RoleChoice;
     race: RaceChoice;
     gender: GenderChoice;
@@ -1181,14 +1181,14 @@ export function character_race(pmindex: number): Race | undefined {
 
 type Facet = CharacterFacet;
 type Choices = CharacterChoices;
-export interface CharacterOptions {
+interface CharacterOptions {
     role: string | null;
     race: string | null;
     gender: string | null;
     align: string | null;
     characterFilters?: CharacterFilters;
 }
-export interface SelectedCharacter {
+interface SelectedCharacter {
     role: Role;
     race: Race;
     gender: Gender;

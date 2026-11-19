@@ -218,7 +218,7 @@ void test('a crash interrupts donning armor and loses the partial wear', async (
 void test('sink results survive a save and restore round trip', async () => {
     await sinkSpot();
     requirePlayingGame(game);
-    const ring = await wearRing('uleft');
+    await wearRing('uleft');
     game.plname = 'SinkFall';
     pushKeys(' '); // the off message pages the joined topline
     await fallIntoSink();

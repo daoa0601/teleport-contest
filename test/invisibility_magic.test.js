@@ -15,7 +15,7 @@ import { castSpell } from '../js/spell.js';
 import { runExtendedCommand } from './support/commands.js';
 import { learnSpell } from './support/spells.js';
 import { dozap } from '../js/zap.js';
-import { addInventoryObject, chargedWand, knownObject, } from './support/game-objects.js';
+import { addInventoryObject, chargedWand, } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshCasterRoom } from './support/hero-state.js';
 import { setHeroSpecies } from '../js/polyself.js';

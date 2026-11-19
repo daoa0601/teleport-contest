@@ -23,14 +23,14 @@ import { d, rn1, rn2, rnd } from './rng.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removeIntrinsicProperty } from './properties.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { isIceAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
-import { ACCESSIBLE, A_CON, A_DEX, A_STR, CLOUD, COLNO, DIED, DISMOUNT_FELL, FAINTING, FOOT, FULL_MOON, GENOCIDED, G_GENOD, HAND, I_SPECIAL, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LEVEL_TIMER_KIND, MV_KNOWS_EGG, M_AP_MONSTER, NECK, NO_KILLER_PREFIX, OBJECT_TIMER_KIND, PLNMSG_OK_DONT_DIE, PLNMSG_ONE_ITEM_HERE, POISONING, ROWNO, SICK_ALL, SICK_NONVOMITABLE, SIZEOF_TIMER_ELEMENT, STONING, TIMEOUT, TURNED_SLIME, W_SADDLE, G_EXTINCT, MM_NOMSG, NO_MINVENT } from './const.js';
-import { AMULET_OF_STRANGULATION, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, FEDORA, EGG, FIGURINE, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, LUCKSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, ROCK, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
-import { carrying, confersLuck, useUpInventoryStack } from './invent.js';
+import { ACCESSIBLE, A_CON, A_DEX, A_STR, CLOUD, COLNO, DIED, DISMOUNT_FELL, FAINTING, FOOT, FULL_MOON, GENOCIDED, G_GENOD, HAND, I_SPECIAL, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LEVEL_TIMER_KIND, MV_KNOWS_EGG, M_AP_MONSTER, NECK, NO_KILLER_PREFIX, OBJECT_TIMER_KIND, PLNMSG_OK_DONT_DIE, PLNMSG_ONE_ITEM_HERE, POISONING, ROWNO, SICK_NONVOMITABLE, SIZEOF_TIMER_ELEMENT, STONING, TIMEOUT, TURNED_SLIME, W_SADDLE, G_EXTINCT, MM_NOMSG, NO_MINVENT } from './const.js';
+import { AMULET_OF_STRANGULATION, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, FEDORA, EGG, FIGURINE, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, LUCKSTONE, MAGIC_LAMP, POT_OIL, ROCK, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
+import { carrying, useUpInventoryStack } from './invent.js';
 import { AD_ELEC, AT_MAGC } from './monster_attack_types.js';
 import { isWereMonster, revertHeroWereForm } from './were.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { displayColorName, monsterName, monsterTypeName, randomDisplayMonsterName } from './do_name.js';
-import { dismountHero , monsterAtPosition } from './steed.js';
+import { dismountHero, monsterAtPosition } from './steed.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, stoneLuck } from './attrib.js';
 import { body_part, extinguishHeroFormLight, heroHasNoLimbs, heroIsBreathless, heroIsGreenSlime, heroIsPolymorphed, heroIsUnchanging, heroSpecies, polymonHero, returnHeroToHumanForm } from './polyself.js';
 import { hurtleHero } from './dothrow.js';
@@ -39,7 +39,7 @@ import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './allmain.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, refreshHeroSeeing, see_monsters } from './display.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline, plineWithContinuation, publishHeardMessage } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -65,8 +65,9 @@ import { surfaceName } from './dungeon.js';
 import { heroCannotVomit, nameToMonster, monsterHasProperName, monsterOlderForm, heroResistsStoning, touchPetrifies, monsterHasNoLimbs, monsterIsAmorphous, monsterIsFlyer, monsterIsSlithy, monsterYoungerForm } from './mondata.js';
 import { tameMonster } from './dog.js';
 import { hatchlingCry } from './sounds.js';
-import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt,
-    finishHeroMonsterKill, hideMonsterUnder,
+import {
+    wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt, finishHeroMonsterKill,
+    hideMonsterUnder,
 } from './mon.js';
 
 
@@ -1443,15 +1444,15 @@ export function spotTimeExpires(
 export function levelTimers(state: GameState = game): LevelTimer[] {
     return levelTimersFor(state).map(timer => ({ ...timer }));
 }
-export interface QueuedObjectTimer {
+interface QueuedObjectTimer {
     object: GameObject;
     timer: ObjectTimer;
 }
-export interface QueuedLevelTimer {
+interface QueuedLevelTimer {
     position: { x: number; y: number };
     timer: LevelTimer;
 }
-export type QueuedTimer = QueuedObjectTimer | QueuedLevelTimer;
+type QueuedTimer = QueuedObjectTimer | QueuedLevelTimer;
 // Port only: expose a sorted view of runtime object and level timers.
 // The native timer queue holds object and level timers in one
 // deadline-ordered list; insert_timer places a new entry before existing
@@ -1609,7 +1610,7 @@ export async function slipOrTrip(publish: MessagePublisher = plineWithContinuati
     if (steed) await dismountHero(DISMOUNT_FELL, { announce: publish });
 }
 
-export interface BurnTimerResult {
+interface BurnTimerResult {
     object: GameObject;
     threshold: number;
     overdue: boolean;
@@ -2212,7 +2213,7 @@ interface UnhatchedEgg extends UnhatchedEggBase {
     desired: number;
     unavailable?: true;
 }
-export interface HatchedEgg {
+interface HatchedEgg {
     egg: GameObject;
     x: number; y: number; mnum: number;
     monster: Monster;
@@ -2226,7 +2227,7 @@ export interface HatchedEgg {
     finishPending: boolean;
     finished?: true;
 }
-export type EggHatchEvent = SterileEgg | MisplacedEgg | UnhatchedEgg | HatchedEgg;
+type EggHatchEvent = SterileEgg | MisplacedEgg | UnhatchedEgg | HatchedEgg;
 
 
 

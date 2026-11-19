@@ -268,7 +268,7 @@ async function pickUpTraditionally(source, count) {
     return { attempted };
 }
 export async function queryObjlist(qstr, olist, options) {
-    const { qflags, how, allow, describe, state = game, engulfer = null, extraClasses = [], groupAccelerators = false, observeRows = true, counts = how === PICK_ANY, pageLocalKeys = false, headerLine = null, } = options;
+    const { qflags, how, allow, describe, state = game, engulfer = null, extraClasses = [], groupAccelerators = false, observeRows = true, pageLocalKeys = false, headerLine = null, } = options;
     if ((qflags & INCLUDE_HERO) !== 0 && how !== PICK_NONE)
         throw new TypeError('INCLUDE_HERO is only reached with a displayed inventory');
     const allowed = olist.filter(allow);

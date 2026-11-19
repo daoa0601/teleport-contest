@@ -363,7 +363,7 @@ void test('the bind keys row binds a command and lists the change', async () => 
     const [input, command] = openFullMenu();
     await input.waitUntilBlocked();
     input.feed('O');
-    const { views, prose } = await runScript(input, command, [
+    const { views } = await runScript(input, command, [
         { at: / - /, pick: /bind keys\s+\[\(0 currently set\)\]/ },
         { at: /bind keys/, keys: '\n' },
         { at: /Do what\?/, pick: /bind key to a command/ },
@@ -384,7 +384,7 @@ void test('the bind keys row binds a command and lists the change', async () => 
     const [secondInput, secondCommand] = openFullMenu();
     await secondInput.waitUntilBlocked();
     secondInput.feed('O');
-    const { views: secondViews, prose: secondProse } = await runScript(secondInput, secondCommand, [
+    const { views: secondViews } = await runScript(secondInput, secondCommand, [
         { at: / - /, pick: /bind keys\s+\[\(1 currently set\)\]/ },
         { at: /bind keys/, keys: '\n' },
         { at: /Do what\?/, keys: '\x1b' },

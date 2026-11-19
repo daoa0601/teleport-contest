@@ -111,7 +111,7 @@ void test('a polymorphed xorn reaches past a boulder to untrap', async () => {
     const level = await freshObjectRoom({ role: 'ranger' });
     requirePlayingGame(game);
     installPolymorphedHero('xorn', { hitPoints: 40, maxHitPoints: 40 });
-    const trap = addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
+    addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
     await floorObject(BOULDER, 11, 10);
     pushKeys('untrap\nl' + ' '.repeat(20));
     await rhack('#'.charCodeAt(0));

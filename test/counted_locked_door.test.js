@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { continueRun } from '../js/hack.js';
 import { rhack } from '../js/cmd.js';
-import { A_CON, A_DEX, A_STR, DOOR, D_LOCKED } from '../js/const.js';
+import { DOOR, D_LOCKED } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requireGameLevel } from '../js/gstate.js';
 import { freshTurnRoom } from './support/playable-room.js';

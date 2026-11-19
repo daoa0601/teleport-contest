@@ -16,7 +16,7 @@ import type { Check, Fields, SavedEntityContext } from './saved_validation.js';
 
 // Entity owners validate every declared entity field and retain their own
 // visited set, so container/carrier back-references preserve object identity.
-export interface MapEntityChecks {
+interface MapEntityChecks {
     object: Check<GameObject>;
     monster: Check<Monster>;
     room: Check<Room>;

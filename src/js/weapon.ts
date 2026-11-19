@@ -81,7 +81,7 @@ interface PolymorphWeaponOptions extends WeaponMessageOptions {
     polyspot?: boolean;
 }
 
-export interface MonsterRangedWeapon {
+interface MonsterRangedWeapon {
     weapon: GameObject;
     launcher: GameObject | null;
 }
@@ -243,7 +243,7 @@ export function weaponHitValue(object: GameObject, defender: Hero | Monster, {
 // below are dmgval()'s blocks in C order (die switch, enchantment, target
 // base rules, the blessed/silver/light bonus, erosion).
 
-export interface PhysicalWeaponDamageOptions {
+interface PhysicalWeaponDamageOptions {
     state?: GameState;
     hero?: boolean;
     rollOne?: (sides: number) => number;
@@ -425,11 +425,11 @@ export function rollPhysicalWeaponDamageAgainstHero(
     );
 }
 
-export interface SpecialContactDamageOptions {
+interface SpecialContactDamageOptions {
     state?: GameState;
 }
 
-export interface SpecialContactDamageResult {
+interface SpecialContactDamageResult {
     damage: number;
     silverMask: number;
 }

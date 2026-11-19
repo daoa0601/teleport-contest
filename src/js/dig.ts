@@ -4,15 +4,14 @@
 import { stack_object } from './invent.js';
 import { POTION_CLASS, COIN_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
-import { wakeNearby,
-    finishLiquidDeathForCurrentMover, hideHeroUnder,
+import {
+    wakeNearby, finishLiquidDeathForCurrentMover, hideHeroUnder,
 } from './mon.js';
-import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
-import { publishMonsterYelp } from './sounds.js';
+import { bringLeashedFollowers, releaseObjectLeash } from './apply.js';
 import { objectIsHardHelmet } from './do_wear.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
 
-import { A_CHA, A_CON, A_INT, A_LAWFUL, A_STR, A_DEX, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, COLNO, CORR, COULD_SEE, DBWALL, DB_LAVA, DB_MOAT, DB_UNDER, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, HOLE, IN_SIGHT, IRONBARS, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, IS_TREE, IS_WALL, Is_airlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, KILLED_BY, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, MON_OFFMAP, TAINT_AGE, MOAT, OBJECT_TIMER_KIND, PIT, POOL, RLOC_NOMSG, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, SHOP_WALL_COST, SINK, STONE, THRONE, TRAPDOOR, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, Upolyd, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, xdir, ydir, FOOT, HEAD, STOMACH } from './const.js';
+import { A_CHA, A_CON, A_INT, A_LAWFUL, A_STR, A_DEX, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, COLNO, CORR, COULD_SEE, DBWALL, DB_LAVA, DB_MOAT, DB_UNDER, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, HOLE, IN_SIGHT, IRONBARS, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, IS_TREE, IS_WALL, Is_airlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, KILLED_BY, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, MON_OFFMAP, TAINT_AGE, MOAT, OBJECT_TIMER_KIND, PIT, POOL, RLOC_NOMSG, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, SHOP_WALL_COST, SINK, STONE, THRONE, TRAPDOOR, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, xdir, ydir, FOOT, HEAD, STOMACH } from './const.js';
 import { isok } from './cmd.js';
 import { currency } from './invent.js';
 import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isMoatAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
@@ -20,12 +19,12 @@ import { convertSecretDoor } from './detect.js';
 import { impactDrop } from './dokick.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { displayLiquidName, monsterName } from './do_name.js';
-import { canSeeMonster, feel_location, feel_newsym, flush_screen, newsym, show_glyph_cell } from './display.js';
+import { canSeeMonster, feel_newsym, flush_screen, newsym, show_glyph_cell } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { explode } from './explode.js';
 import {
-    fireDamageChain, pitDirection, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, seeTrap, trapAt,
-    trapName, mintrap, waterDamageChain, setHeroTrap, dotrap, resetUtrap, maketrap, deleteFloorTrap,
+    fireDamageChain, pitDirection, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, seeTrap,
+    trapAt, trapName, mintrap, waterDamageChain, setHeroTrap, dotrap, resetUtrap, maketrap, deleteFloorTrap,
     triggerBoobyTrap,
 } from './trap.js';
 import { breakSinkAt, dryFountainAt, gushForthFromFountain } from './fountain.js';
@@ -114,7 +113,7 @@ const DIG_ACTIONS = [
 // C dig.c d_target[] for "You hit the <target>..." messages.
 const DIG_TARGETS = ['', 'rock', 'statue', 'boulder', 'door', 'tree'] as const;
 
-export type DiggingTarget = typeof DIGTYP_UNDIGGABLE | typeof DIGTYP_ROCK
+type DiggingTarget = typeof DIGTYP_UNDIGGABLE | typeof DIGTYP_ROCK
     | typeof DIGTYP_STATUE | typeof DIGTYP_BOULDER | typeof DIGTYP_DOOR
     | typeof DIGTYP_TREE;
 
@@ -699,8 +698,8 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
 // ---------------------------------------------------------------------------
 // Downward digging: viability checks and created terrain (digging_terrain)
 
-export type DiggingActor = 'you' | 'object' | Monster | null;
-export interface DigHoleOptions {
+type DiggingActor = 'you' | 'object' | Monster | null;
+interface DigHoleOptions {
     pitOnly?: boolean;
     byMagic?: boolean;
     coordinate?: Position | null;
@@ -1380,7 +1379,7 @@ export function liquidForHole(
 
 const WATCH = new Set(['watchman', 'watch captain']);
 
-export interface WatchDiggingOptions {
+interface WatchDiggingOptions {
     state?: GameState;
     monster?: Monster | null;
     magic?: boolean;
@@ -1693,7 +1692,7 @@ function clearTerrainFlags(location: MapLocation): void {
 // Object burial and buried-object ownership (buried_object)
 
 interface BurialOptions { publish?: MessagePublisher }
-export interface BurialResult {
+interface BurialResult {
     outcome: 'skipped' | 'interrupted' | 'absorbed' | 'buried';
     next: GameObject | null;
 }
@@ -1925,7 +1924,7 @@ interface MonsterTunnelOptions {
     publish?: MessagePublisher;
 }
 
-export interface MonsterTunnelResult { died: boolean; heroDied: boolean }
+interface MonsterTunnelResult { died: boolean; heroDied: boolean }
 
 // C dig.c:mdig_tunnel().
 export async function digMonsterTunnel(monster: Monster, state: PlayingGameState, {
@@ -2039,13 +2038,13 @@ export async function freeHeroFromBuriedBall(state: GameState = game) {
 
 // C dig.c:use_pick_axe()/use_pick_axe2(). Tool prompts and digging directions.
 
-export interface PickAxeDirection {
+interface PickAxeDirection {
     dx: number;
     dy: number;
     dz: number;
 }
 
-export interface PickAxeResult {
+interface PickAxeResult {
     spentTime: boolean;
     resume?: boolean;
     cancelled?: true;

@@ -12,23 +12,14 @@ import { addInventoryItem } from '../js/invent.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterOnMap } from '../js/steed.js';
 import {
-    CHEST, CRYSKNIFE, DAGGER, GOLD_PIECE, LARGE_BOX, OBJECT_NAMES, SACK,
-    WORM_TOOTH, WAN_DIGGING,
+    CRYSKNIFE, DAGGER, GOLD_PIECE, LARGE_BOX, OBJECT_NAMES, SACK, WORM_TOOTH, WAN_DIGGING,
 } from '../js/object_data.js';
 import { unlinkObject, addCreatedObjectToContainer, addObjectToContainer, chargeAlteredUnpaidObject } from '../js/mkobj.js';
 import {
-
-    addShopObjectToBill,
-
-    billedPickupQuote,
-
-    getCostOfShopItem,
-
-    splitObjectBill,
-
+    addShopObjectToBill, billedPickupQuote, getCostOfShopItem, splitObjectBill,
 } from '../js/shk.js';
 import { settleThrownShopObject } from '../js/dothrow.js';
-import {splitObjectStack, placeCreatedObject, placeObject} from '../js/mkobj.js';
+import { splitObjectStack, placeCreatedObject, placeObject } from '../js/mkobj.js';
 import { mergeObjectStacks } from '../js/invent.js';
 
 
@@ -205,7 +196,7 @@ void test('contained objects price through their top and billed contents', async
 });
 
 void test('an intact return removes only the assigned keeper bill', async t => {
-    const first = await staffedShop(t);
+    await staffedShop(t);
     requirePlayingGame(game);
     const other = await createStaffedShop({
         left: 20, right: 24, top: 9, bottom: 11,

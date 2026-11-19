@@ -23,11 +23,12 @@ import { game } from './gstate.js';
 import { clipToplineToColumn, clearMessageWindow, decodeMixedTopline, flushPendingTopline, pageTopline, updateTopline } from './topl.js';
 import { plineWithContinuation } from './pline.js';
 import { rawPrint } from './input.js';
-import { BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY,
-    MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS, HI_ZAP, BL_LEVELDESC, BL_GOLD, BL_HP, BL_HPMAX, BL_ENE, BL_ENEMAX, BL_AC,
-    BL_XP, BL_HD, BL_EXP, BL_TIME, BL_HUNGER, BL_CAP, BL_CONDITION, BL_VERS,
-    CLR_MAX, HL_ATTCLR_BOLD, HL_ATTCLR_DIM, HL_ATTCLR_ITALIC, HL_ATTCLR_ULINE,
-    HL_ATTCLR_BLINK, HL_ATTCLR_INVERSE } from './const.js';
+import {
+    BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED,
+    MENU_ITEMFLAGS_SKIPMENUCOLORS, HI_ZAP, BL_LEVELDESC, BL_GOLD, BL_HP, BL_HPMAX, BL_ENE, BL_ENEMAX, BL_AC,
+    BL_XP, BL_HD, BL_EXP, BL_TIME, BL_HUNGER, BL_CAP, BL_CONDITION, BL_VERS, CLR_MAX, HL_ATTCLR_BOLD,
+    HL_ATTCLR_DIM, HL_ATTCLR_ITALIC, HL_ATTCLR_ULINE, HL_ATTCLR_BLINK, HL_ATTCLR_INVERSE,
+} from './const.js';
 import { NO_COLOR, ATR_INVERSE, ATR_BOLD, ATR_UNDERLINE, CLR_GRAY, DEC_TO_UNICODE } from './terminal.js';
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
 import { statusConditionBit, bot, repadWithDashes } from './botl.js';
@@ -40,9 +41,9 @@ import type { TextMenuEntry } from './windows.js';
 import { nhgetch } from './input.js';
 import { tty_getlin } from './query.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import type { ConditionText, StatusFieldSpan, StatusLine2Fields, StatusStyle } from './botl.js';
+import type { StatusFieldSpan, StatusLine2Fields, StatusStyle } from './botl.js';
 import type { MapLocation } from './map_types.js';
-import type { TerminalCell, TerminalColor } from './terminal.js';
+import type { TerminalColor } from './terminal.js';
 import type { GameDisplay, UnderlayCell } from './game_display.js';
 
 const ANSI_DEFAULT = 39;
@@ -96,8 +97,8 @@ export interface TextMenuLine {
     itemflags?: number;
 }
 export type MenuUnderlay = readonly (readonly UnderlayCell[])[];
-export interface PaintedMenuRow extends TextMenuLine { attributeStart: number }
-export interface MenuLayout<T extends TextMenuLine> {
+interface PaintedMenuRow extends TextMenuLine { attributeStart: number }
+interface MenuLayout<T extends TextMenuLine> {
     rows: readonly (T & PaintedMenuRow)[];
     pageSize: number;
     pageCount: number;
@@ -110,8 +111,8 @@ export interface MenuLayout<T extends TextMenuLine> {
 interface DisplayedMenuLayout<T extends TextMenuLine> extends MenuLayout<T> {
     boundary: number;
 }
-export type MenuPickMode = typeof PICK_NONE | typeof PICK_ONE | typeof PICK_ANY;
-export interface TtyMenuEntry<T> extends TextMenuLine {
+type MenuPickMode = typeof PICK_NONE | typeof PICK_ONE | typeof PICK_ANY;
+interface TtyMenuEntry<T> extends TextMenuLine {
     identifier: T | null;
     selector?: string;
     group?: string;
@@ -133,8 +134,8 @@ export interface TtyMenuWindow<T> {
     destroyed: boolean;
     underlay: MenuUnderlay | null;
 }
-export interface TtyMenuSelection<T> { identifier: T; selector: string; count: number }
-export interface TtyMenuResult<T> {
+interface TtyMenuSelection<T> { identifier: T; selector: string; count: number }
+interface TtyMenuResult<T> {
     cancelled: boolean;
     key: number;
     selections: TtyMenuSelection<T>[];
@@ -580,7 +581,7 @@ export function paintMenuPage<T extends TextMenuLine>(
     rows: readonly PaintedMenuRow[], underlay: MenuUnderlay | null,
     previousPageLines = 0,
 ): void {
-    const { boundary, maxRows, pageCount } = menu;
+    const { boundary, maxRows } = menu;
     if (boundary === 0) d.clearScreen();
     else {
         // process_menu_window() cl_end()s its rows plus the spare lines down
@@ -1192,7 +1193,7 @@ export function hitpointBarFill(hp: number, maximum: number): number {
 
 // ── wintty.c:make_things_fit() — shrinking the second status row ──
 
-export interface StatusLine2Layout {
+interface StatusLine2Layout {
     text: string;
     spans: readonly StatusFieldSpan[];
     capacityBlank: boolean;

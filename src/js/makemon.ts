@@ -1648,7 +1648,6 @@ export async function makemon(
     }
 
     const initializeMonsterEquipment = allowMonsterInventory && !Is_rogue_level(game.u.uz);
-    let skipCommonMonsterInventory = false;
     // C makemon.c:m_initthrow(). Throwing stacks bypass mongets(): the raw
     // mksobj() result goes straight into the inventory, so demons keep any
     // blessing, the quantity is replaced with rn1(oquan, 3), and orcish
@@ -2157,7 +2156,7 @@ export type MonsterGrowth =
         applied?: boolean;
     });
 
-export interface MonsterGrowthOptions {
+interface MonsterGrowthOptions {
     victim?: Monster | null;
     state?: GrowthState;
     rollOne?: Roll;

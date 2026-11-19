@@ -26,8 +26,6 @@ const statusNames = [
     'NH_STATUS_RELEASED', 'NH_STATUS_WIP', 'NH_STATUS_BETA',
     'NH_STATUS_POSTRELEASE',
 ] as const;
-type StatusName = (typeof statusNames)[number];
-
 const header = readFileSync(sourcePath, 'utf8');
 const values = new Map<NumericName, number>();
 for (const name of numericNames) {

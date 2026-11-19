@@ -6,7 +6,7 @@
 import { finishBuriedRevival, landFloorObject } from './do.js';
 import {
     RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS,
-    SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS,
+    SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, ROCK_CLASS,
 } from './objclass.js';
 import {
     objectClassForType, objectMerge, objectMagic, objectCharged, objectDirection, AMULET_OF_YENDOR,
@@ -21,238 +21,38 @@ import {
     WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE,
     WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, TIN,
     BLACK_DRAGON_SCALES, BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD,
-    SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING, objectPropertyName,
+    SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING,
+    objectPropertyName,
 } from './object_data.js';
 import { mimicHitMessage } from './mon.js';
 import { OBJ_NAME } from './object_data.js';
 import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './detect.js';
 
-import { monsterAt, monsterHasMapPosition, monsterAtPosition } from './steed.js';
+import { monsterAt, monsterAtPosition } from './steed.js';
 import { chooseInventoryObject, stack_object } from './invent.js';
 import {
-
-    GETOBJ_EXCLUDE,
-
-    GETOBJ_SUGGEST,
-
-    PLNMSG_ENVELOPED_IN_GAS,
-
-    ZAP_POS,
-
-    ANTI_MAGIC,
-
-    CORR,
-
-    DBWALL,
-
-    D_CLOSED,
-
-    D_LOCKED,
-
-    DOOR,
-
-    DRAWBRIDGE_DOWN,
-
-    ENGRAVE,
-
-    ENL_GAMEINPROGRESS,
-
-    EXPL_MAGICAL,
-
-    HEADSTONE,
-
-    HOLE,
-
-    IS_FURNITURE,
-
-    Is_airlevel,
-
-    LEVEL_TELEP,
-
-    MAGICENLIGHTENMENT,
-
-    MAGIC_PORTAL,
-
-    MAGIC_TRAP,
-
-    POLY_TRAP,
-
-    SCORR,
-
-    TELEP_TRAP,
-
-    TRAPDOOR,
-
-    TRAP_EXPLODE,
-
-    VIBRATING_SQUARE,
-
-    A_CON,
-
-    A_CHA,
-
-    W_ARMH,
-
-    A_WIS,
-
-    W_ARMG,
-
-    A_DEX,
-
-    A_STR,
-
-    A_INT,
-
-    W_RING,
-
-    W_ARMOR,
-
-    G_GENOD,
-
-    MAX_OIL_IN_FLASK,
-
-    MAX_SPELL_STUDY,
-
-    MM_NOMSG,
-
-    NO_MINVENT,
-
-    W_AMUL,
-
-    W_ART,
-
-    W_ARTI,
-
-    W_QUIVER,
-
-    W_RINGL,
-
-    W_RINGR,
-
-    W_SWAPWEP,
-
-    W_TOOL,
-
-    W_WEP,
-
-    COLNO,
-
-    DB_FLOOR,
-
-    DB_ICE,
-
-    DB_UNDER,
-
-    DRAWBRIDGE_UP,
-
-    FOUNTAIN,
-
-    SHOP_BARS_COST,
-
-    SHOP_DOOR_COST,
-
-    D_BROKEN,
-
-    D_NODOOR,
-
-    HWALL,
-
-    ICE,
-
-    ICED_MOAT,
-
-    ICED_POOL,
-
-    IRONBARS,
-
-    IS_WALL,
-
-    IS_WATERWALL,
-
-    Is_rogue_level,
-
-    Is_waterlevel,
-
-    ismnum,
-
-    LAVAWALL,
-
-    PIT,
-
-    POOL,
-
-    ROOM,
-
-    ROWNO,
-
-    SDOOR,
-
-    TT_INFLOOR,
-
-    TT_LAVA,
-
-    Upolyd,
-
-    VWALL,
-
-    WEB,
-
-    W_NONDIGGABLE,
-
-    SHOPBASE,
-
-    BOLT_LIM,
-
-    LEVEL_TIMER_KIND,
-
-    OBJECT_TIMER_KIND,
-
-    HEAD,
-
-    FACE,
-
-    FOOT,
-
-    ARM,
-
-    EYE,
-
-    LL_CONDUCT,
-
-    LL_ARTIFACT,
-
-    LL_WISH,
-
-    INVORDER_SORT,
-
-    INCLUDE_HERO,
-
-    PICK_NONE,
-
+    GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, ANTI_MAGIC, CORR, DBWALL, D_CLOSED,
+    D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, ENL_GAMEINPROGRESS, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE,
+    Is_airlevel, LEVEL_TELEP, MAGICENLIGHTENMENT, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP,
+    TRAPDOOR, TRAP_EXPLODE, VIBRATING_SQUARE, A_CON, A_CHA, W_ARMH, A_WIS, W_ARMG, A_DEX, A_STR, A_INT,
+    W_RING, W_ARMOR, G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI,
+    W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP,
+    FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS,
+    IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR,
+    TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, SHOPBASE, BOLT_LIM, LEVEL_TIMER_KIND,
+    OBJECT_TIMER_KIND, HEAD, FACE, FOOT, ARM, EYE, LL_CONDUCT, LL_ARTIFACT, LL_WISH, INVORDER_SORT,
+    INCLUDE_HERO, PICK_NONE,
 } from './const.js';
 import { isok } from './cmd.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
 import { heroHasCarriedArtifactFlag, artifactById, defends, defendsWhenCarried } from './artifact.js';
 import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom, currentAttribute, poisonHero } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
-import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
+import { canSeeMonster, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
 import {
-
-    formatFeltMessage,
-
-    pline,
-
-    plineWithContinuation,
-
-    publishHeardMessage,
-
-    recordGameLogEvent,
-
-    set_msg_dir,
-
+    formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, set_msg_dir,
     impossible,
-
 } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { waterbodyName } from './pager.js';
@@ -261,8 +61,8 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm, heroResistsStoning, touchPetrifies, eyecount, resistsBlnd } from './mondata.js';
 import {
     setHeroTrap, dotrap, mintrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap,
-    openFallingTrap, openHoldingTrap, sokobanGuilt, igniteItems, resetUtrap, maketrap,
-    deleteFloorTrap, meltIceTrap, activateStatueTrapAt, animateStatue, trapAt,
+    openFallingTrap, openHoldingTrap, sokobanGuilt, igniteItems, resetUtrap, maketrap, deleteFloorTrap,
+    meltIceTrap, activateStatueTrapAt, animateStatue, trapAt,
 } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
 import { possessiveName, mungSpaces } from './hacklib.js';
@@ -282,43 +82,9 @@ import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass, erosionMatters, simpleArmorName } from './objnam.js';
 import {
-
-    copySavedMonsterTraits,
-
-    objectQuantity,
-
-    splitObjectStack,
-
-    mksobj,
-
-    unblessObjectState,
-
-    uncurseObjectState,
-
-    mkobj,
-
-    set_corpsenm,
-
-    replaceObject,
-
-    unlinkObject,
-
-    objectWeight,
-
-    updateIceObjectTimersAt,
-
-    placeCreatedObject,
-
-    placeObject,
-
-    isContainer,
-
-    remove_object,
-
-    sweepFloorPile,
-
-    chargeAlteredUnpaidObject,
-
+    copySavedMonsterTraits, objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState,
+    mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt,
+    placeCreatedObject, placeObject, isContainer, remove_object, sweepFloorPile, chargeAlteredUnpaidObject,
 } from './mkobj.js';
 import {
     MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL,
@@ -352,8 +118,8 @@ import {
 import type { MonsterDeathOptions, MonsterFormChange, MonsterFormChangeOptions, MonsterSelfTouchResult } from './mon.js';
 import {
     setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed,
-    monsterSpeedMessage, findMonsterArmorClass, wornInSlot,
-    removeObjectFromMonsterInventory, removeHeroEquipment,
+    monsterSpeedMessage, findMonsterArmorClass, wornInSlot, removeObjectFromMonsterInventory,
+    removeHeroEquipment,
 } from './worn.js';
 import { rndHallublast, destroyObjectFromMonsterInventory } from './mthrowu.js';
 import { redrawMonsterWormSegments } from './worm.js';
@@ -407,8 +173,8 @@ import { mergeObjectStacks } from './invent.js';
 import type { MapLocation, Position } from './map_types.js';
 import { monsterSpellDeathReason } from './mcastu.js';
 import { putMonsterToSleep, sleptMonst } from './mhitm.js';
-import { heroHasRemovableSpeed, u_slow_down,
-    expelHero,
+import {
+    heroHasRemovableSpeed, u_slow_down, expelHero,
 } from './mhitu.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid, shieldMonster } from './mon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasPoisonResistance, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
@@ -430,8 +196,10 @@ import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { putHeroToSleep } from './timeout.js';
 import { burnArmorByFire, damageObjectWithAcid, fillPitWithBoulderAt } from './trap.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu,
-    tty_start_menu, showTextWindow } from './wintty.js';
+import {
+    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu,
+    showTextWindow,
+} from './wintty.js';
 import { flushPendingTopline } from './topl.js';
 import { monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterWieldedWeapon } from './weapon.js';
@@ -488,7 +256,7 @@ import type { ObjectWhere } from './object_types.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { monsterIsEel } from './mondata.js';
 import { requireInitializedHero } from './hero_types.js';
-export interface FloorBurnOptions {
+interface FloorBurnOptions {
     state?: GameState;
     giveFeedback?: boolean;
     heroCaused?: boolean;
@@ -498,7 +266,7 @@ export interface FloorBurnOptions {
     repaint?: (x: number, y: number) => void | Promise<void>;
 }
 
-export interface RayFloorOptions {
+interface RayFloorOptions {
     rayNoun?: 'bolt' | 'spell' | 'blast';
     random?: typeof rn2;
     heroCaused?: boolean;
@@ -507,7 +275,7 @@ export interface RayFloorOptions {
     publish?: MessagePublisher;
 }
 
-export interface InventoryDamageOptions {
+interface InventoryDamageOptions {
     state?: GameState;
     publish?: MessagePublisher;
     random?: typeof rn2;
@@ -515,7 +283,7 @@ export interface InventoryDamageOptions {
     die?: DeathHandler;
 }
 
-export interface MonsterInventoryDamageOptions extends Omit<InventoryDamageOptions, 'die'> {
+interface MonsterInventoryDamageOptions extends Omit<InventoryDamageOptions, 'die'> {
     visible?: boolean;
 }
 
@@ -579,7 +347,7 @@ interface PolymorphMagicDetails {
     killed: boolean;
 }
 
-export type MonsterMagicPolymorphResult =
+type MonsterMagicPolymorphResult =
     | ({ heroDied: true; alreadyChanged?: never } & Partial<PolymorphMagicDetails>)
     | ({ heroDied?: false; alreadyChanged?: never } & PolymorphMagicDetails)
     | {
@@ -607,7 +375,7 @@ interface ObjectLocationOptions {
     buried?: boolean;
 }
 
-export interface ObjectLocation {
+interface ObjectLocation {
     x: number;
     y: number;
 }
@@ -616,7 +384,7 @@ export interface ObjectLocation {
 // C ref: zap.c cancel_monst() and mon.c normal_shape().
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 
-export interface CancelMonsterOptions {
+interface CancelMonsterOptions {
     state?: GameState;
     attackLevel: number;
     random?: typeof rn2;
@@ -635,7 +403,7 @@ export interface MagicDamageResult {
     heroDied: boolean;
 }
 
-export interface RayFloorResult {
+interface RayFloorResult {
     absorbed: boolean;
     rangeChange: number;
     shopDamage?: boolean;
@@ -672,7 +440,7 @@ const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 // C obj.h:Is_box()
 const isBox = (object: GameObject) => object.otyp === CHEST || object.otyp === LARGE_BOX;
 
-export interface UndeadTurningOptions {
+interface UndeadTurningOptions {
     roll: typeof rnd;
     random: (limit: number) => number;
     wakeMonster: (monster: Monster) => unknown;
@@ -699,18 +467,18 @@ const STONE_GOLEM = MONSTER_NAME.indexOf('stone golem');
 
 const FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
 
-export interface RayCellVisit extends Position {
+interface RayCellVisit extends Position {
     dx: number; dy: number; location: MapLocation | null; remainingRange: number;
 }
 
-export interface RayCellResponse {
+interface RayCellResponse {
     rangeChange?: number; reflected?: boolean; absorbed?: boolean;
     stop?: boolean; result?: NativeRayResult;
 }
 
 interface RayObstacle extends Position { previousX: number; previousY: number; }
 
-export interface RayTraversalOptions {
+interface RayTraversalOptions {
     state?: GameState;
     direction: RayDirection;
     range: number;
@@ -734,7 +502,7 @@ const DIRECTION_Y: Readonly<Partial<Record<RayDirection, number>>> = Object.free
     h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1,
 });
 
-export type RayDirection = 'h' | 'j' | 'k' | 'l' | 'y' | 'u' | 'b' | 'n' | '<' | '>';
+type RayDirection = 'h' | 'j' | 'k' | 'l' | 'y' | 'u' | 'b' | 'n' | '<' | '>';
 
 export interface NativeRayResult { used: boolean; heroDied: boolean; hits: number; }
 
@@ -831,9 +599,9 @@ const DIRECTIONS: Readonly<Record<RayDirection, readonly [number, number]>> = Ob
     '<': [0, 0], '>': [0, 0],
 });
 
-export type HeroRaySource = `${'hero' | 'monster'}-${'breath' | 'spell' | 'wand'}`;
+type HeroRaySource = `${'hero' | 'monster'}-${'breath' | 'spell' | 'wand'}`;
 
-export interface HeroRayOptions {
+interface HeroRayOptions {
     state?: GameState;
     attack?: MonsterAttack | null;
     publish?: MessagePublisher;
@@ -887,7 +655,7 @@ interface FractureOptions {
 
 interface RayMessageOptions { x: number; y: number; damage?: number; ending?: string; state?: GameState; }
 
-export type RayNameKind = 'wand' | 'spell' | 'breath';
+type RayNameKind = 'wand' | 'spell' | 'breath';
 
 const names: Record<RayNameKind, readonly string[]> = {
     wand: ['magic missile', 'bolt of fire', 'bolt of cold', 'sleep ray',
@@ -911,17 +679,17 @@ export interface BoomerangFlight extends ProjectileFlight {
 
 export type CorpseObject = GameObject & { corpsenm: number };
 
-export interface ObjectRevivalLocation extends Position {
+interface ObjectRevivalLocation extends Position {
     monsterCarrier: Monster | null;
 }
 
-export interface ContainerRevivalLocation extends ObjectRevivalLocation {
+interface ContainerRevivalLocation extends ObjectRevivalLocation {
     directContainer: GameObject;
     nesting: number;
     outer: GameObject;
 }
 
-export type CorpseRevivalLocation = ObjectRevivalLocation | ContainerRevivalLocation;
+type CorpseRevivalLocation = ObjectRevivalLocation | ContainerRevivalLocation;
 
 export interface CorpseRevived {
     kind: 'revived';

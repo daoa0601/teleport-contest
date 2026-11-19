@@ -3,20 +3,20 @@
 // wiz_kill()/wiz_telekinesis()/wiz_where()/wiz_level_tele()/wiz_level_change()/
 // wiz_map()/wiz_identify()/wiz_show_nhuuid()/wiz_show_stats().
 
-import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_sokoban, IN_SIGHT, Is_airlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, SIZEOF_CEMETERY, SIZEOF_DAMAGE, SIZEOF_EBONES, SIZEOF_EDOG, SIZEOF_EGD, SIZEOF_EMIN, SIZEOF_EPRI, SIZEOF_ESHK, SIZEOF_KINFO, SIZEOF_MEXTRA, SIZEOF_MONST, SIZEOF_OBJ, SIZEOF_OEXTRA, SIZEOF_TRAP, SIZEOF_WSEG, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR, ARM } from './const.js';
+import { COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_sokoban, IN_SIGHT, Is_knox_level, Is_rogue_level, Is_stronghold, KILLED_BY, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, SIZEOF_CEMETERY, SIZEOF_DAMAGE, SIZEOF_EBONES, SIZEOF_EDOG, SIZEOF_EGD, SIZEOF_EMIN, SIZEOF_EPRI, SIZEOF_ESHK, SIZEOF_KINFO, SIZEOF_MEXTRA, SIZEOF_MONST, SIZEOF_OBJ, SIZEOF_OEXTRA, SIZEOF_TRAP, SIZEOF_WSEG, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR, ARM } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
-import type { DungeonBranch, DungeonLocation, SpecialLevelDescriptor } from './dungeon_types.js';
-import { getLine, ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
-import type { TextMenuEntry } from './windows.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu,
-    tty_start_menu, showTextWindow } from './wintty.js';
+import type { DungeonLocation } from './dungeon_types.js';
+import { getLine, addMenuHeading, showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
+import {
+    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, showTextWindow,
+} from './wintty.js';
 import type { TtyMenuWindow } from './wintty.js';
-import { canSpotMonster, docrt, map_engraving, map_trap, unmap_invisible, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible } from './display.js';
+import { canSpotMonster, docrt, map_engraving, map_trap, unmap_invisible, cmapSymbolByte, objectClassSymbol, rogueColorsActive, glyphAt, map_invisible } from './display.js';
 import { customizedGlyphs } from './glyphs.js';
 import type { CustomizedGlyph } from './glyphs.js';
 import { bot } from './botl.js';
@@ -37,18 +37,19 @@ import { findit, mapMagicLevel } from './detect.js';
 import { monsterName, monsterTypeName } from './do_name.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { MONSTER_GENO, MONSTER_NAME } from './monster_data.js';
-import { finishMonsterKilled, finishMonsterLiquidDeath, killGenocidedMonsters, purgeDeadMonsters, removeMonsterFromGame, restoreNaturalMonsterShapes, smellUnseenMonster,
-    finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
+import {
+    finishMonsterKilled, finishMonsterLiquidDeath, purgeDeadMonsters, removeMonsterFromGame,
+    restoreNaturalMonsterShapes, smellUnseenMonster, finishHeroMonsterKill, finishHeroMonsterKillOutcome,
+    finishHurtleMonsterDeath,
 } from './mon.js';
 import { finishHeroDeath } from './end.js';
 import { hurtleHero, hurtleMonster } from './dothrow.js';
 import { finishTeleportArrival, levelTeleport } from './teleport.js';
-import { gotoLevel, resolveHeroArrivalCollision, saveCurrentState } from './do.js';
+import { gotoLevel } from './do.js';
 import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { encumber_msg } from './pickup.js';
-import { withMonsterNoticesBlocked, applyHeroLiquidEffects, mayDig, showGetposTip, checkSpecialRoom } from './hack.js';
-import { Is_botlevel, depth, dungeonDepth, overviewStats, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, u_on_rndspot, In_quest, In_mines, In_V_tower, Invocation_lev } from './dungeon.js';
-import { unlinkObject, deallocateObject } from './mkobj.js';
+import { withMonsterNoticesBlocked, applyHeroLiquidEffects, mayDig, showGetposTip } from './hack.js';
+import { Is_botlevel, depth, overviewStats, printDungeon, specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, In_quest, In_mines, In_V_tower, Invocation_lev } from './dungeon.js';
 import { lightStats } from './light.js';
 import { engrStats } from './engrave.js';
 import { timerStats } from './timeout.js';
@@ -60,15 +61,12 @@ import { panic } from './end.js';
 import { flip_level, flip_level_rnd } from './sp_lev.js';
 import { makeDeaf, startHeroSickness, makeHallucinated, makeStunned, makeBlinded, setHeroSlimingTimeout, setHeroPetrificationTimeout, setSlipperyHands, setPropertyTimeout } from './potion.js';
 import { makeHeroVomiting } from './potion.js';
-import { propertyIsActive, propertyTimeout, refreshMovementProperties } from './properties.js';
+import { propertyIsActive, propertyTimeout } from './properties.js';
 import { rn2 } from './rng.js';
 import type { PlayingGameState } from './game_state.js';
-import { heroIsPunished, placeBallAndChain, releaseCarriedBall, unplaceBallAndChain } from './ball.js';
-import { maybeResetPick } from './lock.js';
 import { mklev } from './mklev.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { vision_reset_new_level } from './vision.js';
-import { collectLevelFollowers, deliverMigratingMonsters, migrateMonsterOffLevel } from './dog.js';
+import { collectLevelFollowers, migrateMonsterOffLevel } from './dog.js';
 import { makemonAt, rndmonstAdj } from './makemon.js';
 
 import { MAP_SYMBOLS } from './map_symbols.js';

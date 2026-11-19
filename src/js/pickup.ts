@@ -6,13 +6,13 @@ import {
     objectClassForType, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER,
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION,
     GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP,
-    POT_OIL, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION,
-    WAX_CANDLE,
+    POT_OIL, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE,
+    WAN_CANCELLATION, WAX_CANDLE,
 } from './object_data.js';
 import { commandResultCancelled, cmdq_add_ec, setMulti, getAdjacentLocation, isok, paranoidYesNoQuit, yn_function } from './cmd.js';
 import {
-    nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount,
-    calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity,
+    nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount, calcCapacity, invWeight,
+    MOD_ENCUMBER, weightCapacity,
 } from './hack.js';
 import { monsterStagger, monsterIsBig, monsterIsRider, monsterThrowsRocks, touchPetrifies, heroResistsStoning } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -29,14 +29,14 @@ import { autokey, autoUnlockFlags, pickLock, isForceableWeapon, changeBoxLockByM
 import { AUTOSELECT_SINGLE, CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, FEEL_COCKATRICE, INCLUDE_HERO, INVORDER_SORT, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ANY, PICK_NONE, PICK_ONE, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SIGNAL_ESCAPE, SORTLOOT_INVLET, SORTLOOT_PETRIFY, USE_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL, HAND, MM_ADJACENTOK, MM_NOMSG, NO_MINVENT, FOOT } from './const.js';
 import {
     inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject,
-    inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem,
-    chooseInventoryObject, currency, dungeonFeatureAt, engulfedHeroMenuSection, finishInventoryRemoval,
-    floorObjectDescription,
-    freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving,
-    recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, bucCategory,
+    inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook,
+    addInventoryItem, chooseInventoryObject, currency, dungeonFeatureAt, engulfedHeroMenuSection,
+    finishInventoryRemoval, floorObjectDescription, freeInventoryObject, getobj, lookHere,
+    pricedFloorObjectDescription, readFloorEngraving, recordHeroPrizeAcquisition, useUpInventoryStack,
+    feelPetrifyingCorpse, willFeelPetrifyingCorpse, bucCategory,
 } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero, landObjectOnAltar } from './do.js';
-import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout, set_corpsenm, fobjChain, floorPileAt} from './mkobj.js';
+import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout, set_corpsenm, fobjChain, floorPileAt } from './mkobj.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, newsym_force, canSpotMonster } from './display.js';
@@ -45,15 +45,15 @@ import type { FeatureOptions, InventoryClassification } from './invent.js';
 import type { MessagePublisher } from './pline.js';
 import { getLine, showMultiSelectWindow, showInventoryWindow, showDisclosureOverlay, showChoiceWindow } from './windows.js';
 import { snapshotMenuUnderlay, restoreMenuUnderlay, showTextWindow } from './wintty.js';
-import type { ChoiceMenuEntry, CountedSelection, MultiSelectItem, MultiSelectSection, PageLocalMultiSelectItem, SelectableMenuItem } from './windows.js';
+import type { ChoiceMenuEntry, CountedSelection, MultiSelectItem, PageLocalMultiSelectItem, SelectableMenuItem } from './windows.js';
 import type { MenuUnderlay } from './wintty.js';
 import { takeQueuedInventoryChoice } from './invent.js';
 import { promptYesNoQuit, promptChoice } from './query.js';
 import { tty_yn_function } from './topl.js';
 import { useUpFloorObject } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
-import { hideHeroUnder, finishEnvironmentalMonsterDeath,
-    finishHeroMonsterKill, finishHeroMonsterKillOutcome,
+import {
+    hideHeroUnder, finishEnvironmentalMonsterDeath, finishHeroMonsterKill, finishHeroMonsterKillOutcome,
 } from './mon.js';
 import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL, SELL_DELIBERATE, SELL_DONTSELL, currentShopResident, stolenValue, sellHeroDroppedObject, warnAboutRemovedPick, deleteObject } from './shk.js';
 import { finishGhostlyPickup } from './bones.js';
@@ -64,7 +64,7 @@ import { makemonNear } from './mklev.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { surfaceName, ceilingName } from './dungeon.js';
 import { waterbodyName } from './pager.js';
-import type {TransferStack} from './mkobj.js';
+import type { TransferStack } from './mkobj.js';
 import { petrifyFromCorpseContact } from './stoning.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
 import { displayLiquidName, monsterName, randomDisplayMonsterName, visibleMonsterSubject } from './do_name.js';
@@ -80,7 +80,6 @@ import { heroIsBlind, heroIsUnaware, heroIsHallucinating } from './senses.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { Position } from './map_types.js';
 import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage, triggerChestTrap, trapAt } from './trap.js';
 import { clearMessageWindow, displayMessageWindow } from './topl.js';
 import { containerContents } from './end.js';
@@ -106,7 +105,7 @@ type PickupSelection = GameObject | CountedSelection<GameObject>;
 type TraditionalPickup = 'canceled' | { attempted: boolean };
 type ScrollPickupResult = { decision: 'stop' } | { decision: 'consumed' }
     | { decision: 'lift'; object: GameObject; count: number };
-export interface AddedInventoryObject {
+interface AddedInventoryObject {
     object: GameObject;
     count: number;
 }
@@ -315,7 +314,7 @@ async function pickUpTraditionally(source: PickupSource, count: number): Promise
 // with its headings, the FEEL_COCKATRICE abort, the INCLUDE_HERO engulfer
 // row, select_menu() and the engulfer's worn-object fixups.  Every port of
 // a C query_objlist() caller routes its menu through here.
-export interface QueryObjlistOptions {
+interface QueryObjlistOptions {
     // The C qflags bits (const.js).  BY_NEXTHERE only records that the
     // caller passed a per-square pile; the traversal is the chain given.
     qflags: number;
@@ -368,7 +367,7 @@ export async function queryObjlist(
     const {
         qflags, how, allow, describe, state = game, engulfer = null,
         extraClasses = [], groupAccelerators = false, observeRows = true,
-        counts = how === PICK_ANY, pageLocalKeys = false, headerLine = null,
+        pageLocalKeys = false, headerLine = null,
     } = options;
     if ((qflags & INCLUDE_HERO) !== 0 && how !== PICK_NONE)
         throw new TypeError('INCLUDE_HERO is only reached with a displayed inventory');
@@ -868,14 +867,14 @@ export async function forceDescribeDecor({ state = game, probing = false }: Feat
 
 // Decide how much of a floor or container stack the hero can lift.
 // C refs: pickup.c carry_count() and lift_object().
-export interface LiftOptions {
+interface LiftOptions {
     object: GameObject;
     container?: GameObject | null;
     count?: number;
     telekinesis?: boolean;
     state?: GameState;
 }
-export type LiftResult = { decision: 'lift'; count: number }
+type LiftResult = { decision: 'lift'; count: number }
     | { decision: 'stop' | 'skip'; count: 0 };
 
 const INVENTORY_SLOT_COUNT = 52;
@@ -1641,7 +1640,7 @@ async function tipContainer(source: GameObject): Promise<void> {
 
 type BucCategory = 'B' | 'U' | 'C' | 'X';
 type ObjectCategory = number | BucCategory | 'u' | 'P';
-export interface ObjectClassSelection {
+interface ObjectClassSelection {
     classes: number[];
     categories: ObjectCategory[];
     oneAtATime: boolean;
@@ -1899,11 +1898,11 @@ interface ContainerTransferBatch {
     results: ContainerTransferResult[];
     spentTime: boolean;
 }
-export type ContainerTransferResult =
+type ContainerTransferResult =
     | { moved: true; message: string; stop?: never; destroyedContainer?: never }
     | { moved: false; message: string | null; noRepeat?: boolean; stop?: boolean; destroyedContainer?: never }
     | { moved: false; message: null; stop?: never; destroyedContainer: true };
-export interface ContainerUseResult {
+interface ContainerUseResult {
     spentTime: boolean;
     container: GameObject | null;
     heroDied?: boolean;

@@ -5,7 +5,6 @@ import { setHeroSpecies } from '../../js/polyself.js';
 import { unplaceBallAndChain } from '../../js/ball.js';
 import { swallowed } from '../../js/display.js';
 import { monsterEmitsLight, vision_recalc } from '../../js/vision.js';
-import { refreshMovementProperties } from '../../js/properties.js';
 import { setHeroTrap } from '../../js/trap.js';
 import { A_INT, A_WIS, P_EXPERT, P_NUM_SKILLS, TT_BURIEDBALL, W_BALL, W_CHAIN, } from '../../js/const.js';
 import { placeCreatedObject, addBuriedObject } from '../../js/mkobj.js';

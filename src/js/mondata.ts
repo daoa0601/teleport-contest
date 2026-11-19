@@ -5,52 +5,17 @@
 
 import { levelHasCeiling } from './dungeon.js';
 import {
-
-    MONSTER_ATTACKS,
-
-    MONSTER_FLAGS1,
-
-    MONSTER_FLAGS2,
-
-    MONSTER_GENO,
-
-    MONSTER_GROWTH_TARGET,
-
-    MONSTER_LEVEL,
-
-    MONSTER_MOVE,
-
-    MONSTER_NAME,
-
-    MONSTER_SIZE,
-
-    MONSTER_SOUND,
-
-    MONSTER_SYMBOL,
-
-    requireMonsterData,
-
-    MONSTER_RESISTS,
-
-    MONSTER_COLOR,
-
-    monsterClassSymbol,
-
-    FLAMING_SPECIES,
-
-    MONSTER_FLAGS3,
-
-    PM_GREEN_SLIME,
-
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL,
+    MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, requireMonsterData,
+    MONSTER_RESISTS, MONSTER_COLOR, monsterClassSymbol, FLAMING_SPECIES, MONSTER_FLAGS3, PM_GREEN_SLIME,
     S_GHOST,
-
 } from './monster_data.js';
 import { monsterTypeName } from './do_name.js';
 import {
-    AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DCAY, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU,
-    AD_MAGM, AD_PHYS, AD_PLYS, AD_RBRE, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT,
-    AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH,
-    AT_WEAP, AD_SEDU, AD_SSEX, AD_DGST, AD_STCK, AD_WRAP,
+    AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DCAY, AD_DRLI, AD_ELEC, AD_FIRE, AD_MAGM, AD_PHYS, AD_RBRE,
+    AD_RUST, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK,
+    AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, AD_SEDU, AD_SSEX, AD_DGST, AD_STCK,
+    AD_WRAP,
 } from './monster_attack_types.js';
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
 import { heroHasNoHead, heroIsBreathless, heroMonsterForm, heroSpecies, heroIsPolymorphed } from './polyself.js';
@@ -58,14 +23,12 @@ import { artifactById, defends, defendsWhenCarried } from './artifact.js';
 import type { ArtifactDefender, ArtifactDefenseQuery } from './artifact.js';
 import { currentAttribute } from './attrib.js';
 import {
-    M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON,
-    M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_ARMH, W_ARMOR, W_ACCESSORY, W_WEP, G_GENOD, A_CHA,
+    M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING,
+    M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_ARMH, W_ARMOR, W_ACCESSORY, W_WEP, G_GENOD, A_CHA,
 } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
-import { speciesWasGenocided } from './mon.js';
 import { rn2 } from './rng.js';
 import { monsterWieldedWeapon } from './weapon.js';
-import type { ArtifactDefense } from './data_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MonsterCallLog, RollOne } from './monster_action_types.js';
@@ -92,7 +55,7 @@ type ShifterReference = SpeciesReference & Partial<Pick<Monster, 'cham'>>;
 // Native MALE, FEMALE, and NEUTRAL name indices.
 export type MonsterNameGender = 0 | 1 | 2;
 
-export interface MonsterNameMatch {
+interface MonsterNameMatch {
     readonly mnum: number;
     readonly gender: MonsterNameGender;
 }
@@ -102,7 +65,7 @@ export interface MonsterNamePrefix extends MonsterNameMatch {
     readonly overridesGender: boolean;
 }
 
-export interface MonsterClassMatch {
+interface MonsterClassMatch {
     readonly monsterClass: number;
     readonly mnum: number;
 }
@@ -876,7 +839,7 @@ export function monsterHasSeductionAttack(mnum: number): boolean {
 
 // Monster resistance checks shared by attacks and item effects.
 // C refs: mondata.c Resists_Elem() and resists_*().
-export type ResistantMonster = Pick<Monster, 'mnum'> & Partial<Pick<Monster,
+type ResistantMonster = Pick<Monster, 'mnum'> & Partial<Pick<Monster,
     'cham' | 'minvent' | 'inventory' | 'mw' | 'mintrinsics' | 'mextrinsics'>>;
 
 const MR_FIRE = 0x01;
@@ -1313,8 +1276,6 @@ const S_UNICORN = 21;
 const M1_HUMANOID = 0x00020000;
 
 const S_VORTEX = 22;
-
-const S_ELEMENTAL = 31;
 
 const PM_AIR_ELEMENTAL = 154;
 

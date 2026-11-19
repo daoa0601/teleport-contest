@@ -1,6 +1,5 @@
 import type { GameObject } from '../js/object_types.js';
 import type { Monster } from '../js/monster_types.js';
-import type { MonsterMovementAction } from '../js/monster_action_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -16,14 +15,13 @@ import { giveSpecialMonsterObject } from '../js/sp_lev.js';
 import { makemonAt } from '../js/makemon.js';
 import { mksobj } from '../js/mkobj.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { commitPetPickup, petDroppableObject } from '../js/dogmove.js';
-import {linkObjectToMonsterInventory, runClaimedGlobTimer, placeCreatedObject} from '../js/mkobj.js';
+import { petDroppableObject } from '../js/dogmove.js';
+import { linkObjectToMonsterInventory, runClaimedGlobTimer, placeCreatedObject } from '../js/mkobj.js';
 import { removeObjectFromMonsterInventory } from '../js/worn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
-    BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE,
-    GOLD_PIECE, LUCKSTONE, MACE, SCR_IDENTIFY, SKELETON_KEY, SPEED_BOOTS,
-    OIL_LAMP, SPE_BOOK_OF_THE_DEAD, TALLOW_CANDLE, WAN_STRIKING,
+    BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE, GOLD_PIECE, LUCKSTONE, MACE, SCR_IDENTIFY, SKELETON_KEY,
+    SPEED_BOOTS, OIL_LAMP, SPE_BOOK_OF_THE_DEAD, TALLOW_CANDLE, WAN_STRIKING,
 } from '../js/object_data.js';
 import { claimNextDueObjectTimer, objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
@@ -271,7 +269,7 @@ void test('pet mpickobj ownership survives the complete pickup and release cycle
         dagger.cursed = false;
         placeCreatedObject(dagger, pet.mx, pet.my);
 
-        const pickup = await takeMonsterTurn(
+        await takeMonsterTurn(
             pet, game,
             range => (range > 1 ? 1 : 0),
             (count, sides) => count * sides,

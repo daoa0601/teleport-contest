@@ -6,7 +6,6 @@ export interface DungeonLocation {
 }
 
 export type DungeonFlag = 'town' | 'hellish' | 'mazelike' | 'roguelike' | 'unconnected';
-export type DungeonAlignment = 'lawful' | 'neutral' | 'chaotic' | 'unaligned' | 'noalign';
 export type DungeonBranchType = 'stair' | 'portal' | 'no_end1' | 'no_end2';
 export type BranchDefinitionType = 'stair' | 'portal' | 'no_up' | 'no_down';
 

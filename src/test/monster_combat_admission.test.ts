@@ -129,7 +129,7 @@ for (const defenderKind of ['covered cobra', 'disguised mimic'] as const) {
         };
         initRng(1n);
 
-        const ready = await takeMonsterTurn(captain, game);
+        await takeMonsterTurn(captain, game);
 
         assert.equal(captain.mw, horn);
         assert.equal(horn.where, 'minvent');

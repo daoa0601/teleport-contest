@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Engine } from '../js/jsmain.js';
 import { GameDisplay } from '../js/game_display.js';
-import { makeRecipe, validateRecipeRecording } from '../scripts/holdout/recipes.mjs';
+import { makeRecipe } from '../scripts/holdout/recipes.mjs';
 import { createSessionDriver } from '../scripts/lib/session-driver.mjs';
 import { memoryStorage } from './support/memory-storage.js';
 import { capturedScreen, screenText } from './support/screen.js';

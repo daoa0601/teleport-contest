@@ -6,20 +6,19 @@
 //         feeds blengr(); invent.c getobj()'s "write with" flow is called
 //         from doengrave().
 import {
-    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS,
-    SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, ROCK_CLASS,
-    BALL_CLASS, VENOM_CLASS,
+    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS,
+    GEM_CLASS, ROCK_CLASS, BALL_CLASS, VENOM_CLASS,
 } from './objclass.js';
 import { is_boots } from './object_properties.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameMap } from './game.js';
-import type { Engraving, Trap } from './map_types.js';
+import type { Engraving } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import { exerciseWisdom, exerciseAttribute } from './attrib.js';
 import { heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm, heroSpecies, body_part } from './polyself.js';
 import { heroTeetersAtPit, heroEscapedShaft, trapAt } from './trap.js';
-import { MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { AT_HUGS } from './monster_attack_types.js';
 import {
     P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS,
@@ -28,7 +27,6 @@ import {
     MD_PAD_RUMORS, SIZEOF_ENGRAVING,
 } from './const.js';
 import type { Monster } from './monster_types.js';
-import type { DungeonLocation } from './dungeon_types.js';
 import { rn2, rnd } from './rng.js';
 import { newsym } from './display.js';
 import { surfaceName, ceilingName } from './dungeon.js';
@@ -44,21 +42,11 @@ import {
     WAN_WISHING,
 } from './object_data.js';
 import { isBimanualObject, isBlade, isWetTowel } from './object_properties.js';
-import { willWeld, isWeldedPrimary } from './wield.js';
+import { isWeldedPrimary } from './wield.js';
 import type { GameObject } from './object_types.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
 import {
-
-    plineWithContinuation as pline,
-
-    plineWithContinuation,
-
-    formatSeenMessage,
-
-    recordGameLogEvent,
-
-    impossible,
-
+    plineWithContinuation as pline, plineWithContinuation, formatSeenMessage, recordGameLogEvent, impossible,
 } from './pline.js';
 import { promptYesNoQuit } from './query.js';
 import { getLine } from './windows.js';
@@ -481,7 +469,7 @@ export function heroHasFreeHand(state: GameState): boolean {
     return !isBimanualObject(weapon) && !shield?.cursed;
 }
 
-export interface FloorReachOptions { checkPit?: boolean }
+interface FloorReachOptions { checkPit?: boolean }
 
 const MZ_HUGE = 4;
 

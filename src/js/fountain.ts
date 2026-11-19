@@ -9,9 +9,9 @@ import { fingersOrGloves } from './do_wear.js';
 import { artifactByName, discoverArtifact, nameArtifact, setWieldedArtifactProperties } from './artifact.js';
 import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHeroStrengthAndHp } from './attrib.js';
 import {
-    A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, ENL_GAMEINPROGRESS, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE,
-    MAGICENLIGHTENMENT, MM_NOMSG, M_SEEN_FIRE, mon_offmap, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING,
-    ARM, HAND, FACE, HEAD, LL_ARTIFACT, TT_INFLOOR, TT_LAVA,
+    A_CON, A_DEX, A_MAX, A_STR, A_WIS, ENL_GAMEINPROGRESS, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE,
+    MAGICENLIGHTENMENT, MM_NOMSG, M_SEEN_FIRE, mon_offmap, POOL, POLY_NOFLAGS, ROOM, SINK, S_LRING, ARM, HAND,
+    FACE, HEAD, LL_ARTIFACT, TT_INFLOOR, TT_LAVA,
 } from './const.js';
 import { monsterHasMapPosition } from './steed.js';
 import { canSpotMonster, glyphAt, newsym } from './display.js';
@@ -30,7 +30,7 @@ import type { GameObject } from './object_types.js';
 import { countLevelFeatures, makemonNear } from './mklev.js';
 import { nexttodoor } from './mkroom.js';
 import { splitMon, grantMonsterWish, applySupportedPotionVapor, heroPotionVaporProfile, drinkPotion, setPropertyTimeout } from './potion.js';
-import { mkobj, mkgold, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject, adjustObjectLightAfterBlessing} from './mkobj.js';
+import { mkobj, mkgold, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject, adjustObjectLightAfterBlessing } from './mkobj.js';
 import { definiteName, objectCombatName, rndClass, makePlural, fruitName } from './objnam.js';
 import { resolveMonsterLiquid, angerWatchGuards, finishLiquidDeathForCurrentMover } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
@@ -38,7 +38,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { monsterPossessive, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasNoLimbs } from './mondata.js';
 import { level_difficulty, surfaceName } from './dungeon.js';
-import { BOULDER, DILITHIUM_CRYSTAL, LONG_SWORD, LUCKSTONE, POT_ACID, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_POLYMORPH, POT_WATER, } from './object_data.js';
+import { BOULDER, DILITHIUM_CRYSTAL, LONG_SWORD, LUCKSTONE, POT_ACID, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_POLYMORPH, POT_WATER } from './object_data.js';
 import { promptYesNo } from './query.js';
 import { rnd, rn1, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -575,10 +575,6 @@ export async function washHands(): Promise<WaterDamageOutcome> {
 // ---------------------------------------------------------------------------
 
 type DescribedPart = string | (() => string);
-
-interface FountainTrapResult {
-    heroDied: boolean;
-}
 
 // Port only: resolve a lazy message part (names computed only when the
 // message that uses them is printed).

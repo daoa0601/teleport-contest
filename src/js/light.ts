@@ -1,11 +1,5 @@
 // Object light and burn timers.
 
-import { SCROLL_CLASS } from './objclass.js';
-import { monsterHasMapPosition } from './steed.js';
-import { wakeMonstersNearWithMessages, finishMonsterKilled, finishHeroMonsterKillOutcome } from './mon.js';
-import type { MonsterDeathResult, HeroMonsterKillOutcome } from './mon.js';
-import { AD_BLND } from './monster_attack_types.js';
-import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
 import { definiteObjectAction, objectNameIsPlural, ownedObjectName } from './objnam.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -16,28 +10,20 @@ import { beginObjectBurn, endObjectBurn, lightObjectIsGlobal, objectsInTimerGrap
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { GameMap } from './game.js';
-import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
 import { artifactEmitsLight } from './artifact.js';
-import { COLNO, CORR, COULD_SEE, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS, ROWNO, SIZEOF_LIGHT_SOURCE, TEMP_LIT } from './const.js';
+import { COLNO, COULD_SEE, ROWNO, SIZEOF_LIGHT_SOURCE, TEMP_LIT } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible } from './display.js';
 import {
-    BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP,
-    POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
+    BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP,
+    OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
-import { rnd } from './rng.js';
-import { impactArtifactLight } from './potion.js';
 import {
-    cansee, clearAreaCells, vision_recalc, clearPath, monsterEmitsLight,
-    circle_data, circle_start, visionRow, visionValue,
+    cansee, vision_recalc, clearPath, monsterEmitsLight, circle_data, circle_start, visionRow, visionValue,
 } from './vision.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { heroIsBlind } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
 import { getObjectLocation } from './zap.js';
 import { placeObjectSynchronously, remove_object } from './mkobj.js';
-import { roomForRoomno } from './hack.js';
-import { snuffLitObject } from './apply.js';
-import { monsterDigests, monsterIsWhirly } from './mondata.js';
 import { showDisclosureOverlay } from './windows.js';
 
 // C light.c:41 LSF_SHOW — the only flag set on a live, displayed source.
@@ -391,7 +377,7 @@ export function discardFlashes(state: GameState = game): void {
 // depend on, plus the x/y the C caller passes; show starts clear and only
 // do_light_sources() sets it. The range validation has no port branch
 // because every port registration passes a legal radius.
-export type LightSourceId =
+type LightSourceId =
     | { kind: 'object'; object: GameObject }
     | { kind: 'monster'; monster: Monster }
     | { kind: 'you' };
@@ -466,7 +452,7 @@ function refreshLightSourcePositions(state: GameState): void {
 // during vision passes; `idText` stands in for C's fmt_ptr() of the source
 // pointer, using the stable o_id/m_id (and 0x1 for youmonst, whose id
 // light.c:find_mid() pins to 1) in the same 0x-prefixed shape as #timeout.
-export interface LightSourceRecord extends LightSourcePosition {
+interface LightSourceRecord extends LightSourcePosition {
     range: number;
     kind: 'obj' | 'mon' | 'you' | '<m>';
     idText: string;

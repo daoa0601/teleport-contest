@@ -23,7 +23,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('expelling a swallowed hero spends the release redraw display draws in native order', async () => {
     await freshObjectRoom({ hero: { warning: true, hallucinationTurns: 100 } });
     const engulfer = await createMonsterAt('purple worm', game.u.ux, game.u.uy, MM_NOGRP | NO_MINVENT);
-    const warned = await createMonsterAt('earth elemental', 12, 10, MM_NOGRP | NO_MINVENT);
+    await createMonsterAt('earth elemental', 12, 10, MM_NOGRP | NO_MINVENT);
     game.u.ustuck = engulfer;
     game.u.uswallow = 1;
     assert.equal(glyphAt(12, 10)?.kind, 'monster');

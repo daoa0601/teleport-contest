@@ -5,7 +5,7 @@ import type { Position } from './map_types.js';
 
 // Options may be absent until their owning startup step supplies a default.
 // A closed list keeps misspelled configuration names out of saved game state.
-export type GameBooleanFlag =
+type GameBooleanFlag =
     | 'accessiblemsg' | 'acoustics' | 'armorstatus'
     | 'autodig' | 'autoopen' | 'pickup' | 'autoquiver' | 'checkpoint'
     | 'cmdassist' | 'color' | 'confirm' | 'customcolors' | 'customsymbols'

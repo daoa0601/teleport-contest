@@ -17,7 +17,7 @@ void test('a filtered inventory report rejects a queued letter outside its nativ
     const ring = await addInventoryObject(RIN_PROTECTION, { owornmask: W_RINGL });
     ring.invlet = 'a';
     game.uleft = ring;
-    const input = resetInputState();
+    resetInputState();
     queueCannedKeys('aq');
 
     const action = await inventoryReport('rings');

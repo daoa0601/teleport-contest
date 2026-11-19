@@ -20,7 +20,7 @@ import { dist2, distmin } from './hacklib.js';
 import { within_bounded_area } from './rect.js';
 import { clampHoleDestination, deleteTrap, seeTrap, mintrap, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious, trapAt } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
-import { Is_botlevel, levelAtDepth, levelDepthByName, insideWizardTower, levelIsWizardTower, printDungeon, specialDisplayName, surfaceName, In_quest, In_mines, sameDungeonLevel } from './dungeon.js';
+import { Is_botlevel, levelAtDepth, levelDepthByName, insideWizardTower, levelIsWizardTower, printDungeon, surfaceName, In_quest, In_mines, sameDungeonLevel } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { bot } from './botl.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, nomul, shouldShowGetposTip, showGetposTip, heroLocomotion, announceInvocationSquare, checkSpecialRoom, exceedsActionCapacity, nearCapacity, SLT_ENCUMBER, roomsAt, switchHeroTerrain, finishDestinationSpotEffects } from './hack.js';
@@ -35,7 +35,7 @@ import { MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { AMULET_OF_YENDOR, BOULDER, CORPSE, oc_level, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SCR_SCARE_MONSTER, SPE_TELEPORT_AWAY, WAN_TELEPORTATION } from './object_data.js';
 import { morehungry } from './eat.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { ACCESSIBLE, ALTAR, CC_INCL_CENTER, CC_NO_FLAGS, CC_RING_PAIRS, CC_SKIP_INACCS, CC_SKIP_MONS, CC_UNSHUFFLED, COLNO, D_CLOSED, D_LOCKED, DOOR, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, IS_STWALL, LEVEL_TELEP, MAGIC_PORTAL, MAX_TYPE, MM_IGNORELAVA, MM_IGNOREWATER, RLOC_ERR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, ROWNO, SHOPBASE, STRAT_APPEARMSG, TELEP_TRAP, TT_BURIEDBALL, VAULT, VIBRATING_SQUARE, WATER, W_NONPASSWALL, ZAP_POS, In_endgame, In_sokoban, Is_stronghold, Is_waterlevel, MIGR_PORTAL, MIGR_RANDOM, M_AP_NOTHING, mon_offmap, Upolyd, is_hole, is_pit, A_STR, BOLT_LIM, HOLE, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE } from './const.js';
+import { ACCESSIBLE, ALTAR, CC_INCL_CENTER, CC_NO_FLAGS, CC_RING_PAIRS, CC_SKIP_INACCS, CC_SKIP_MONS, CC_UNSHUFFLED, COLNO, D_CLOSED, D_LOCKED, DOOR, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, IS_STWALL, LEVEL_TELEP, MAGIC_PORTAL, MM_IGNORELAVA, MM_IGNOREWATER, RLOC_ERR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, ROWNO, SHOPBASE, STRAT_APPEARMSG, TELEP_TRAP, TT_BURIEDBALL, VAULT, VIBRATING_SQUARE, WATER, W_NONPASSWALL, ZAP_POS, In_endgame, In_sokoban, Is_stronghold, Is_waterlevel, MIGR_PORTAL, MIGR_RANDOM, M_AP_NOTHING, mon_offmap, Upolyd, is_hole, is_pit, A_STR, BOLT_LIM, HOLE, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE } from './const.js';
 import { priestIsInOwnTemple, templeRoomAt } from './priest.js';
 import { costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue, makeAngryShopkeeper, addShopObjectToBill, costlyAdjacent, removeObjectAndContentsFromBill, leaveHeroShop } from './shk.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
@@ -68,12 +68,12 @@ import { publishMonsterYelp } from './sounds.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { isHomeElemental } from './makemon.js';
 import { reviveCorpseImmediately, applyFloorEffects } from './do.js';
-import { unlinkObject, placeObject, mksobj} from './mkobj.js';
+import { unlinkObject, placeObject, mksobj } from './mkobj.js';
 import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './do.js';
 import {
-    monsterIsAmphibious, monsterIsSwimmer, monsterPassesWalls, monsterIsAmorphous, monsterThrowsRocks, is_lord,
-    is_prince, monsterHasEyes, monsterIsCovetous, monsterIsEel, monsterCanTeleport, monsterControlsTeleport,
-    monsterIsRider, monsterIsSilent,
+    monsterIsAmphibious, monsterIsSwimmer, monsterPassesWalls, monsterIsAmorphous, monsterThrowsRocks,
+    is_lord, is_prince, monsterHasEyes, monsterIsCovetous, monsterIsEel, monsterCanTeleport,
+    monsterControlsTeleport, monsterIsRider, monsterIsSilent,
 } from './mondata.js';
 
 // teleport.js - same-level teleportation.
@@ -82,8 +82,8 @@ import {
 type RandomBelow = (limit: number) => number;
 type LevelGameState = GameState & { level: GameMap };
 export interface HeroTeleportMovement extends Position { oldx: number; oldy: number }
-export interface HeroDestinationRequest { onPrompt: () => Promise<void> }
-export interface HeroTeleportOptions<Arrival extends ArrivalResult = DefaultArrival> {
+interface HeroDestinationRequest { onPrompt: () => Promise<void> }
+interface HeroTeleportOptions<Arrival extends ArrivalResult = DefaultArrival> {
     chooseDestination?: (request: HeroDestinationRequest) => Promise<Position | null>;
     source?: GameObject | null;
     discover?: (() => unknown) | null;
@@ -93,7 +93,7 @@ export interface HeroTeleportOptions<Arrival extends ArrivalResult = DefaultArri
     finishArrival?: (movement: HeroTeleportMovement) => Promise<Arrival>;
     publish?: MessagePublisher;
 }
-export interface RelocationOptions {
+interface RelocationOptions {
     state?: GameState;
     calls?: MonsterCallLog | null;
     random?: RandomBelow;
@@ -110,7 +110,7 @@ interface TeleportAtWillOptions<Arrival extends ArrivalResult> {
     publish?: MessagePublisher;
     ignoreRestrictions?: boolean;
 }
-export interface TeleportAtWillResult<Arrival> {
+interface TeleportAtWillResult<Arrival> {
     moved: boolean;
     died: boolean;
     spentTime: boolean;
@@ -124,7 +124,7 @@ interface HeroTeleportMoveOptions<Arrival extends ArrivalResult> {
     allowDrag?: boolean;
     finishArrival?: (movement: HeroTeleportMovement) => Promise<Arrival>;
 }
-export interface SafeTeledsOptions<Arrival extends ArrivalResult> {
+interface SafeTeledsOptions<Arrival extends ArrivalResult> {
     random?: RandomBelow;
     rollOne?: RandomBelow;
     allowDrag?: boolean;
@@ -256,7 +256,7 @@ export function heroTeleportRestricted(state = game) {
 export type PlacementSubject = null | { kind: 'hero' }
     | { kind: 'monster'; monster: Monster }
     | { kind: 'species'; mnum: number };
-export interface PositionOptions {
+interface PositionOptions {
     state?: GameState;
     gpflags?: number;
     random?: (limit: number) => number;
@@ -364,7 +364,7 @@ function monsterTypeScaredFromPosition(mndx: number, x: number, y: number, state
     return hasCompletedEngraving('Elbereth', x, y, state);
 }
 
-export interface EnextoOptions {
+interface EnextoOptions {
     state?: GameState;
     random?: (limit: number) => number;
     calls?: { push(label: string): unknown } | null;
@@ -905,7 +905,7 @@ export async function randomMonsterRelocation(monster: Monster | null, {
 
 const shudder = 'You shudder for a moment.';
 
-export type LevelChange = (...args: Parameters<typeof changeLevel>) => unknown;
+type LevelChange = (...args: Parameters<typeof changeLevel>) => unknown;
 
 type LevelRequest =
     | { random: true; depth?: never; destination?: never }

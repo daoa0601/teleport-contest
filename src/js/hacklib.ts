@@ -3,8 +3,6 @@
 // and the string/number helpers.
 
 
-import type { DungeonLocation } from './dungeon_types.js';
-import type { GameState } from './game_state.js';
 
 /*
  * Copyright (c) 1991, 1992, 1993 The Regents of the University of California.

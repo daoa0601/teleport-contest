@@ -164,7 +164,7 @@ import { DTHSZ, KILLED_BY_PREFIXES, formatKiller, loadScoreRecords, saveScoreRec
 import { monsterHasProperName } from './mondata.js';
 import { expelHero } from './mhitu.js';
 
-export interface DeathDamage {
+interface DeathDamage {
     hpKey: 'mh' | 'uhp';
     hpBefore: number;
     damage: number;
@@ -189,9 +189,7 @@ export interface FinishHeroDeathOptions extends OrdinaryDeathOptions {
 }
 
 export type DeathHandler = (options: FinishHeroDeathOptions) => boolean | Promise<boolean>;
-/** Terminal death callers await the transition and discard its return value. */
-export type OrdinaryDeathHandler = (options: OrdinaryDeathOptions) => unknown;
-export interface LifeSavingTransaction { amulet: GameObject }
+interface LifeSavingTransaction { amulet: GameObject }
 interface RevivalOptions { deathType?: number | null }
 type LivingOutcome = 'escaped' | 'ascended';
 interface GameSummary { gold: number; score: number; depth: number; moves: number }
@@ -1258,7 +1256,7 @@ async function finalPossessionLines(possessions: FinalPossessions) {
 // C refs: end.c done_in_by()/done()/savelife(), tty message windows.
 // ---------------------------------------------------------------------------
 
-export type MonsterDeathAttribution = { kind: 'done-in-by' } | {
+type MonsterDeathAttribution = { kind: 'done-in-by' } | {
     kind: 'death-inflicted-by';
     killer: string;
     deathCause?: string;

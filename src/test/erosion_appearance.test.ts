@@ -149,7 +149,7 @@ void test('erosion names an unfamiliar monster weapon by its visible appearance'
 
 for (const arm of [1, 2]) {
     void test(`a rust trap hitting arm ${arm} names an unfamiliar wielded polearm by appearance`, async () => {
-        const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP,
+        const { monster } = await freshMonsterTrapRoom(RUST_TRAP,
             { monster: { species: 'water troll' } });
         const weapon = await uninitializedObject(OBJECT_NAMES.indexOf('ranseur'), { typeKnown: false });
         await equipMonsterObject(monster, weapon, W_WEP);

@@ -28,7 +28,7 @@ void test('a blade can break while prying a chest lock', async () => {
         wielded: true,
         owornmask: W_WEP,
     });
-    const chest = await floorObject(CHEST, 10, 10, {
+    await floorObject(CHEST, 10, 10, {
         olocked: true,
         obroken: false,
         contents: [],

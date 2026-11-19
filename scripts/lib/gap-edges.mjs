@@ -17,7 +17,7 @@ import { join, relative } from 'node:path';
 import ts from 'typescript';
 import { INFRASTRUCTURE_FILES, baseName } from './c-sources.mjs';
 import { isPortSource, portProgram } from './port-program.mjs';
-import { arrayValue, objectValue, stringValue } from './session-types.mjs';
+import { arrayValue, stringValue } from './session-types.mjs';
 const EXTRACTOR_VERSION = 'edges-1';
 export const REACH_DEPTH = 2;
 // Callees whose job the port does through its own message and naming layer;
@@ -501,7 +501,6 @@ export async function compareEdges(root, tree, cacheDir, definedIn, ownOriginOnl
     const aliases = readAliases(join(root, 'docs', 'ledger', 'c-ts-aliases.tsv'));
     const justified = readJustified(join(root, 'docs', 'ledger', 'c-edges-justified.tsv'));
     const portNames = (cName) => [cName, ...(aliases.get(cName) ?? [])].map(normalizedName);
-    const citationIndex = ownOriginOnly ? index.byOrigin : index.byCitation;
     const rows = [];
     const unmapped = [];
     for (const [caller, callees] of [...graph.calls].sort((a, b) => a[0].localeCompare(b[0]))) {

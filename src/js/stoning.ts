@@ -9,7 +9,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME, requireMonsterData } from './monster_data.js';
-import { CORPSE, EGG } from './object_data.js';
+import { EGG } from './object_data.js';
 import { polymonHero } from './polyself.js';
 import { resolveImmediatePetrification } from './trap.js';
 import {
