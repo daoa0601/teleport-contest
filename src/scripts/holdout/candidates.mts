@@ -68,7 +68,7 @@ function publicDisplayOptions(): string {
 }
 
 export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly GeneratorKind[], recipes: readonly string[],
-    optionMix: OptionMix = 'fixed'): { spec: CandidateSpec; session: Session } {
+    optionMix: OptionMix = 'fixed', long = false): { spec: CandidateSpec; session: Session } {
     const rotation: GeneratorKind[] = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', ...(kinds.includes('deep') ? ['deep' as const] : [])];
@@ -108,7 +108,7 @@ export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly
         spec.debug = session.segments.some(segment => /playmode:debug/.test(segment.nethackrc));
     } else {
         const lengthSlot = Math.floor(index / schedule.length) % 20;
-        const ranges: [number, number] = lengthSlot < 7 ? [35, 59] : lengthSlot < 12 ? [60, 149]
+        const ranges: [number, number] = long ? [600, 2000] : lengthSlot < 7 ? [35, 59] : lengthSlot < 12 ? [60, 149]
             : lengthSlot < 17 ? [150, 399] : [400, 1800];
         spec.targetKeys = randomInt(ranges[0], ranges[1] + 1);
         const variants = ['!autopickup,runmode:teleport', 'autopickup,runmode:walk',
@@ -125,7 +125,7 @@ export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly
         if (kind === 'deep' || kind === 'deepwide') {
             spec.debug = true;
             spec.targetDepth = itemAt([3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45], index % 13);
-            spec.targetKeys = itemAt([80, 120, 240, 400], Math.floor(index / 13) % 4);
+            spec.targetKeys = itemAt(long ? [800, 1200, 1600, 2000] : [80, 120, 240, 400], Math.floor(index / 13) % 4);
             nethackrc += 'OPTIONS=playmode:debug,disclose:-i -a -v -g -c -o\n';
             driver.maxSteps = spec.targetKeys;
             // teleport.c sends the first cross-dungeon numeric teleport to

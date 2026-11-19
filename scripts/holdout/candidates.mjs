@@ -63,7 +63,7 @@ function publicDisplayOptions() {
     }
     return options.join(',');
 }
-export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed') {
+export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed', long = false) {
     const rotation = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', ...(kinds.includes('deep') ? ['deep'] : [])];
@@ -110,7 +110,7 @@ export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed')
     }
     else {
         const lengthSlot = Math.floor(index / schedule.length) % 20;
-        const ranges = lengthSlot < 7 ? [35, 59] : lengthSlot < 12 ? [60, 149]
+        const ranges = long ? [600, 2000] : lengthSlot < 7 ? [35, 59] : lengthSlot < 12 ? [60, 149]
             : lengthSlot < 17 ? [150, 399] : [400, 1800];
         spec.targetKeys = randomInt(ranges[0], ranges[1] + 1);
         const variants = ['!autopickup,runmode:teleport', 'autopickup,runmode:walk',
@@ -127,7 +127,7 @@ export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed')
         if (kind === 'deep' || kind === 'deepwide') {
             spec.debug = true;
             spec.targetDepth = itemAt([3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45], index % 13);
-            spec.targetKeys = itemAt([80, 120, 240, 400], Math.floor(index / 13) % 4);
+            spec.targetKeys = itemAt(long ? [800, 1200, 1600, 2000] : [80, 120, 240, 400], Math.floor(index / 13) % 4);
             nethackrc += 'OPTIONS=playmode:debug,disclose:-i -a -v -g -c -o\n';
             driver.maxSteps = spec.targetKeys;
             // teleport.c sends the first cross-dungeon numeric teleport to
