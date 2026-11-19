@@ -2227,37 +2227,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     } else if (enteredEndgame && game.u?.uhave?.amulet)
         await resurrectWizard();
     await temperatureChangeMsg(previousTemperature);
-    if (!cached) {
-        // do.c:goto_level() logs the livelog "entered <level>" line after
-        // any temperature message and before the Tourist level bonus.
-        // describe_level(dloc, 2): "level N, the <branch>", Knox and the
-        // endgame planes keep their own full names.
-        let location: string;
-        let withBranch = true;
-        if (Is_knox_level(newDepth)) {
-            location = newDungeon?.dname ?? '';
-            withBranch = false;
-        } else if (In_quest(newDepth)) {
-            location = `Home ${newDepth.dlevel}`;
-        } else if (In_endgame(newDepth)) {
-            location = endgameLevelName(newDepth);
-            withBranch = false;
-        } else {
-            location = `level ${depth(newDepth)}`;
-        }
-        if (withBranch && newDungeon)
-            location += `, ${newDungeon.dname.replace(/^The /, 'the ')}`;
-        recordGameLogEvent(`entered ${location}`, {
-            flags: (In_endgame(newDepth) && !Is_astralevel(newDepth)) || In_quest(newDepth)
-                ? LL_ACHIEVE : LL_DEBUG,
-        });
-    }
-    // do.c:1961-1964 (inline in goto_level()): the Tourist experience
-    // bonus for a newly entered level.
-    if (!cached && game.urole?.key === 'tourist') {
-        addExperience(level_difficulty(), 0);
-        await checkExperienceLevel();
-    }
+    if (!cached) await enterNewLevelTail(newDepth);
     // do.c:1967: goto_level() resets u.uz0 to the arrival level before the
     // annotation, room entry, object delivery, fall damage, and pickup, so
     // a death during those steps still ends on the level the hero arrived
@@ -2879,3 +2849,37 @@ export async function finishBuriedRevival(event: CorpseRevivalResult, state: Gam
         event.trap = await maketrap(event.monster.mx, event.monster.my, PIT);
 }
 
+// Part of C do.c:goto_level(): the "if (new)" tail run on a level's first
+// visit, after any temperature message.  It logs the livelog "entered
+// <level>" line, then gives a Tourist the new-level experience bonus.
+// maybe_do_tutorial()'s arrival runs it too, as C's goes through goto_level().
+// describe_level(dloc, 2): "level N, the <branch>"; Knox and the endgame
+// planes keep their own full names.
+export async function enterNewLevelTail(newDepth: DungeonLocation): Promise<void> {
+    const game = requireInitializedGame();
+    const newDungeon = game.dungeons?.[newDepth.dnum ?? 0];
+    let location: string;
+    let withBranch = true;
+    if (Is_knox_level(newDepth)) {
+        location = newDungeon?.dname ?? '';
+        withBranch = false;
+    } else if (In_quest(newDepth)) {
+        location = `Home ${newDepth.dlevel}`;
+    } else if (In_endgame(newDepth)) {
+        location = endgameLevelName(newDepth);
+        withBranch = false;
+    } else {
+        location = `level ${depth(newDepth)}`;
+    }
+    if (withBranch && newDungeon)
+        location += `, ${newDungeon.dname.replace(/^The /, 'the ')}`;
+    recordGameLogEvent(`entered ${location}`, {
+        flags: (In_endgame(newDepth) && !Is_astralevel(newDepth)) || In_quest(newDepth)
+            ? LL_ACHIEVE : LL_DEBUG,
+    });
+    // do.c:1961-1964: the Tourist experience bonus for a newly entered level.
+    if (game.urole?.key === 'tourist') {
+        addExperience(level_difficulty(), 0);
+        await checkExperienceLevel();
+    }
+}
