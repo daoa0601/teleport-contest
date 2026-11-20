@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
+import { ATR_INVERSE } from '../js/terminal.js';
 import { PIT, ROOM } from '../js/const.js';
-import { newsym } from '../js/display.js';
+import { flush_screen, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { makeStunned } from '../js/potion.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
 import { floorObject } from './support/game-objects.js';
-import { DAGGER } from '../js/object_data.js';
+import { DAGGER, FOOD_RATION } from '../js/object_data.js';
 import { maketrap } from '../js/trap.js';
 void test('the terrain view can retain a discovered trap', async () => {
     const input = freshTurnRoom({ flags: { tips: false } });
@@ -98,5 +99,36 @@ void test('removing an object from a terrain view retains DECgraphics floor rend
         input.feed('\x1b ');
         await action;
     }
+});
+// C detect.c:reveal_terrain() shows the piletop glyph itself through
+// show_glyph(), and tty_print_glyph() (wintty.c) turns its MG_OBJPILE flag
+// into the hilite_pile inverse attribute, exactly as on the ordinary map:
+//
+//     } else if ((((special & MG_OBJPILE) != 0 && iflags.hilite_pile)
+//                 ...
+//                && iflags.use_inverse) {
+//         term_start_attr(ATR_INVERSE);
+void test('the terrain view keeps the hilite_pile attribute on object piles', async () => {
+    const input = freshTurnRoom({ flags: { tips: false, hilite_pile: true } });
+    await floorObject(DAGGER, 14, 9);
+    await floorObject(FOOD_RATION, 14, 9);
+    await newsym(14, 9);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(13, 10).attr, ATR_INVERSE, 'the ordinary map hilites the pile top');
+    input.feed('\x7fc');
+    const action = rhack(0);
+    try {
+        await input.waitUntilBlocked();
+        input.feed(' ');
+        await input.waitUntilBlocked();
+        const cell = requireScreenCell(13, 10);
+        assert.equal(cell.ch, '%', 'option c keeps the food ration pile top');
+        assert.equal(cell.attr, ATR_INVERSE, 'the piletop glyph keeps the hilite_pile inverse attribute');
+    }
+    finally {
+        input.feed(',');
+        await action;
+    }
+    assert.equal(game.context.move, 0);
 });
 //# sourceMappingURL=command_terrain.test.js.map
