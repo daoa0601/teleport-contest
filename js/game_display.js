@@ -9,7 +9,6 @@
 //   const display = new GameDisplay(terminal);
 //   // display.setCell, display.readKey etc. all delegate to terminal
 import { Terminal, CLR_GRAY, NO_COLOR, ATR_INVERSE } from './terminal.js';
-import { bytesFromByteString } from './hacklib.js';
 import { StatusHighlights } from './botl.js';
 export class GameDisplay {
     terminal;
@@ -246,14 +245,12 @@ export class GameDisplay {
     // after it shifts left; an invalid or split sequence decodes as
     // U+FFFD, exactly as the recorder's TextDecoder does.
     //
-    // The shadow row is a byte array, so the raw prefix and whatever the
-    // earlier painting left from the first raw column on are decoded
-    // together: rawRowBytes holds the raw-written prefix, rawRowTail the
-    // row's cell bytes snapped before that prefix began (painting over an
-    // already raw-written row is not something the game does, and the
-    // snap would go stale there). Materializing rewrites the row from
-    // that one byte layout, so a sequence that consumes two byte cells
-    // shortens the decoded row the way the capture does.
+    // Raw bytes replace physical cells, including their attributes. The
+    // retained tail keeps both its browser glyph and its captured glyph:
+    // an IBM wall, for example, has already passed through g_putch().
+    // Only the raw prefix needs UTF-8 decoding; retained text and glyphs
+    // have already been rendered. A multi-byte prefix consumes its byte
+    // count from the tail before the decoded cells are joined to it.
     rawRowBytes = [];
     rawRowTail = null;
     // termcap.c:nomux_enter_raw_mode()/nomux_get_cursor(): raw output runs
@@ -303,28 +300,38 @@ export class GameDisplay {
         this.setCursor(this.rawCol, this.rawRow);
         this.flush();
     }
-    // The row's cell bytes at the moment raw output reaches it — the tail
-    // the raw prefix will be decoded with.
+    // The row's cells before raw output reaches it. Keep the capture's
+    // g_putch() result and every cell property, including styled blanks.
     snapRawRowTail() {
-        const cells = this.terminal.grid[this.rawRow];
-        this.rawRowTail = cells
-            ? [...bytesFromByteString(cells.map(cell => cell.ch).join(''))]
-            : [];
+        const captured = this.captureGrid[this.rawRow] ?? [];
+        this.rawRowTail = captured.map((cell, column) => ({
+            ...cell,
+            ch: this.grid[this.rawRow]?.[column]?.ch ?? cell.ch,
+            capturedCh: cell.ch,
+            altFont: this.altFontAt(column, this.rawRow),
+        }));
     }
     materializeRawRow() {
         if (this.rawRow < 0 || this.rawRow >= this.rows)
             return;
-        const tail = this.rawRowTail ?? [];
-        const layout = [...this.rawRowBytes, ...tail.slice(this.rawRowBytes.length)];
-        // nomux_capture_screen() trims trailing blank bytes before the
-        // recorder decodes the row.
-        let end = layout.length;
-        while (end > 0 && layout[end - 1] === 32)
-            end--;
-        const decoded = new TextDecoder().decode(Uint8Array.from(layout.slice(0, end)));
+        const decoded = new TextDecoder().decode(Uint8Array.from(this.rawRowBytes));
+        const prefix = Array.from(decoded, ch => ({
+            ch, capturedCh: ch, color: NO_COLOR, attr: 0, altFont: false,
+        }));
+        const tail = this.rawRowTail?.slice(this.rawRowBytes.length) ?? [];
+        const cells = [...prefix, ...tail];
+        this.clearCapturedMapCells(0, this.rawRow, this.cols);
         this.repaintRow(this.rawRow);
-        for (let column = 0; column < decoded.length && column < this.cols; column++)
-            this.setFrameCell(column, this.rawRow, decoded.charAt(column), NO_COLOR, 0);
+        for (const [column, cell] of cells.entries()) {
+            if (column >= this.cols)
+                break;
+            this.setFrameCell(column, this.rawRow, cell.ch, cell.color, cell.attr, cell.altFont);
+            if (cell.capturedCh !== cell.ch) {
+                this.capturedMapCells.set(this.rawRow * this.cols + column, {
+                    ch: cell.capturedCh, color: cell.color, attr: cell.attr,
+                });
+            }
+        }
     }
     // The cursor the recorder reports (nomux_get_cursor()).
     get captureCursorCol() {

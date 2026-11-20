@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { decodeScreen } from '../frozen/screen-decode.mjs';
 import { parseNethackrc } from '../js/cfgfiles.js';
 import { addMessageTypeRule } from '../js/message_types.js';
 import { luaPline } from '../js/lua/messages.js';
 import { pushKey, rawPrint } from '../js/input.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { runSegment } from '../js/jsmain.js';
+import { runSegment, serializeCapture } from '../js/jsmain.js';
+import { ATR_INVERSE, CLR_BROWN, CLR_GREEN, NO_COLOR } from '../js/terminal.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 // The recorded harness wrote each session's .nethackrc to disk as UTF-8,
@@ -110,5 +112,46 @@ void test('raw output resumes over painted cells without clearing the row', () =
     rawPrint('\xC3\xA9');
     const merged = display.grid[2]?.map(cell => cell.ch).join('') ?? '';
     assert.equal(merged.trimEnd(), 'éisting tail');
+});
+void test('raw output leaves a retained IBM wall glyph in the captured row', () => {
+    freshPlayableRoom();
+    const display = requireGameDisplay();
+    rawPrint('first');
+    display.setMapCell(1, 1, '\xCD', CLR_BROWN, 0, null, true);
+    rawPrint('X');
+    // wintty.c g_putch() strips the wall byte's high bit for the capture.
+    // termcap.c nomux_raw_putch() overwrites only column 0, retaining M.
+    const captured = decodeScreen(serializeCapture(display));
+    assert.equal(captured[1]?.[0]?.ch, 'X');
+    assert.equal(captured[1]?.[1]?.ch, 'M');
+    assert.equal(captured[1]?.[1]?.color, CLR_BROWN);
+    assert.equal(display.grid[1]?.[1]?.ch, '\xCD');
+});
+void test('raw output preserves the painted tail color, inverse video and alternate font', () => {
+    freshPlayableRoom();
+    const display = requireGameDisplay();
+    rawPrint('first');
+    display.setMapCell(1, 1, '\u2502', CLR_GREEN, ATR_INVERSE, null, false, true);
+    display.setCell(2, 1, ' ', NO_COLOR, ATR_INVERSE);
+    rawPrint('X');
+    const captured = decodeScreen(serializeCapture(display));
+    assert.equal(captured[1]?.[1]?.ch, 'x');
+    assert.equal(captured[1]?.[1]?.color, CLR_GREEN);
+    assert.equal(captured[1]?.[1]?.attr, ATR_INVERSE);
+    assert.equal(captured[1]?.[1]?.decgfx, 1);
+    assert.equal(captured[1]?.[2]?.ch, ' ');
+    assert.equal(captured[1]?.[2]?.attr, ATR_INVERSE);
+});
+void test('raw UTF-8 moves the styled tail left without losing its cell properties', () => {
+    freshPlayableRoom();
+    const display = requireGameDisplay();
+    rawPrint('first');
+    display.setCell(2, 1, '!', CLR_GREEN, ATR_INVERSE);
+    rawPrint('\xC3\xA9');
+    const captured = decodeScreen(serializeCapture(display));
+    assert.equal(captured[1]?.[0]?.ch, 'é');
+    assert.equal(captured[1]?.[1]?.ch, '!');
+    assert.equal(captured[1]?.[1]?.color, CLR_GREEN);
+    assert.equal(captured[1]?.[1]?.attr, ATR_INVERSE);
 });
 //# sourceMappingURL=rc_bytes.test.js.map
