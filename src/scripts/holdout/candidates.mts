@@ -69,7 +69,8 @@ const WIDE_OPTIONS: readonly (readonly [string | readonly string[], number])[] =
     [['pickup_types:$?!/="+', 'pickup_types:$', 'pickup_types:all'], 12], [['pickup_burden:unencumbered', 'pickup_burden:overloaded'], 8],
     [['paranoid_confirmation:pray', 'paranoid_confirmation:attack quit', 'paranoid_confirmation:wand-break eat'], 10],
     [['sortpack', '!sortpack'], 8], ['!implicit_uncursed', 8], [['menu_headings:bold', 'menu_headings:underline'], 8],
-    ['showrace', 8], ['force_invmenu', 6], ['goldX', 6], ['lootabc', 8], ['hitpointbar', 10], ['!travel', 6], ['!mention_walls', 4],
+    ['showrace', 8], ['force_invmenu', 6],
+    [['dogname:Fido', 'dogname:Fidø', 'catname:Mïsty', 'catname:Tiger', 'horsename:Shadowfax', 'horsename:Épona'], 10], ['goldX', 6], ['lootabc', 8], ['hitpointbar', 10], ['!travel', 6], ['!mention_walls', 4],
 ];
 
 // The recorder writes the nethackrc as UTF-8, so a non-ASCII name reaches
@@ -78,6 +79,22 @@ const WIDE_NAMES = ['Zoë', 'Ångström', 'Renée', 'Søren', 'José'];
 
 function characterName(optionMix: OptionMix): string {
     return optionMix === 'wide' && chance(15) ? itemAt(WIDE_NAMES, randomInt(WIDE_NAMES.length)) : 'Holdout';
+}
+
+// Statements beyond OPTIONS, as in the public custom-binds session. The
+// symbols avoid the glyphs the wide policy reads (hero, doors, corridors,
+// items), and the bindings take keys it rarely sends.
+const WIDE_SYMBOLS = ['S_pool:~', 'S_fountain:{', 'S_tree:#', 'S_sink:#', 'S_grave:|', 'S_altar:_'];
+const WIDE_BINDS = ['BIND=v:inventory', 'BIND=V:attributes', 'BIND=^R:overview'];
+
+function wideRcLines(): string[] {
+    const lines: string[] = [];
+    if (chance(15)) {
+        const symbols = WIDE_SYMBOLS.filter(() => chance(40));
+        lines.push(`SYMBOLS=${(symbols.length ? symbols : [itemAt(WIDE_SYMBOLS, randomInt(WIDE_SYMBOLS.length))]).join(',')}`);
+    }
+    if (chance(10)) lines.push(itemAt(WIDE_BINDS, randomInt(WIDE_BINDS.length)));
+    return lines;
 }
 
 // One setting per option family: a repeated option is a configuration
@@ -159,7 +176,11 @@ export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly
         const driver: PolicyConfig = { kind: kind === 'deep' ? 'explore' : kind === 'deepwide' ? 'wide' : kind,
             seed: randomInt(1, 0x7fffffff), maxSteps: spec.targetKeys,
             ...(kind === 'deepwide' ? { debug: true } : {}), ...(meta ? { meta: true } : {}) };
-        let nethackrc = rc;
+        if (optionMix === 'wide') {
+            const lines = wideRcLines();
+            if (lines.length) spec.rcLines = lines;
+        }
+        let nethackrc = rc + (spec.rcLines ?? []).map(line => `${line}\n`).join('');
         if (kind === 'deep' || kind === 'deepwide') {
             spec.debug = true;
             spec.targetDepth = itemAt([3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45], index % 13);

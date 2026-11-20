@@ -13,6 +13,8 @@ export interface CandidateSpec {
     targetKeys?: number;
     targetDepth?: number;
     options?: string;
+    /** Configuration statements after the OPTIONS lines (SYMBOLS=, BIND=). */
+    rcLines?: string[];
     /** Save/restore chain length for a chained policy session. */
     segments?: number;
 }
@@ -72,6 +74,7 @@ function decodeCandidate(value: unknown): CandidateSpec {
     if (data.targetKeys !== undefined) spec.targetKeys = numberValue(data.targetKeys, 'targetKeys');
     if (data.targetDepth !== undefined) spec.targetDepth = numberValue(data.targetDepth, 'targetDepth');
     if (data.options !== undefined) spec.options = stringValue(data.options, 'options');
+    if (data.rcLines !== undefined) spec.rcLines = arrayValue(data.rcLines, 'rcLines').map(line => stringValue(line, 'rc line'));
     if (data.segments !== undefined) spec.segments = numberValue(data.segments, 'segments');
     if (spec.kind === 'recipe' && !spec.recipe) throw new Error('recipe candidate needs a recipe name');
     if ((spec.kind === 'deep' || spec.kind === 'deepwide') && spec.targetDepth === undefined) {
