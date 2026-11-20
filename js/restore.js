@@ -831,22 +831,24 @@ export async function restoreGame(name, storage = game.storage) {
         const encoded = storage.getItem(key);
         if (!encoded)
             return false;
-        // C sys/unix/unixmain.c:261 plines the restoring banner once the
-        // save file is open, before dorecover(); restore_msghistory()
-        // then files this session line back on top of the messages read
-        // from the save file (topl.c:tty_putmsghistory()). A topline the
-        // caller left unacknowledged is marked seen first: native startup
-        // always reaches this boundary with an empty pager, and the
-        // banner repaints the row rather than waiting on the old page.
+        const snapshot = decodeSavedGame(encoded);
+        if (!snapshot.state.level || !snapshot.state.urole || !snapshot.state.urace)
+            return false;
+        requireInitializedHero(snapshot.state.u);
+        // C files.c:1270 restore_saved_game() validates the opened save
+        // (version.c:uptodate()) before sys/unix/unixmain.c:261 plines the
+        // restoring banner, so only a readable save announces itself;
+        // restore_msghistory() then files this session line back on top of
+        // the messages read from the save file (topl.c:tty_putmsghistory()).
+        // A topline the caller left unacknowledged is marked seen first:
+        // native startup always reaches this boundary with an empty pager,
+        // and the banner repaints the row rather than waiting on the old
+        // page.
         if (game._pending_message) {
             game._retained_message = game._pending_message;
             game._pending_message = '';
         }
         await pline('Restoring save file...');
-        const snapshot = decodeSavedGame(encoded);
-        if (!snapshot.state.level || !snapshot.state.urole || !snapshot.state.urace)
-            return false;
-        requireInitializedHero(snapshot.state.u);
         // C restgamestate() reads the saved flags and runs role_init()
         // before it reads the hero, so the quest gender rolls are spent
         // even when the save is then refused; installing the snapshot
