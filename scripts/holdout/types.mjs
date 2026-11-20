@@ -27,6 +27,8 @@ function decodeCandidate(value) {
         spec.targetDepth = numberValue(data.targetDepth, 'targetDepth');
     if (data.options !== undefined)
         spec.options = stringValue(data.options, 'options');
+    if (data.rcLines !== undefined)
+        spec.rcLines = arrayValue(data.rcLines, 'rcLines').map(line => stringValue(line, 'rc line'));
     if (data.segments !== undefined)
         spec.segments = numberValue(data.segments, 'segments');
     if (spec.kind === 'recipe' && !spec.recipe)
