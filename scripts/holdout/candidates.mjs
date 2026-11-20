@@ -63,7 +63,7 @@ function publicDisplayOptions() {
     }
     return options.join(',');
 }
-export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed', long = false, meta = false) {
+export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed', long = false, meta = false, chain = false) {
     const rotation = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', ...(kinds.includes('deep') ? ['deep'] : [])];
@@ -136,7 +136,23 @@ export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed',
             driver.setup = [{ type: 'keys', dismissMore: true,
                     value: `#levelchange\r20\r${teleport}${spec.targetDepth >= 30 ? teleport : ''}` }];
         }
-        session = { version: 5, segments: [{ seed, datetime: date.datetime, nethackrc, driver }] };
+        if (chain && (kind === 'wide' || kind === 'deepwide')) {
+            // A save/restore chain: each segment but the last saves and quits
+            // once its share of keys is spent; the next restores that game.
+            const count = index % 3 === 0 ? 3 : 2;
+            const share = Math.max(30, Math.floor(driver.maxSteps / count));
+            spec.segments = count;
+            session = { version: 5, segments: Array.from({ length: count }, (_, part) => {
+                    const { setup, ...policy } = driver;
+                    const segmentDriver = { ...policy, seed: part === 0 ? driver.seed : randomInt(1, 0x7fffffff),
+                        maxSteps: share, ...(part === 0 && setup ? { setup } : {}),
+                        ...(part < count - 1 ? { finish: [{ type: 'keys', value: 'Sy', dismissMore: true, expectExit: true }] } : {}) };
+                    return { seed, datetime: date.datetime, nethackrc, driver: segmentDriver };
+                }) };
+        }
+        else {
+            session = { version: 5, segments: [{ seed, datetime: date.datetime, nethackrc, driver }] };
+        }
     }
     for (const segment of session.segments) {
         if (!Number.isSafeInteger(segment.seed) || segment.seed < seed || segment.seed >= seed + 16) {

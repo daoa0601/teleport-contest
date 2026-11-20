@@ -21,6 +21,7 @@ interface GeneratorOptions {
     optionMix: OptionMix;
     long: boolean;
     meta: boolean;
+    chain: boolean;
 }
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -40,7 +41,7 @@ process.on('SIGTERM', stopChildren);
 
 function options(argv: readonly string[]): GeneratorOptions | null {
     const opts: GeneratorOptions = { count: 500, jobs: 2, out: path.join(ROOT, '.cache/holdout-dev/mixed'),
-        maxAttempts: 0, resume: false, kinds: ['recipe', 'fuzz', 'explore'], optionMix: 'fixed', long: false, meta: false };
+        maxAttempts: 0, resume: false, kinds: ['recipe', 'fuzz', 'explore'], optionMix: 'fixed', long: false, meta: false, chain: false };
     let requestedMaxAttempts: number | null = null;
     for (let index = 0; index < argv.length; index++) {
         const flag = argv[index];
@@ -48,6 +49,7 @@ function options(argv: readonly string[]): GeneratorOptions | null {
         if (flag === '--resume') { opts.resume = true; continue; }
         if (flag === '--long') { opts.long = true; continue; }
         if (flag === '--meta') { opts.meta = true; continue; }
+        if (flag === '--chain') { opts.chain = true; continue; }
         const value = argv[++index];
         if (value === undefined) throw new Error(`missing value for ${flag}`);
         if (flag === '--count') opts.count = Number(value);
@@ -161,7 +163,7 @@ async function record(input: string, output: string, install: string): Promise<v
 async function main(): Promise<void> {
     const opts = options(process.argv.slice(2));
     if (!opts) {
-        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide,deepwide] [--recipes NAME,...] [--options fixed|public] [--long] [--meta] [--max-attempts N]');
+        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide,deepwide] [--recipes NAME,...] [--options fixed|public] [--long] [--meta] [--chain] [--max-attempts N]');
         return;
     }
     const lock = await reserveOutput(opts);
@@ -226,7 +228,7 @@ async function main(): Promise<void> {
                 && manifest.attempts < opts.maxAttempts) {
                 inFlight++;
                 const index = manifest.attempts++;
-                const candidate = makeCandidate(index, seeds, opts.kinds, opts.recipes ?? RECIPE_NAMES, opts.optionMix, opts.long, opts.meta);
+                const candidate = makeCandidate(index, seeds, opts.kinds, opts.recipes ?? RECIPE_NAMES, opts.optionMix, opts.long, opts.meta, opts.chain);
                 const { spec, session } = candidate;
                 const planPath = path.join(opts.out, 'plans', `${spec.id}.json`);
                 const partial = path.join(runtime, `${spec.id}.partial.json`);

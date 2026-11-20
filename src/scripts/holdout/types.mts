@@ -13,6 +13,8 @@ export interface CandidateSpec {
     targetKeys?: number;
     targetDepth?: number;
     options?: string;
+    /** Save/restore chain length for a chained policy session. */
+    segments?: number;
 }
 export interface RecordingMetrics {
     segments: number;
@@ -70,6 +72,7 @@ function decodeCandidate(value: unknown): CandidateSpec {
     if (data.targetKeys !== undefined) spec.targetKeys = numberValue(data.targetKeys, 'targetKeys');
     if (data.targetDepth !== undefined) spec.targetDepth = numberValue(data.targetDepth, 'targetDepth');
     if (data.options !== undefined) spec.options = stringValue(data.options, 'options');
+    if (data.segments !== undefined) spec.segments = numberValue(data.segments, 'segments');
     if (spec.kind === 'recipe' && !spec.recipe) throw new Error('recipe candidate needs a recipe name');
     if ((spec.kind === 'deep' || spec.kind === 'deepwide') && spec.targetDepth === undefined) {
         throw new Error('deep or deepwide candidate needs a target depth');

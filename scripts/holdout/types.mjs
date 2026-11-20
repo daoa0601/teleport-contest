@@ -27,6 +27,8 @@ function decodeCandidate(value) {
         spec.targetDepth = numberValue(data.targetDepth, 'targetDepth');
     if (data.options !== undefined)
         spec.options = stringValue(data.options, 'options');
+    if (data.segments !== undefined)
+        spec.segments = numberValue(data.segments, 'segments');
     if (spec.kind === 'recipe' && !spec.recipe)
         throw new Error('recipe candidate needs a recipe name');
     if ((spec.kind === 'deep' || spec.kind === 'deepwide') && spec.targetDepth === undefined) {
