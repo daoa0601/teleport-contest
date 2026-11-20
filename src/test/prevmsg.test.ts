@@ -133,6 +133,52 @@ void test('msg_window:full lists the ring oldest-first with the pending line las
         'destroy_nhwindow() erases the recall window');
 });
 
+// C win/tty/wintty.c:erase_menu_or_text() dismisses a corner window with
+// docorner(offx, maxrow + 1): every covered row is cl_end()ed from column
+// offx-1 and the wrecked status lines are repainted by bot() — which
+// windows.c:getlin() has disabled for the whole prompt, so the covered
+// status columns stay blank:
+//
+//     if (ymax >= (int) wins[WIN_STATUS]->offy
+//         && !ystart_between_menu_pages) {
+//         /* we have wrecked the bottom line */
+//         disp.botlx = TRUE;
+//         bot();
+//     }
+void test('a dismissed full history window leaves the covered status columns blank in a getlin', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 'f';
+    const input = resetInputState();
+    // Twenty filed entries put the window's 23 content rows plus its
+    // --More-- marker over both status rows; every line is 44 columns so
+    // tty_display_nhwindow() places the corner at offx = 80 - 45 - 1 = 34.
+    for (let index = 0; index < 20; index++) {
+        await pline(`History entry number ${String(index + 2).padStart(2, '0')}`.padEnd(44, '.'));
+        await markSeen(input);
+    }
+    const editor = getLine('What do you want to call this thing?', () => true);
+    try {
+        await input.waitUntilBlocked();
+        const [statusLine1, statusLine2] = [rowText(22), rowText(23)];
+        assert.ok(statusLine1.length > 34, 'the prompt flushed a painted status line');
+        input.feed(16);
+        await input.waitUntilBlocked();
+        assert.match(rowText(0), /Message History/);
+        input.feed(' ');
+        await input.waitUntilBlocked();
+        assert.equal(rowText(0), 'What do you want to call this thing?',
+            'the getlin prompt returns after the window is dismissed');
+        assert.equal(rowText(22), statusLine1.slice(0, 33).trimEnd(),
+            'bot() stays disabled, so the status keeps only the columns left of the corner');
+        assert.equal(rowText(23), statusLine2.slice(0, 33).trimEnd(),
+            'the second status row keeps its uncovered columns only');
+    } finally {
+        input.feed('\x1b\x1b');
+        await editor;
+    }
+});
+
 void test('the first recall from an untouched long line prompt pages its text', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);

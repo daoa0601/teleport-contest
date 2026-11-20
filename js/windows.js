@@ -248,6 +248,16 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
         }
         // docorner() leaves the covered message columns blank.
         clearRect(Math.max(0, cornerOffset - 1), 0, d.cols, 1);
+        // docorner() cl_end()s every covered row from its xmin and then
+        // repaints only the wrecked status lines through bot(); callers
+        // that run with bot() disabled (windows.c getlin() and
+        // select_menu() set gb.bot_disabled) keep those columns blank
+        // until the next status update.
+        const firstStatusRow = d.rows - 2;
+        if (game._statusUpdatesDisabled && content.length >= firstStatusRow) {
+            const coveredStatusRows = Math.min(2, content.length + 1 - firstStatusRow);
+            clearRect(Math.max(0, cornerOffset - 1), firstStatusRow, d.cols, firstStatusRow + coveredStatusRows);
+        }
         d.setCursor(underlayCursor.col, underlayCursor.row);
         d.cursorVisible = underlayCursor.visible;
     }
