@@ -1680,8 +1680,7 @@ export async function query_classes(
     const categories: ObjectCategory[] = [];
     let menuSeen = false;
     for (;;) {
-        const response = await getLine(`What kinds of thing do you want to ${action}? [${letters}]`,
-            (_character, key) => key >= 32 && key < 127);
+        const response = await getLine(`What kinds of thing do you want to ${action}? [${letters}]`);
         if (response === null) return null;
         const selected: number[] = [];
         let oneAtATime = false, everything = false, missing = false, filtered = false;

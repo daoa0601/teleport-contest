@@ -39,12 +39,12 @@ void test('DEL erases one character and control-U clears the line', async () => 
     freshPlayableRoom();
     requirePlayingGame(game);
     pushKeys('abc\x7fd\n');
-    assert.equal(await getLine('What do you want to write?', () => true), 'abd');
+    assert.equal(await getLine('What do you want to write?'), 'abd');
 
     freshPlayableRoom();
     requirePlayingGame(game);
     pushKeys('abc\x15d\n');
-    assert.equal(await getLine('What do you want to write?', () => true), 'd');
+    assert.equal(await getLine('What do you want to write?'), 'd');
 });
 
 void test('line input acknowledges unread prose before taking the answer', async () => {
@@ -52,7 +52,7 @@ void test('line input acknowledges unread prose before taking the answer', async
     requirePlayingGame(game);
     await pline('You discover a faint inscription.');
     const input = resetInputState();
-    const answer = getLine('What does it say?', () => true);
+    const answer = getLine('What does it say?');
     await input.waitUntilBlocked();
     assert.equal(game._pending_message, 'You discover a faint inscription.');
     input.feed(' ');
@@ -69,7 +69,7 @@ void test('an already read topline does not consume a line-answer key as another
     pushKeys('x');
     await nhgetch();
     pushKeys('welcome\n');
-    assert.equal(await getLine('What does it say?', () => true), 'welcome');
+    assert.equal(await getLine('What does it say?'), 'welcome');
 });
 
 void test('confirmation acknowledges distinct unread prose and asks its question once', async () => {
@@ -139,7 +139,7 @@ void test('a wrapped line prompt leaves covered status rows blank until the next
     game.plname = 'Lin';
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 6, rows: 24 }));
     const input = resetInputState();
-    const answer = getLine('Choose '.repeat(18), () => true);
+    const answer = getLine('Choose '.repeat(18));
     try {
         await input.waitUntilBlocked();
         assert.doesNotMatch(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/,
@@ -164,7 +164,7 @@ void test('line input holds existing status until it returns', async () => {
     await bot();
     game.plname = 'After';
     const input = resetInputState();
-    const answer = getLine('Name?', () => true);
+    const answer = getLine('Name?');
     try {
         await input.waitUntilBlocked();
         await bot();
@@ -259,7 +259,7 @@ void test('line input wraps at the terminal margin and erases without crossing t
     freshPlayableRoom();
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 40, rows: 24 }));
     const input = resetInputState();
-    const answer = getLine('Write'.padEnd(37, '.'), () => true);
+    const answer = getLine('Write'.padEnd(37, '.'));
     try {
         await input.waitUntilBlocked();
         input.feed('ab');
@@ -293,7 +293,7 @@ void test('a line question resumes ordinary messages after Escape stopped a More
     resetInputState().feed('\x1b');
     await flushPendingTopline();
     pushKeys('hello\n');
-    assert.equal(await getLine('Write what?', () => true), 'hello');
+    assert.equal(await getLine('Write what?'), 'hello');
     await plineWithContinuation('The inscription is complete.');
     await flush_screen(1);
     assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'The inscription is complete.');
@@ -307,7 +307,7 @@ void test('line input clears the row its echo wraps onto', async () => {
     const longPrompt = 'What tune are you playing? [5 notes, A-G]';
     const typed = 'A'.repeat(38);
     const input = resetInputState();
-    const answer = getLine(longPrompt, () => true);
+    const answer = getLine(longPrompt);
     await input.waitUntilBlocked();
     // A leftover cell from earlier message output beside the live prompt,
     // as when a previous line wrapped and was dismissed.
@@ -337,7 +337,7 @@ void test('clearing a wrapped answer restores the covered map row', async () => 
 
     const typed = 'a'.repeat(38);
     const input = resetInputState();
-    const answer = getLine('What tune are you playing? [5 notes, A-G]', () => true);
+    const answer = getLine('What tune are you playing? [5 notes, A-G]');
     await input.waitUntilBlocked();
     input.feed(typed);
     await input.waitUntilBlocked();

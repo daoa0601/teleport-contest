@@ -451,7 +451,6 @@ export async function throneSitEffect({
         if (game.flags?.debug && !game.flags?.debug_fuzzer) {
             const answer = await getLine(
                 'Throne sit effect (1..13) [0=random]',
-                () => true,
             );
             if (answer === null) {
                 await plineWithContinuation('Never mind.');

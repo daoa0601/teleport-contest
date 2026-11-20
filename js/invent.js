@@ -1128,7 +1128,7 @@ async function identifyTraditionally(limit) {
         const choices = traditionalIdentifyChoices(candidates);
         await flushPendingTopline();
         clearMessageWindow();
-        const answer = await getLine(`What kinds of thing do you want to identify? [${choices}]`, (_character, key) => key >= 32 && key < 127);
+        const answer = await getLine(`What kinds of thing do you want to identify? [${choices}]`);
         // Native ggetobj returns zero here; identify_pack asks again while
         // identification allowance remains. The per-item q choice quits.
         if (answer === null)

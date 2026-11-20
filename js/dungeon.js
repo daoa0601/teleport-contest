@@ -1345,7 +1345,7 @@ export async function queryLevelAnnotation(level = null, inMenu = false) {
     const prior = getAnnotation(location);
     const prompt = prior ? `Replace annotation "${prior.slice(0, 30)}${prior.length > 30 ? '...' : ''}" with?`
         : `What do you want to call ${annotationLevelDescription(location)}?`;
-    const value = await getLine(prompt, () => true, { inMenu });
+    const value = await getLine(prompt, { inMenu });
     setLevelAnnotation(location, value);
 }
 // C dungeon.c:doannotate().

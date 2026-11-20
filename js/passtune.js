@@ -10,6 +10,7 @@ import { game } from './gstate.js';
 import { definiteName, objectCombatName } from './objnam.js';
 import { promptYesNoQuit } from './query.js';
 import { getLine } from './windows.js';
+import { mungSpaces } from './hacklib.js';
 import { heroIsDeaf } from './senses.js';
 // Part of C music.c:do_play_instrument(): find the adjacent drawbridge.
 function nearbyDrawbridge() {
@@ -24,11 +25,19 @@ function nearbyDrawbridge() {
     }
     return null;
 }
-// Part of C music.c:do_play_instrument(): uppercase the typed tune,
-// H becoming B.
+// Part of C music.c:do_play_instrument(): mungspaces(), then highc() over
+// each byte ('a'..'z' only) and "H" rewritten to "B". highc() leaves a high
+// bit byte alone instead of folding it the way toUpperCase() would.
 function normalizeTune(tune) {
-    return tune.trim().replace(/\s+/gu, ' ').toUpperCase()
-        .replaceAll('H', 'B');
+    const munged = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(tune)));
+    let result = '';
+    for (const character of munged) {
+        const code = character.charCodeAt(0);
+        const upper = code >= 'a'.charCodeAt(0) && code <= 'z'.charCodeAt(0)
+            ? String.fromCharCode(code - 32) : character;
+        result += upper === 'H' ? 'B' : upper;
+    }
+    return result;
 }
 // Part of C music.c:do_play_instrument(): the passtune prompt, or the
 // known tune when the hero has already heard it.
@@ -40,7 +49,7 @@ export async function askForTune() {
         if (answer === 'y')
             return game.castleTune || '';
     }
-    const tune = await getLine('What tune are you playing? [5 notes, A-G]', (_ch, key) => key >= 32 && key < 127);
+    const tune = await getLine('What tune are you playing? [5 notes, A-G]');
     return tune === null ? null : normalizeTune(tune);
 }
 // Part of C music.c:do_play_instrument(): count tumblers and gears that

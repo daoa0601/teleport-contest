@@ -15,7 +15,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import { promptYesNoQuit, promptChoice, promptYesNo } from './query.js';
 import { paranoidQuery, yn_function } from './cmd.js';
 import { promptDirection } from './cmd.js';
-import { visibleCommandKey } from './hacklib.js';
+import { mungSpaces, visibleCommandKey } from './hacklib.js';
 import { setMulti, makemapPrepost } from './cmd.js';
 import { displayPickinvWizardIdentify } from './invent.js';
 import { askTeleportDestination } from './teleport.js';
@@ -283,7 +283,10 @@ export async function wizLevelChange() {
     const hero = game.u;
     requireInitializedHero(hero);
     const value = await getLine('To what experience level do you want to be set?');
-    const input = value?.trim();
+    // wizcmds.c:wiz_level_change(): mungspaces(), then sscanf("%d%c") == 1
+    // — a signed digit run with nothing else left in the buffer.
+    const input = value === null ? ''
+        : new TextDecoder().decode(mungSpaces(new TextEncoder().encode(value)));
     if (!input || !/^[+-]?\d+$/.test(input)) {
         await pline('Never mind.');
         game.context.move = 0;
@@ -925,7 +928,7 @@ export async function wizMigrateMonsters() {
         await plineWithContinuation("Can't get there from here.");
         return;
     }
-    const input = await getLine('How many random monsters to migrate to next level? [0]', ch => ch >= ' ');
+    const input = await getLine('How many random monsters to migrate to next level? [0]');
     if (!input)
         return;
     const count = Number.parseInt(input, 10) || 0;

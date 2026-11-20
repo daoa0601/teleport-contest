@@ -306,7 +306,7 @@ async function readGuardName() {
     const prompt = heroIsDeaf(game) ? 'You are required to supply your name. -'
         : '"Hello stranger, who are you?" -';
     for (let tries = 5; tries > 0; tries--) {
-        const response = await getLine(prompt, (_character, key) => key >= 32 && key !== 127);
+        const response = await getLine(prompt);
         // C mungspaces() trims and collapses ordinary spaces only.
         const name = response?.replace(/^ +| +$/g, '').replace(/ +/g, ' ') ?? '\x1b';
         if (name) return name;

@@ -115,7 +115,7 @@ import type { Monster, MonsterVital } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { freeHeroFromBuriedBall } from './dig.js';
 import { landFloorObject } from './do.js';
-import { possessiveName, upstart } from './hacklib.js';
+import { mungSpaces, possessiveName, upstart } from './hacklib.js';
 import { displayColorName, displayLiquidName, monsterName, monsterTypeName } from './do_name.js';
 import { makemonNear } from './mklev.js';
 import { greatestErosion, isWeaponTool } from './object_properties.js';
@@ -2209,9 +2209,10 @@ async function genocideInput(kind: 'class' | 'species', attempt: number): Promis
     const assisted = kind === 'class' ? "the symbol or name representing a class, or '?'"
         : "the name of a type of monster, or '?'";
     const suffix = attempt ? ` [enter ${(state.flags.cmdassist ?? true) ? assisted : "'?' to see previous genocides"}]` : '';
-    const response = await getLine(`What ${subject} do you want to genocide?${suffix}`,
-        (_ch, key) => key >= 32 && key < 127);
-    return response === null ? '\u001b' : response.trim().replace(/\s+/g, ' ');
+    const response = await getLine(`What ${subject} do you want to genocide?${suffix}`);
+    // read.c:do_genocide(): mungspaces() over the answer's bytes.
+    return response === null ? '\u001b'
+        : new TextDecoder().decode(mungSpaces(new TextEncoder().encode(response)));
 }
 
 // Part of C read.c:do_genocide(), do_class_genocide(): the declined
@@ -2360,9 +2361,10 @@ export async function createParticularMonster(): Promise<boolean> {
     let prompt = 'Create what kind of monster?';
     let explainedEmptyInput = false;
     for (let attempt = 0; attempt < 5; attempt++) {
-        const response = await getLine(prompt, (_ch, key) => key >= 32 && key < 127);
+        const response = await getLine(prompt);
         if (response === null || response.startsWith('\u001b')) return false;
-        const text = response.trim().replace(/\s+/g, ' ');
+        // read.c:create_particular(): mungspaces() over the answer's bytes.
+        const text = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(response)));
         const request = parseCreationRequest(text);
         if (request) return createRequestedMonsters(request);
         if (text || explainedEmptyInput || attempt === 4)

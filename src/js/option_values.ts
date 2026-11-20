@@ -24,8 +24,9 @@ export function isTextOption(name: string): boolean {
 
 
 // Port only: parse an integer like the native atoi used by option handlers.
+// atoi() skips isspace() bytes ( \t\n\v\f\r); a high bit byte stops it.
 export function cInteger(value: string): number {
-    const prefix = value.match(/^\s*[+-]?\d+/)?.[0];
+    const prefix = value.match(/^[ \t\n\v\f\r]*[+-]?\d+/)?.[0];
     return prefix ? Number(prefix) : 0;
 }
 

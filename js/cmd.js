@@ -20,7 +20,7 @@ import { askTeleportDestination, dotelecmd } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
 import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, THRONE, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
 import { nhgetch, nh_poskey, MAP_CLICK_KEY, inputGate } from './input.js';
-import { visibleCommandKey } from './hacklib.js';
+import { mungSpaces, visibleCommandKey } from './hacklib.js';
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizShowStats, wizSmell, wizTelekinesis, wizWhere, wizWish, makemapRemoveMons } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
 import { wizTimeoutQueue } from './timeout.js';
@@ -2037,7 +2037,7 @@ export async function showExtendedCommandList() {
         else if (action === 's')
             search = '';
         else if (action === ':') {
-            const phrase = await getLine('Extended command list search phrase?', (_ch, key) => key >= 32);
+            const phrase = await getLine('Extended command list search phrase?');
             search = phrase?.trim().replace(/\s+/g, ' ') ?? '';
             if (!search) {
                 game.context.move = 0;
@@ -2261,10 +2261,10 @@ async function handlerRebindKeysAdd(keyfirst) {
         if (!command)
             return;
         if (command.flags & NATIVE_COMMAND_FLAGS.CMD_PARAM) {
-            const answer = await getLine(`Command ${command.name} requires a parameter:`, (_character, keyCode) => keyCode >= 32 && keyCode < 127);
-            // mungspaces() condenses the answer; an ESC stays in the buffer
-            // and ends up inside the binding parameter, as in C.
-            const parameter = (answer ?? '\x1b').replace(/\s+/g, ' ').trim();
+            const answer = await getLine(`Command ${command.name} requires a parameter:`);
+            // mungspaces() condenses the answer over its bytes; an ESC stays
+            // in the buffer and ends up inside the binding parameter, as in C.
+            const parameter = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer ?? '\x1b')));
             commandText = `${command.name}(${parameter})`;
         }
         else {
@@ -3104,10 +3104,11 @@ export async function paranoidYesNoQuit(beParanoid, prompt, acceptQuit = true, p
         const extra = prefix.length + 1 + responseType.length;
         if (question.length + extra > QBUFSZ - 1)
             question = question.slice(0, QBUFSZ - 1 - extra - 4) + '...?';
-        const line = await getLine(`${prefix}${question} ${responseType}`, (_ch, key) => key >= 32 && key < 127);
+        const line = await getLine(`${prefix}${question} ${responseType}`);
         if (line === null)
             return acceptQuit ? 'q' : 'n';
-        const answer = line.trim().replace(/\s+/g, ' ').toLowerCase();
+        // mungspaces() over the bytes, then strcmpi() against the answers.
+        const answer = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(line))).toLowerCase();
         if (answer === 'yes')
             return 'y';
         if (answer === 'quit')

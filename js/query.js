@@ -15,7 +15,10 @@ import { visibleCommandKey } from './hacklib.js';
 // Also C getline.c:hooked_tty_getlin(): line editing is inlined here
 // Direct tty callers, such as menu search, read live input without consuming
 // queued command answers. Core getlin() owns that queue through getLine().
-export async function tty_getlin(prompt, accepts, { suppressStatus = false, inMenu = false }) {
+// hooked_tty_getlin() has no per-caller filter: getline.c:166-169 appends
+// any byte with ' ' <= (unsigned char)c && c != '\177' (and the length
+// limit, whose COLNO half is the binding one), for every caller.
+export async function tty_getlin(prompt, { suppressStatus = false, inMenu = false }) {
     let value = '';
     let renderedRows = 1;
     // Rows this editor ever covered, kept apart from the current content
@@ -157,7 +160,9 @@ export async function tty_getlin(prompt, accepts, { suppressStatus = false, inMe
         }
         else {
             const ch = String.fromCharCode(key);
-            if (key >= 32 && key !== 127 && value.length < COLNO && accepts(ch, key)) {
+            // getline.c:166-169: ' ' <= (unsigned char)c && c != '\177',
+            // within BUFSZ-1 and COLNO (the smaller bound).
+            if (key >= 32 && key !== 127 && value.length < COLNO) {
                 value += ch;
                 if (cursorColumn === width) {
                     cursorColumn = 0;
@@ -263,6 +268,18 @@ export async function editExtendedCommand() {
             doprev = false;
             completion = null;
             await redrawCommand();
+        }
+        // pgetchar() reports byte 0xff as EOF; hooked_tty_getlin() then
+        // returns "\033" even after typed text, like Escape at an empty
+        // prompt, so the extended command is cancelled outright.
+        if (key === -1 || key === 0xff) {
+            game._pending_message = '';
+            game._retained_message = '';
+            game._toplines = '';
+            game._promptOwnsTopline = false;
+            game.nhDisplay?.clearRow(0);
+            game.context.move = 0;
+            return null;
         }
         if (key === 27) {
             // tty_getlin(): Escape first clears non-empty input; only Escape

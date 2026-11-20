@@ -1572,7 +1572,7 @@ export async function query_classes(action, objects) {
     const categories = [];
     let menuSeen = false;
     for (;;) {
-        const response = await getLine(`What kinds of thing do you want to ${action}? [${letters}]`, (_character, key) => key >= 32 && key < 127);
+        const response = await getLine(`What kinds of thing do you want to ${action}? [${letters}]`);
         if (response === null)
             return null;
         const selected = [];

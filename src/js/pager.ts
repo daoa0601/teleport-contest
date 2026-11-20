@@ -307,7 +307,7 @@ async function doLookChoice(rawChoice: string, mode: 0 | 1): Promise<void> {
         const item = game.inventory.find(item => item.invlet === String.fromCharCode(letter));
         if (item) await showEncyclopediaInformation(singularObjectName(item));
     } else if (choice === '?') {
-        const typed = await getLine('Specify what? (type the word)', ch => ch >= ' ');
+        const typed = await getLine('Specify what? (type the word)');
         const name = typed === ' ' ? typed : typed?.trim().replace(/\s+/g, ' ');
         if (name && name.length > 1) await showEncyclopediaInformation(name);
         else if (name) {

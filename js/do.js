@@ -1304,7 +1304,7 @@ async function traditionalDropCategories(combo) {
         + `${game.inventory.some(object => object.pickup_prev) ? 'P' : ''}ai${combo ? '' : 'm'}`;
     let response;
     for (;;) {
-        response = await getLine(`What kinds of thing do you want to drop? [${classes.map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('')} ${extras}]`, (_character, key) => key >= 32 && key < 127);
+        response = await getLine(`What kinds of thing do you want to drop? [${classes.map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('')} ${extras}]`);
         if (response === null)
             return null;
         if (!response.includes('i'))

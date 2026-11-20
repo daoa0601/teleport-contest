@@ -1027,8 +1027,7 @@ async function traditionalCategories(combo: boolean, selectOff: SelectOff): Prom
         + `${statuses.has('C') ? 'C' : ''}${statuses.has('X') ? 'X' : ''}${picked ? 'P' : ''}ai${combo ? '' : 'm'}`;
     let response: string | null;
     for (;;) {
-        response = await getLine(`What kinds of thing do you want to take off? [${promptClasses} ${extras}]`,
-            (_character, key) => key >= 32 && key < 127);
+        response = await getLine(`What kinds of thing do you want to take off? [${promptClasses} ${extras}]`);
         if (response === null) return null;
         if (!response.includes('i')) break;
         const underlay = snapshotMenuUnderlay();

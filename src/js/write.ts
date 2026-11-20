@@ -76,7 +76,7 @@ export async function useMagicMarker(pen: GameObject): Promise<boolean> {
     }
     // Native makes the scroll type known even when writing on a blank book.
     learnObjectType(SCR_BLANK_PAPER);
-    const answer = await getLine(`What type of ${typeword} do you want to write?`, () => true);
+    const answer = await getLine(`What type of ${typeword} do you want to write?`);
     if (answer === null || !answer.trim()) return true;
     const name = answer.trim().replace(/\s+/g, ' ')
         .replace(/^(scroll |spellbook )/i, '').replace(/^of /i, '')
