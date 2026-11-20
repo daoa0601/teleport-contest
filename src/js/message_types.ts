@@ -1005,11 +1005,8 @@ export function parseOptions(
             // condensed before the name is sanitized.
             const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
             if (!raw) addError(`Missing parameter for '${stripped}'`);
-            // The config value arrives UTF-8-decoded; C reads its bytes, so
-            // fold it back to one character per byte before the shared
-            // byte-wise fruit normalization sees it.
-            else result.fruit = normalizePreferredFruitName(
-                Array.from(new TextEncoder().encode(raw), byte => String.fromCharCode(byte)).join(''), result);
+            // The config value is already one character per byte.
+            else result.fruit = normalizePreferredFruitName(raw, result);
             continue;
         }
         if (canonical === 'rest_on_space') {
@@ -2295,7 +2292,7 @@ async function editPickupTypes(preserveStatus = false): Promise<void> {
         // input or ESC restores it, and 'm' after mungspaces opens the menu.
         const wasspace = (answer?.[0] ?? '') === ' ';
         const munged = answer === null ? null
-            : new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer)));
+            : byteStringFromBytes(mungSpaces(bytesFromByteString(answer)));
         value = wasspace && munged === '' ? ''
             : munged === null || munged === '' ? previous
             : munged;
