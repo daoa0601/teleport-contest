@@ -378,6 +378,44 @@ void test('Wizard restore uses the fixed player name and retains the current rc 
         await resumed.lua.destroy();
     }
 });
+void test('a restore re-reads the run-time configuration for instance-side options', async () => {
+    const storage = memoryStorage();
+    const nethackrc = 'OPTIONS=name:Configured,role:valkyrie,race:human,gender:female,align:lawful,!legacy,!tutorial,!tips';
+    const first = new Engine({ seed: 1, storage, display: new GameDisplay(null), nethackrc });
+    first.inputGate.beforeRead = () => first.inputGate.feed(' ');
+    await first.start();
+    // C flag.h:410-411 stores cmdassist and fireassist in struct
+    // instance_flags and flag.h:348 stores pricequotes there; save.c
+    // never writes that struct, so in-game toggles must be lost across a
+    // save/restore while struct flag options (verbose, flag.h:70) keep
+    // their saved in-game values.
+    await chooseOption('cmdassist', true);
+    await chooseOption('fireassist', true);
+    await chooseOption('price_quotes', true);
+    await chooseOption('verbose', true);
+    assert.equal(game.flags.cmdassist, false);
+    assert.equal(game.flags.fireassist, false);
+    assert.equal(game.flags.price_quotes, true);
+    assert.equal(game.flags.verbose, false);
+    assert.equal(await saveGame(storage), true);
+    await first.lua.destroy();
+    const resumed = new Engine({ seed: 2, storage, display: new GameDisplay(null), nethackrc });
+    resumed.inputGate.beforeRead = () => resumed.inputGate.feed(' ');
+    try {
+        await resumed.start();
+        const cmdassist = await chooseOption('cmdassist', false);
+        assert.match(cmdassist, /cmdassist\s+\[true\]/, 'cmdassist reverts to the configured default');
+        const fireassist = await chooseOption('fireassist', false);
+        assert.match(fireassist, /fireassist\s+\[true\]/, 'fireassist reverts to the configured default');
+        const priceQuotes = await chooseOption('price_quotes', false);
+        assert.match(priceQuotes, /price_quotes\s+\[false\]/, 'price_quotes reverts to the configured default');
+        const verbose = await chooseOption('verbose', false);
+        assert.match(verbose, /verbose\s+\[false\]/, 'a struct flag option keeps its saved in-game value');
+    }
+    finally {
+        await resumed.lua.destroy();
+    }
+});
 async function beginSelectedOptions(names) {
     const input = resetInputState();
     const remaining = new Set(names);
