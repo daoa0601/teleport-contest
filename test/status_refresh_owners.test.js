@@ -81,7 +81,7 @@ void test('a map flush preserves status rows erased by line input until a status
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 6, rows: 24 }));
     await bot();
     pushKeys('\n');
-    await getLine('Choose '.repeat(18), () => true);
+    await getLine('Choose '.repeat(18));
     await flush_screen(1);
     assert.equal(requireScreenRow(22).map(cell => cell.ch).join('').trim(), '');
     assert.equal(requireScreenRow(23).map(cell => cell.ch).join('').trim(), '');

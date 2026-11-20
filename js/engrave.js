@@ -1064,7 +1064,7 @@ export async function doengrave(state = game) {
         await pline(`You ${everb} the ${eloc} with your ${body_part(FINGERTIP, state)}.`);
     }
     // Prompt for the engraving text.
-    const line = await getLine(`What do you want to ${everb} the ${eloc} here?`, (_ch, key) => key >= 32 && key <= 255 && key !== 127);
+    const line = await getLine(`What do you want to ${everb} the ${eloc} here?`);
     const text = line === null
         ? '\x1b'
         : line.replace(/\t/g, ' ').replace(/ +/g, ' ').replace(/^ | $/g, '');

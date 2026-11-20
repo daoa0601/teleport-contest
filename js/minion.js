@@ -342,7 +342,7 @@ export function ensureMinionData(monster) {
 }
 // C minion.c:bribe(), shared by demon and priest conversations.
 export async function offerGoldToMonster(monster, prompt, state, random = rn2) {
-    const text = await getLine(prompt, () => true);
+    const text = await getLine(prompt);
     const digits = /^\s*[+-]?\d+/u.exec(text ?? '');
     let offer = digits ? Number(digits[0]) : 0;
     if (!Number.isFinite(offer))

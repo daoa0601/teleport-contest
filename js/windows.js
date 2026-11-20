@@ -96,7 +96,9 @@ export function getMenuColoring(text) {
     return null;
 }
 // C windows.c:getlin(): core line input; owns the command queue.
-export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), options = {}) {
+// getlin() passes no acceptance rule to the tty: every caller's bytes are
+// filtered only by hooked_tty_getlin() itself (getline.c:166-169).
+export async function getLine(prompt, options = {}) {
     // C windows.c:getlin(): queued CMDQ_KEY entries answer without any tty
     // prompt and are echoed as pline("%s %s", query, buf). The first
     // non-key entry stops the drain and is discarded; '\n' ends the
@@ -126,7 +128,7 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), opti
     const statusUpdatesDisabled = game._statusUpdatesDisabled ?? false;
     game._statusUpdatesDisabled = true;
     try {
-        return await tty_getlin(prompt, accepts, options);
+        return await tty_getlin(prompt, options);
     }
     finally {
         game._statusUpdatesDisabled = statusUpdatesDisabled;

@@ -18,8 +18,9 @@ export function isTextOption(name) {
         'scores', 'suppress_alert', 'statushilites'].includes(name);
 }
 // Port only: parse an integer like the native atoi used by option handlers.
+// atoi() skips isspace() bytes ( \t\n\v\f\r); a high bit byte stops it.
 export function cInteger(value) {
-    const prefix = value.match(/^\s*[+-]?\d+/)?.[0];
+    const prefix = value.match(/^[ \t\n\v\f\r]*[+-]?\d+/)?.[0];
     return prefix ? Number(prefix) : 0;
 }
 // Part of C cfgfiles.c:config_erradd(): adds punctuation at the interactive boundary.

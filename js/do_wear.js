@@ -966,7 +966,7 @@ async function traditionalCategories(combo, selectOff) {
         + `${statuses.has('C') ? 'C' : ''}${statuses.has('X') ? 'X' : ''}${picked ? 'P' : ''}ai${combo ? '' : 'm'}`;
     let response;
     for (;;) {
-        response = await getLine(`What kinds of thing do you want to take off? [${promptClasses} ${extras}]`, (_character, key) => key >= 32 && key < 127);
+        response = await getLine(`What kinds of thing do you want to take off? [${promptClasses} ${extras}]`);
         if (response === null)
             return null;
         if (!response.includes('i'))

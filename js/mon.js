@@ -19,7 +19,7 @@ import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible
 import { splitMon } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName, monsterTypeName, visibleMonsterSubject } from './do_name.js';
-import { possessiveName, dist2, distmin, ordinalSuffix, pointsOnline } from './hacklib.js';
+import { mungSpaces, possessiveName, dist2, distmin, ordinalSuffix, pointsOnline } from './hacklib.js';
 import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, formCanBecomeStoneGolem, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, is_dwarf, is_elf, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, likes_lava, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsAlwaysHostile, monsterIsPlainHuman, monsterIsQuestGuardian, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies, resistConflict, heroHasOlfaction, } from './mondata.js';
 import { killEgg, objectsInTimerGraph } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
@@ -4474,8 +4474,10 @@ async function wizForceChamForm(monster, state) {
         if (triesLeft === TRY_LIMIT - 1)
             prompt = `${prompt.slice(0, -1)} kind of monster?`;
         monsterClass = 0;
-        const answer = await getLine(prompt, (_character, key) => key >= 32 && key < 127);
-        const text = answer === null ? null : answer.trim().replace(/\s+/g, ' ');
+        const answer = await getLine(prompt);
+        // mon.c:newcham_form(): mungspaces() over the answer's bytes.
+        const text = answer === null ? null
+            : new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer)));
         // Escape keeps whatever an earlier round left; only a valid answer
         // ever survives one, so that is always "no form".
         if (text === null)

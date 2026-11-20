@@ -1317,7 +1317,6 @@ async function identifyTraditionally(limit: number): Promise<IdentificationResul
         clearMessageWindow();
         const answer = await getLine(
             `What kinds of thing do you want to identify? [${choices}]`,
-            (_character, key) => key >= 32 && key < 127,
         );
         // Native ggetobj returns zero here; identify_pack asks again while
         // identification allowance remains. The per-item q choice quits.

@@ -5595,11 +5595,13 @@ export async function makeWish() {
             ? " (enter 'help' for assistance)" : '';
         value = failedAttempts === 0 && game.iflags.menu_requested && game._wishHistory?.length
             ? await choosePastWish()
-            : await getLine(`For what do you wish${assistance}?`, (_ch, key) => key >= 32 && key < 127);
+            : await getLine(`For what do you wish${assistance}?`);
         // zap.c:makewish() mungspaces() the typed line before comparing it,
         // parsing it, recording it in the history, and livelogging it.
         value = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(value ?? '')));
-        if ((value ?? '').trim().toLowerCase() === 'help') {
+        // strcmpi() compares the mungspaces() result as it stands; a byte
+        // like 0x85 survives mungspaces() and keeps "help..." unequal.
+        if ((value ?? '').toLowerCase() === 'help') {
             await showWishHelp(5 - failedAttempts);
             continue;
         }

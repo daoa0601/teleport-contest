@@ -403,7 +403,7 @@ export async function throneSitEffect({ gotoLevel = null, chooseTeleportDestinat
     if (rnd(6) > 4) {
         let effect = rnd(13);
         if (game.flags?.debug && !game.flags?.debug_fuzzer) {
-            const answer = await getLine('Throne sit effect (1..13) [0=random]', () => true);
+            const answer = await getLine('Throne sit effect (1..13) [0=random]');
             if (answer === null) {
                 await plineWithContinuation('Never mind.');
                 return;

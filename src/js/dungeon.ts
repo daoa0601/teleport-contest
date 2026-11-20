@@ -1421,7 +1421,6 @@ export async function queryLevelAnnotation(level: DungeonLocation | null = null,
         : `What do you want to call ${annotationLevelDescription(location)}?`;
     const value = await getLine(
         prompt,
-        () => true,
         { inMenu },
     );
     setLevelAnnotation(location, value);

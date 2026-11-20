@@ -954,8 +954,11 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
             const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
             if (!raw)
                 addError(`Missing parameter for '${stripped}'`);
+            // The config value arrives UTF-8-decoded; C reads its bytes, so
+            // fold it back to one character per byte before the shared
+            // byte-wise fruit normalization sees it.
             else
-                result.fruit = normalizePreferredFruitName(raw, result);
+                result.fruit = normalizePreferredFruitName(Array.from(new TextEncoder().encode(raw), byte => String.fromCharCode(byte)).join(''), result);
             continue;
         }
         if (canonical === 'rest_on_space') {
@@ -1457,16 +1460,16 @@ export function changePreferredFruit(name, state = game) {
 // optfn_fruit() (above) and fruitadd() (below) both cap the bytes and then
 // run bones.c:sanitize_name() over each byte of the native buffer — control
 // bytes become '.', and a high byte is masked to '_' unless the tty accepts
-// eight-bit input, which keeps the byte itself. The port's bones names are
-// decoded strings (sanitizeName in bones.ts masks those per character);
-// the fruit option still sees the raw UTF-8 bytes here.
+// eight-bit input, which keeps the byte itself. Every caller hands a
+// one-character-per-byte string: a typed getlin answer already is one, and
+// the config path converts its decoded value back to bytes below.
 function sanitizeFruitCopy(name, iflags) {
-    const bytes = new TextEncoder().encode(name).subarray(0, FRUIT_NAME_BYTES);
-    return [...bytes].map(byte => {
+    return [...name].slice(0, FRUIT_NAME_BYTES).map(character => {
+        const byte = character.charCodeAt(0);
         const low = byte & 127;
         if (low < 32 || low === 127)
             return '.';
-        return byte > 127 && !iflags?.wc_eight_bit_input ? '_' : String.fromCharCode(byte);
+        return byte > 127 && !iflags?.wc_eight_bit_input ? '_' : character;
     }).join('');
 }
 // C options.c:optfn_hilite_status(): apply a typed compound-option value.
@@ -1479,7 +1482,9 @@ export async function setTextOption(name, value) {
         await optionError('Option too long, max length is 128 characters');
         return;
     }
-    value = value.trimEnd();
+    // parseoptions() strips trailing isspace() bytes only; a byte with the
+    // high bit set stays in the value (options.c isspace((uchar) *op)).
+    value = value.replace(/[ \t\n\v\f\r]+$/, '');
     switch (name) {
         case 'pile_limit': {
             const { limit, missing } = optfnPileLimit(value, false);
@@ -2230,8 +2235,16 @@ async function editPickupTypes(preserveStatus = false) {
     let value = previous;
     let useMenu = true;
     if ((game.flags.menu_style ?? MENU_FULL) <= 1) {
-        const answer = await getLine(`New pickup_types: [${inventoryOrderSymbols()} am] (${previous || 'all'})`, (_character, key) => key >= 32 && key < 127);
-        value = answer === null || !answer ? previous : answer.trim().replace(/ +/g, ' ');
+        const answer = await getLine(`New pickup_types: [${inventoryOrderSymbols()} am] (${previous || 'all'})`);
+        // options.c:3346-3356: wasspace is sampled before mungspaces(); a
+        // leading space with nothing after it clears the old value, empty
+        // input or ESC restores it, and 'm' after mungspaces opens the menu.
+        const wasspace = (answer?.[0] ?? '') === ' ';
+        const munged = answer === null ? null
+            : new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer)));
+        value = wasspace && munged === '' ? ''
+            : munged === null || munged === '' ? previous
+                : munged;
         useMenu = value.startsWith('m');
     }
     if (useMenu) {
@@ -2305,7 +2318,7 @@ async function editAutopickupExceptions() {
         if (action === 'done')
             return;
         if (action === 'add') {
-            const answer = await getLine('What new autopickup exception pattern?', (_character, key) => key >= 32 && key < 127);
+            const answer = await getLine('What new autopickup exception pattern?');
             if (answer === null)
                 return;
             const pattern = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer)));
@@ -2355,7 +2368,7 @@ async function editMenuColors() {
         if (action === 'done')
             return;
         if (action === 'add') {
-            const pattern = await getLine('What new menucolor pattern?', (_character, key) => key >= 32 && key < 127);
+            const pattern = await getLine('What new menucolor pattern?');
             if (pattern === null)
                 return;
             if (pattern) {
@@ -2436,7 +2449,7 @@ async function editMessageTypes() {
         if (action === 'done')
             return;
         if (action === 'add') {
-            const patternText = await getLine('What new message pattern?', (_character, key) => key >= 32 && key < 127);
+            const patternText = await getLine('What new message pattern?');
             if (patternText === null)
                 return;
             if (!patternText)
@@ -3119,7 +3132,7 @@ async function editCompoundOption(name, fullMenu) {
     else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false))
         return name === 'versinfo' && (game.flags.versinfo ?? 1) !== previousVersion;
     else if (isTextOption(name)) {
-        const value = await getLine(`Set ${name} to what?`, (_character, key) => key >= 32 && key < 127);
+        const value = await getLine(`Set ${name} to what?`);
         if (value === null)
             return false;
         if (name === 'scores') {
@@ -3142,7 +3155,7 @@ async function editCompoundOption(name, fullMenu) {
 // Part of C options.c:doset(), doset_simple(): the fruit prompt routed
 // through optfn_fruit.
 async function editFruitOption(giveMessage) {
-    const name = await getLine('Set fruit to what?', (_ch, code) => code >= 32 && code < 127, { suppressStatus: true });
+    const name = await getLine('Set fruit to what?', { suppressStatus: true });
     if (!name)
         return;
     const result = changePreferredFruit(name);
@@ -3185,7 +3198,7 @@ export function optfnBoulder(raw, { initial = false } = {}) {
 // optfn_boulder() through parseoptions(); mid-game the new symbol lands in
 // both symbol sets' overrides and go.opt_need_redraw triggers doredraw().
 async function editBoulderSymbol() {
-    const value = await getLine('Set boulder to what?', (_character, key) => key >= 32 && key < 127);
+    const value = await getLine('Set boulder to what?');
     if (value === null)
         return false;
     if (!value) {

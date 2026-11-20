@@ -429,7 +429,7 @@ async function process_menu_window(d, rows, layout, how, underlay) {
             continue;
         }
         if (letter === ':' && how !== PICK_NONE) {
-            const query = await tty_getlin('Search for:', (_ch, code) => code >= 32 && code !== 127, { inMenu: true });
+            const query = await tty_getlin('Search for:', { inMenu: true });
             if (!query)
                 continue;
             for (const row of rows) {

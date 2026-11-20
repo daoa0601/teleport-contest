@@ -1433,7 +1433,6 @@ async function statusHiliteMenuChooseUpDownBoth(
 // botl.c status_hilite_menu_add(): one whole rule entry session, including
 // C's goto retry structure. Returns whether a rule was added.
 async function statusHiliteMenuAdd(origfld: number): Promise<boolean> {
-    const printable = (_character: string, key: number) => key >= 32 && key < 127;
     let retry = 0;
     chooseField: for (;;) {
         let fld = origfld;
@@ -1470,17 +1469,17 @@ async function statusHiliteMenuAdd(origfld: number): Promise<boolean> {
                 if (behavior === BL_TH_VAL_PERCENTAGE || behavior === BL_TH_VAL_ABSOLUTE) {
                     const percent = behavior === BL_TH_VAL_PERCENTAGE;
                     const answer = await getLine(
-                        `Enter ${percent ? 'percentage ' : ''}value for ${field.name} threshold:`,
-                        printable);
-                    if (answer === null || answer.trim() === '') continue chooseBehavior;
+                        `Enter ${percent ? 'percentage ' : ''}value for ${field.name} threshold:`);
+                    if (answer === null || /^[ \t]*$/.test(answer)) continue chooseBehavior;
                     // C walks and mangles the response buffer in place;
                     // trimspaces() only skips the leading blanks in it, so
                     // they stay in the buffer and reach the value rows.
                     const raw = [...answer];
                     let start = 0;
                     let cut = raw.length;
-                    while (/\s/.test(raw[start] ?? '')) start++;
-                    while (cut > start && /\s/.test(raw[cut - 1] ?? '')) cut--;
+                    // C trimspaces() skips only ' ' and '\t' (hacklib.c:228).
+                    while (raw[start] === ' ' || raw[start] === '\t') start++;
+                    while (cut > start && (raw[cut - 1] === ' ' || raw[cut - 1] === '\t')) cut--;
                     const chars = raw.slice(0, cut);
                     let position = start;
                     let numstart = start;
@@ -1624,10 +1623,11 @@ async function statusHiliteMenuAdd(origfld: number): Promise<boolean> {
                         }
                         if (rv < 0) continue chooseBehavior;
                     } else {
-                        const answer = await getLine(query, printable);
+                        const answer = await getLine(query);
                         if (answer === null || answer === '') continue chooseBehavior;
-                        // struct hilite_s.textmatch[MAXVALWIDTH]
-                        if (new TextEncoder().encode(answer).length >= 80) return false;
+                        // struct hilite_s.textmatch[MAXVALWIDTH]; each typed
+                        // byte is one character, so strlen() is the length.
+                        if (answer.length >= 80) return false;
                         rule.rel = TXT_VALUE;
                         rule.textmatch = answer;
                     }

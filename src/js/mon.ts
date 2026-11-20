@@ -55,7 +55,7 @@ import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible
 import { splitMon } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName, monsterTypeName, visibleMonsterSubject } from './do_name.js';
-import { possessiveName, dist2, distmin, ordinalSuffix, pointsOnline } from './hacklib.js';
+import { mungSpaces, possessiveName, dist2, distmin, ordinalSuffix, pointsOnline } from './hacklib.js';
 import {
     monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars,
     monsterPassesBars, monsterLocomotion, monsterFireDescription, formCanBecomeStoneGolem, nameToMonster,
@@ -5247,8 +5247,10 @@ async function wizForceChamForm(monster: Monster, state: GameState): Promise<num
         if (triesLeft === TRY_LIMIT - 1)
             prompt = `${prompt.slice(0, -1)} kind of monster?`;
         monsterClass = 0;
-        const answer = await getLine(prompt, (_character, key) => key >= 32 && key < 127);
-        const text = answer === null ? null : answer.trim().replace(/\s+/g, ' ');
+        const answer = await getLine(prompt);
+        // mon.c:newcham_form(): mungspaces() over the answer's bytes.
+        const text = answer === null ? null
+            : new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer)));
         // Escape keeps whatever an earlier round left; only a valid answer
         // ever survives one, so that is always "no form".
         if (text === null) break;

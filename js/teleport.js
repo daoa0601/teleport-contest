@@ -894,7 +894,7 @@ async function readLevelRequest(state, menuRequested) {
         const help = attempt > 1
             ? wizard ? ' [type a number, name, or ? for a menu]' : ' [type a number or name]'
             : '';
-        const text = await getLine(`To what level do you want to teleport?${help}`, character => character >= ' ');
+        const text = await getLine(`To what level do you want to teleport?${help}`);
         if (text === '*')
             return { random: true };
         // A confused cancellation can itself be misread as random teleport.

@@ -39,7 +39,7 @@ import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
 import { randomExperience } from './exper.js';
 import { rankOf, roleSwitch } from './botl.js';
-import { dist2, possessiveName } from './hacklib.js';
+import { dist2, mungSpaces, possessiveName } from './hacklib.js';
 import { heroCanSeeInvisible } from './mcastu.js';
 import { breatheInDirection } from './mthrowu.js';
 import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp, hitMonsterWithThrownObject, } from './dothrow.js';
@@ -1478,12 +1478,14 @@ async function chooseHeroForm({ forced, dragon, lycanthrope }) {
     let tries = 5;
     let mnum = -1;
     do {
-        const answer = await getLine('Become what kind of monster? [type the name]', (_character, key) => key >= 32 && key < 127);
+        const answer = await getLine('Become what kind of monster? [type the name]');
         if (answer === null && forced) {
             await plineWithContinuation('Never mind.');
             return { cancelled: true };
         }
-        const name = answer === null ? '*' : answer.trim().replace(/\s+/g, ' ');
+        // polyself.c:522: mungspaces() over the answer's bytes.
+        const name = answer === null ? '*'
+            : new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer)));
         if (name === '*' || name === 'random')
             return { mnum: -1, random: true };
         mnum = nameToMonster(name);

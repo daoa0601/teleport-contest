@@ -119,7 +119,7 @@ void test('the first recall from an untouched long line prompt pages its text', 
     const input = resetInputState();
     await pline('Before the question.');
     await markSeen(input);
-    const editor = getLine('What do you want to call the distant chamber beyond the old stone door at the end of this passage?', () => true);
+    const editor = getLine('What do you want to call the distant chamber beyond the old stone door at the end of this passage?');
     try {
         await input.waitUntilBlocked();
         input.feed(16);
