@@ -120,8 +120,10 @@ for (const [pattern, matching, visible] of [
     ['^[[:digit:]-]+$', ['2-5', '-'], ['a']],
     ['^[[=hyphen=]-0]+$', ['-./0'], ['a']],
     ['^[[.NUL.]]$', [], ['a', '\0']],
-    ['^.$', ['a'], ['é', '\0']],
-    ['^..$', ['é'], ['a']],
+    // The é message text holds its two UTF-8 source bytes (nhlua.c
+    // nhl_pline() hands Lua's bytes to pline); ERE '.' matches one byte.
+    ['^.$', ['a'], ['\xC3\xA9', '\0']],
+    ['^..$', ['\xC3\xA9'], ['a']],
     ['^bell$', ['bell\0ignored'], ['bell\n']],
 ] as const) {
     void test(`MSGTYPE matches native ERE behavior for ${pattern}`, () => {

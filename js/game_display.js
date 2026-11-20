@@ -132,8 +132,9 @@ export class GameDisplay {
     }
     setCursor(col, row) { return this.terminal.setCursor(col, row); }
     clearScreen() {
+        this.rawRowBytes = [];
+        this.rawRowTailOffset = 0;
         this.capturedMapCells.clear();
-        this.altFontCells.clear();
         this.repaintScreen();
     }
     // The browser rebuilds its grid on each flush; the tty recorder only
@@ -177,6 +178,8 @@ export class GameDisplay {
         this.setCursor(cursorCol, cursorRow);
     }
     clearRow(row) {
+        this.rawRowBytes = [];
+        this.rawRowTailOffset = 0;
         this.clearCapturedMapCells(0, row, this.cols);
         this.repaintRow(row);
     }
@@ -187,6 +190,8 @@ export class GameDisplay {
         this.terminal.clearRow(row);
     }
     scrollUp() {
+        this.rawRowBytes = [];
+        this.rawRowTailOffset = 0;
         this.terminal.scrollUp();
         this.mapFrameCells.clear();
         const movedCells = [...this.capturedMapCells];
@@ -231,6 +236,121 @@ export class GameDisplay {
     getCanvas() { return this.terminal.getCanvas?.(); }
     colorToCss(color) { return this.terminal.colorToCss(color); }
     captureForShell() { return this.terminal.captureForShell(); }
+    // termcap.c:nomux_raw_putch()/nomux_raw_emit(): tty_raw_print() writes
+    // its bytes to the shadow buffer as unsigned characters — one byte per
+    // cell, dropping everything at or past column 80 and row 24 with no
+    // wrap and no scroll — while the cursor counters keep counting. The
+    // recorder decodes each captured row as UTF-8, so a multi-byte
+    // sequence written raw occupies one recorded cell and everything
+    // after it shifts left; an invalid or split sequence decodes as
+    // U+FFFD, exactly as the recorder's TextDecoder does.
+    //
+    // Raw bytes replace physical cells, including their attributes. The
+    // retained tail keeps both its browser glyph and its captured glyph:
+    // an IBM wall, for example, has already passed through g_putch().
+    // Only the raw prefix needs UTF-8 decoding; retained text and glyphs
+    // have already been rendered. A multi-byte prefix consumes its byte
+    // count from the tail before the decoded cells are joined to it.
+    rawRowBytes = [];
+    // Where the tail begins in the grid relative to the raw byte count:
+    // decoded length minus byte length of the last materialization (0
+    // until one runs), so a multi-byte merge shifts the tail left and a
+    // later write consumes from the right place.
+    rawRowTailOffset = 0;
+    // termcap.c:nomux_enter_raw_mode()/nomux_get_cursor(): raw output runs
+    // on its own row/column counters from a cleared shadow buffer, and no
+    // code ever leaves raw mode — later tty painting continues through
+    // nomux_putch() while the capture keeps reporting the frozen raw
+    // counters.
+    rawModeActive = false;
+    rawCol = 0;
+    rawRow = 0;
+    writeRawText(text) {
+        if (!this.rawModeActive) {
+            this.rawModeActive = true;
+            this.rawCol = 0;
+            this.rawRow = 0;
+            this.clearScreen();
+        }
+        for (const character of text) {
+            if (character === '\n') {
+                this.rawRowBytes = [];
+                this.rawRowTailOffset = 0;
+                this.rawCol = 0;
+                this.rawRow++;
+                continue;
+            }
+            const code = character.codePointAt(0) ?? 0;
+            if (code < 32) {
+                // nomux_raw_putch() rejects every character below 32 before
+                // its column counter moves: the shadow buffer never sees
+                // tty_raw_print()'s tabs or carriage returns, and the bytes
+                // after one continue at the current column.
+                continue;
+            }
+            const bytes = code <= 0xFF ? [code]
+                : new TextEncoder().encode(character);
+            for (const byte of bytes) {
+                // The shadow writer drops bytes at or past the last column;
+                // its column counter still advances.
+                if (this.rawCol < this.cols)
+                    this.rawRowBytes.push(byte);
+                this.rawCol++;
+            }
+            this.materializeRawRow();
+        }
+        this.setCursor(this.rawCol, this.rawRow);
+        this.flush();
+    }
+    // The row's cells as they stand now — one shadow buffer in C: painting
+    // between raw writes is part of the row the raw prefix joins. Keep the
+    // capture's g_putch() result and every cell property, including styled
+    // blanks.
+    liveRawRowCells() {
+        const captured = this.captureGrid[this.rawRow] ?? [];
+        return captured.map((cell, column) => ({
+            ...cell,
+            ch: this.grid[this.rawRow]?.[column]?.ch ?? cell.ch,
+            capturedCh: cell.ch,
+            altFont: this.altFontAt(column, this.rawRow),
+        }));
+    }
+    materializeRawRow() {
+        if (this.rawRow < 0 || this.rawRow >= this.rows)
+            return;
+        const decoded = new TextDecoder().decode(Uint8Array.from(this.rawRowBytes));
+        const prefix = Array.from(decoded, ch => ({
+            ch, capturedCh: ch, color: NO_COLOR, attr: 0, altFont: false,
+        }));
+        // The tail starts where the last materialization left it, advanced
+        // by the bytes written since: painting between raw writes is part
+        // of the row (one shadow buffer), and a merge consumes tail cells.
+        const tail = this.liveRawRowCells()
+            .slice(this.rawRowTailOffset + this.rawRowBytes.length);
+        const cells = [...prefix, ...tail];
+        // prefix counts code points; decoded.length would count UTF-16
+        // units and drop an astral character's second unit from the shift.
+        this.rawRowTailOffset = prefix.length - this.rawRowBytes.length;
+        this.clearCapturedMapCells(0, this.rawRow, this.cols);
+        this.repaintRow(this.rawRow);
+        for (const [column, cell] of cells.entries()) {
+            if (column >= this.cols)
+                break;
+            this.setFrameCell(column, this.rawRow, cell.ch, cell.color, cell.attr, cell.altFont);
+            if (cell.capturedCh !== cell.ch) {
+                this.capturedMapCells.set(this.rawRow * this.cols + column, {
+                    ch: cell.capturedCh, color: cell.color, attr: cell.attr,
+                });
+            }
+        }
+    }
+    // The cursor the recorder reports (nomux_get_cursor()).
+    get captureCursorCol() {
+        return this.rawModeActive ? this.rawCol : this.terminal.cursorCol;
+    }
+    get captureCursorRow() {
+        return this.rawModeActive ? this.rawRow : this.terminal.cursorRow;
+    }
     clearCapturedMapCells(col, row, length) {
         for (let c = Math.max(0, col); c < Math.min(this.cols, col + length); c++) {
             const index = row * this.cols + c;

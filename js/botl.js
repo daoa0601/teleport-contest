@@ -28,7 +28,7 @@ import { newExperienceThreshold } from './exper.js';
 import { pline } from './pline.js';
 import { getLine, menuHeadingStyle, showMultiSelectWindow } from './windows.js';
 import { colorName, matchAttributeName, matchColorName, queryAttr, queryColorMenu } from './coloratt.js';
-import { fuzzyMatch, stripChars, sgn } from './hacklib.js';
+import { cByteLength, fuzzyMatch, stripChars, sgn, trimCIsspace } from './hacklib.js';
 import { NO_COLOR, ATR_BOLD, ATR_INVERSE, ATR_UNDERLINE } from './terminal.js';
 import { classifyStatusTerrain, heroGoldAmount, nearCapacity } from './hack.js';
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
@@ -1618,9 +1618,8 @@ async function statusHiliteMenuAdd(origfld) {
                         const answer = await getLine(query);
                         if (answer === null || answer === '')
                             continue chooseBehavior;
-                        // struct hilite_s.textmatch[MAXVALWIDTH]; each typed
-                        // byte is one character, so strlen() is the length.
-                        if (answer.length >= 80)
+                        // struct hilite_s.textmatch[MAXVALWIDTH]
+                        if (cByteLength(answer) >= 80)
                             return false;
                         rule.rel = TXT_VALUE;
                         rule.textmatch = answer;
@@ -1960,7 +1959,7 @@ function isFieldArrayValue(text, values, minimum, maximum) {
 // ignored; the port's thresholds are all ANY_LONG/ANY_INT, so the union's
 // pointer cases reduce to this number.
 function cAtoi(text) {
-    const match = /^[+-]?\d+/.exec(text.trim());
+    const match = /^[+-]?\d+/.exec(trimCIsspace(text));
     return match ? Number.parseInt(match[0], 10) : 0;
 }
 /** botl.c parse_status_hl1(): split one config entry into rules. */
@@ -2232,7 +2231,7 @@ export function parseStatusHl2(fields, addError, fromConfigFile = false, operati
         rule.rel = relation;
         rule.value = value;
         if (rule.behavior === BL_TH_TEXTMATCH && txt !== null)
-            rule.textmatch = txt.trim();
+            rule.textmatch = trimCIsspace(txt);
         rule.set = true;
         operations.push({ threshold: { fld, rule } });
         successes++;

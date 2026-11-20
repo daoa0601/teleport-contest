@@ -1,4 +1,8 @@
-// C nhlua.c:nhl_pline() and nhl_text().
+// C nhlua.c:nhl_pline() and nhl_text(). luaL_checkstring hands Lua's
+// bytes to C verbatim: Lua strings already hold one character per byte —
+// source literals are lexed from the file's bytes, and game values (typed
+// and configured names) enter the interpreter as byte strings.
+
 
 import { flushPendingTopline } from '../topl.js';
 import { plineWithContinuation } from '../pline.js';

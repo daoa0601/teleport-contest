@@ -55,7 +55,10 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, WARNCOUNT } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
-import { mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf, visibleCommandKey } from './hacklib.js';
+import {
+    byteStringFromBytes, bytesFromByteString, mungSpaces, mungSpacesText, fuzzyMatch, asciiLower,
+    asciiNameEqual, ciPrefixOf, trimCIsspace, trimSpaces, visibleCommandKey,
+} from './hacklib.js';
 
 import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
@@ -454,7 +457,8 @@ function optfnParanoidConfirmation(
     // + or - as augmenting, matches arguments case-insensitively through
     // match_optname(), and reports the first unmatched token verbatim
     // while keeping the changes before it.
-    let fields = rawValue.trim().replace(/[ \t]+/g, ' ');
+    // optfn_paranoid_confirmation() condenses its value with mungspaces().
+    let fields = mungSpacesText(rawValue);
     const augmenting = fields.startsWith('+') || fields.startsWith('-');
     const removing = fields.startsWith('-');
     let bits = augmenting ? current : 0;
@@ -486,7 +490,7 @@ type ScoreChoices = Required<Pick<GameFlags, 'end_top' | 'end_around' | 'end_own
 // C options.c:optfn_scores(): the top/around/own value parsing.
 function optfnScores(value: string | null, negated: boolean): ScoreChoices | null {
     // string_for_opt() trims the value; an empty one is a missing parameter.
-    const text = value?.trim();
+    const text = value == null ? '' : trimCIsspace(value);
     if (!text) return null;
     const choices: ScoreChoices = { end_top: 0, end_around: 0, end_own: false, error: null };
     let rest = negated ? '' : text;
@@ -574,7 +578,7 @@ export function parseOptions(
             continue;
         }
         const trimmedBytes = trimConfigurationOption(optionBytes);
-        const trimmed = new TextDecoder().decode(trimmedBytes);
+        const trimmed = byteStringFromBytes(trimmedBytes);
         if (!trimmed) {
             addError('Empty statement');
             continue;
@@ -673,9 +677,8 @@ export function parseOptions(
         }
 
         const colonIdx = stripped.search(/[:=]/);
-        const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx))
-            .trimEnd().toLowerCase().trimStart();
-        const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+        const bindingOption = trimCIsspace(colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).toLowerCase();
+        const optionValue = colonIdx < 0 ? null : trimCIsspace(stripped.slice(colonIdx + 1));
 
         // optfn_petattr(): the attribute also controls hilite_pet.
         // Even a missing parameter reapplies that boolean, but an
@@ -1002,11 +1005,8 @@ export function parseOptions(
             // condensed before the name is sanitized.
             const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
             if (!raw) addError(`Missing parameter for '${stripped}'`);
-            // The config value arrives UTF-8-decoded; C reads its bytes, so
-            // fold it back to one character per byte before the shared
-            // byte-wise fruit normalization sees it.
-            else result.fruit = normalizePreferredFruitName(
-                Array.from(new TextEncoder().encode(raw), byte => String.fromCharCode(byte)).join(''), result);
+            // The config value is already one character per byte.
+            else result.fruit = normalizePreferredFruitName(raw, result);
             continue;
         }
         if (canonical === 'rest_on_space') {
@@ -1073,7 +1073,7 @@ export function parseOptions(
         // optfn_name(): the value is mandatory at startup
         // (string_for_env_opt(FALSE)), with or without a delimiter.
         if (canonical === 'name') {
-            const val = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1).trim();
+            const val = colonIdx < 0 ? '' : trimCIsspace(stripped.slice(colonIdx + 1));
             if (val) result.name = val;
             else addError(`Missing parameter for '${stripped}'`);
             continue;
@@ -1087,7 +1087,7 @@ export function parseOptions(
         }
 
         if (colonIdx >= 0) {
-            const val = stripped.slice(colonIdx + 1).trim();
+            const val = trimCIsspace(stripped.slice(colonIdx + 1));
 
             // optfn_playmode(): duplicates refuse outright; the value
             // prefixes normal/play, explore/discovery, debug/wizard.
@@ -1295,10 +1295,10 @@ function optfnAutounlock(
     const sep = op.includes('+') ? '+' : ' ';
     let bits = 0;
     let none = negated;
-    let rest = op.trim();
+    let rest = trimSpaces(op);
     for (;;) {
         const cut = rest.indexOf(sep);
-        const element = (cut < 0 ? rest : rest.slice(0, cut)).trim();
+        const element = trimSpaces(cut < 0 ? rest : rest.slice(0, cut));
         if (ciPrefixOf('none', element)) {
             none = true;
         } else {
@@ -1311,7 +1311,7 @@ function optfnAutounlock(
             bits |= type[1];
         }
         if (cut < 0) break;
-        rest = rest.slice(cut + 1).trim();
+        rest = trimSpaces(rest.slice(cut + 1));
     }
     if (none && bits !== 0) {
         addError("Invalid value combination for \"autounlock\": 'none' with some");
@@ -1409,7 +1409,7 @@ export function parseDisclosureSettings(raw: unknown): Record<string, string> {
     };
     // An unset option leaves the zero-initialized defaults: ask, answer no.
     if (raw === undefined || raw === null) return settings;
-    const text = String(raw).trim();
+    const text = trimCIsspace(String(raw));
     if (text === '' || text.toLowerCase() === 'all') {
         for (const category of DISCLOSURE_CATEGORIES) settings[category] = 'y';
         return settings;
@@ -1482,11 +1482,11 @@ interface FruitNameSettings {
 // one-character-per-byte string: a typed getlin answer already is one, and
 // the config path converts its decoded value back to bytes below.
 function sanitizeFruitCopy(name: string, iflags?: Pick<InterfaceFlags, 'wc_eight_bit_input'>): string {
-    return [...name].slice(0, FRUIT_NAME_BYTES).map(character => {
-        const byte = character.charCodeAt(0);
+    const bytes = bytesFromByteString(name).subarray(0, FRUIT_NAME_BYTES);
+    return [...bytes].map(byte => {
         const low = byte & 127;
         if (low < 32 || low === 127) return '.';
-        return byte > 127 && !iflags?.wc_eight_bit_input ? '_' : character;
+        return byte > 127 && !iflags?.wc_eight_bit_input ? '_' : String.fromCharCode(byte);
     }).join('');
 }
 
@@ -2103,7 +2103,8 @@ const MESSAGE_TYPES: ReadonlyArray<readonly [string, MessageType]> = [
 export function addMessageTypeRule(value: string, rules: MessageTypeRule[]): string | null {
     // sscanf() accepts a ten-character type and up to 255 pattern characters;
     // the closing quote and trailing input do not affect its two conversions.
-    const match = value.match(/^\s*(\S{1,10})\s+"([^"]{1,255})/);
+    // sscanf()'s %s and the literal blank skip isspace() bytes only.
+    const match = value.match(/^[ \t\n\v\f\r]*([^ \t\n\v\f\r]{1,10})[ \t\n\v\f\r]+"([^"]{1,255})/);
     if (!match?.[1] || !match[2]) return 'Malformed MSGTYPE';
     const name = match[1];
     const entry = MESSAGE_TYPES.find(([type]) => type.startsWith(name.toLowerCase()));
@@ -2292,7 +2293,7 @@ async function editPickupTypes(preserveStatus = false): Promise<void> {
         // input or ESC restores it, and 'm' after mungspaces opens the menu.
         const wasspace = (answer?.[0] ?? '') === ' ';
         const munged = answer === null ? null
-            : new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer)));
+            : byteStringFromBytes(mungSpaces(bytesFromByteString(answer)));
         value = wasspace && munged === '' ? ''
             : munged === null || munged === '' ? previous
             : munged;
@@ -2374,7 +2375,7 @@ async function editAutopickupExceptions(): Promise<void> {
         if (action === 'add') {
             const answer = await getLine('What new autopickup exception pattern?');
             if (answer === null) return;
-            const pattern = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer)));
+            const pattern = byteStringFromBytes(mungSpaces(bytesFromByteString(answer)));
             if (!pattern) continue;
             // The handler wraps the answer in quotes (apebuf's bounds cap the
             // whole mapping at 255 bytes) and reuses the config parser; its
@@ -2474,7 +2475,7 @@ function menuColoringRow(rule: MenuColoringRule): string {
     const suffix = `"=${color}${rule.attr !== 0 ? `&${attributeName(rule.attr)}` : ''}`;
     // C: ln = BUFSZ - strlen("\"\"=suffix") - 1, and strncat() counts bytes.
     const limit = 254 - suffix.length;
-    const shown = new TextEncoder().encode(rule.origstr).length > limit
+    const shown = rule.origstr.length > limit
         ? `${cutConfigBytes(rule.origstr, limit - 3)}...` : rule.origstr;
     return `"${shown}${suffix}`;
 }
@@ -2538,7 +2539,7 @@ function messageTypeRow(rule: MessageTypeRule): string {
     const prefix = `${choice[0].padEnd(5)} "`;
     // handler_msgtype() reserves the closing quote and NUL in its BUFSZ buffer.
     const limit = BUFSZ - prefix.length - 2;
-    const pattern = new TextEncoder().encode(rule.patternText).length > limit
+    const pattern = rule.patternText.length > limit
         ? `${cutConfigBytes(rule.patternText, limit - 3)}...` : rule.patternText;
     return `${prefix}${pattern}"`;
 }
@@ -2573,7 +2574,7 @@ function configuredPetName(value: Uint8Array, eightBitInput: boolean): string {
 // C options.c:escapes()
 // Byte-oriented control, numeric, and meta escapes.
 export function decodeOptionEscapes(value: string): string {
-    const bytes = String.fromCharCode(...new TextEncoder().encode(value));
+    const bytes = value;
     let decoded = '';
     let index = 0;
     while (index < bytes.length) {
@@ -2607,7 +2608,7 @@ export function decodeOptionEscapes(value: string): string {
 // txt2key() consumes bytes, not Unicode code points. Only the first decoded
 // escape is needed: Native returns the first byte of escapes()' output.
 export function bindingKeyCode(value: string): number {
-    let key = String.fromCharCode(...new TextEncoder().encode(value.trim()));
+    let key = trimSpaces(value);
     if (!key.length) return 0;
     if (key.length === 1) return key.charCodeAt(0);
     if (key === '<enter>') return 10;
@@ -2755,8 +2756,9 @@ function configureCharacterOption(result: ConfigurationSettings, {
     let positiveValue: string | null = null;
     let filterOnly = false;
     const duplicate = fromFile && previous.has(facet);
-    const words = value.trim();
-    for (let token of words ? words.split(/\s+/) : []) {
+    // parse_role_opt() runs mungspaces() and then splits on single spaces.
+    const words = mungSpacesText(value);
+    for (let token of words ? words.split(' ') : []) {
         let tokenNegated = false;
         while (token.startsWith('!') || /^no/i.test(token)) {
             tokenNegated = !tokenNegated;
@@ -2857,7 +2859,8 @@ export function addFruit(name: string, { preferred = false, initial = false, rep
             const actual = foodName === 'slime mold' ? 'fruit' : foodName;
             return actual === value || size && actual === value.slice(size);
         });
-        const numeric = /^\d*(?:$|\s)/.test(value);
+        // atoi() skips only the C-locale isspace() bytes.
+        const numeric = /^\d*(?:$|[ \t\n\v\f\r])/.test(value);
         const monsterTin = value.startsWith('tin of ')
             && (value.slice(7) === 'spinach' || nameToMonster(value.slice(7)) >= 0);
         const monsterProduct = /(?: corpse| egg)$/.test(value) && nameToMonster(value) >= 0;
@@ -3322,18 +3325,18 @@ export async function toggleBooleanOptionPrefix(prefix: string): Promise<boolean
 export function parseAutopickupException(
     value: string, addError: (message: string) => void,
 ): AutopickupExceptionRule | null {
-    const bytes = new TextEncoder().encode(value);
+    const bytes = bytesFromByteString(value);
     const scan = (prefix: string): { text: string; trailing: string | null } | null => {
         const start = 1 + prefix.length;
         if (!value.startsWith('"' + prefix)) return null;
         const close = bytes.indexOf(34, start);
         const end = Math.min(close < 0 ? bytes.length : close, start + 253);
         if (end === start) return null;
-        const text = new TextDecoder().decode(bytes.subarray(start, end));
+        const text = byteStringFromBytes(bytes.subarray(start, end));
         // Once the scanset captures text, sscanf() returns one conversion
         // even if the closing quote is missing or beyond the 253-byte limit.
         if (bytes[end] !== 34) return { text, trailing: null };
-        const rest = new TextDecoder().decode(bytes.subarray(end + 1)).replace(/^[ \t\n\r\f\v]+/, '');
+        const rest = byteStringFromBytes(bytes.subarray(end + 1)).replace(/^[ \t\n\r\f\v]+/, '');
         return { text, trailing: rest.charAt(0) || null };
     };
     const compile = (text: string, grab: boolean): AutopickupExceptionRule | null => {

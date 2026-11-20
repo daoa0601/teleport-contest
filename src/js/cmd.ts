@@ -21,7 +21,7 @@ import { askTeleportDestination, dotelecmd } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
 import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, THRONE, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
 import { nhgetch, nh_poskey, MAP_CLICK_KEY, inputGate } from './input.js';
-import { mungSpaces, visibleCommandKey } from './hacklib.js';
+import { mungSpaces, mungSpacesText, visibleCommandKey } from './hacklib.js';
 
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizShowStats, wizSmell, wizTelekinesis, wizWhere, wizWish, makemapRemoveMons } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
@@ -1941,7 +1941,8 @@ export async function showExtendedCommandList(): Promise<void> {
         else if (action === 's') search = '';
         else if (action === ':') {
             const phrase = await getLine('Extended command list search phrase?');
-            search = phrase?.trim().replace(/\s+/g, ' ') ?? '';
+            // cmd.c runs the phrase through mungspaces().
+            search = phrase == null ? '' : mungSpacesText(phrase);
             if (!search) {
                 game.context.move = 0;
                 return;

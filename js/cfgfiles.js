@@ -7,7 +7,7 @@
 // parseoptions(), parsebindings(), add_autopickup_exception()), keeping
 // C's cfgfiles.c → options.c call direction.
 import { bindingFields, bindingKeyCode, menuCommandKeyError, parseAutopickupException, parseOptions, MENU_KEY_OPTIONS, } from './message_types.js';
-import { mungSpaces, visibleCommandKey } from './hacklib.js';
+import { byteStringFromBytes, bytesFromByteString, mungSpaces, trimSpaces, utf8ByteString, visibleCommandKey, } from './hacklib.js';
 import { parseMenuColoring } from './coloratt.js';
 import { parseAutocomplete, resetCommandAutocomplete } from './cmd.js';
 import { addMessageTypeRule } from './message_types.js';
@@ -60,12 +60,11 @@ export async function displayConfigurationErrors(reports) {
         await getret();
     }
 }
-// C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut, kept UTF-8
-// safe — vsnprintf's buf[BUFSZ-1] = '\0' and printf's %.Ns precision
-// count bytes; a UTF-8 sequence split by the cut survives as one
-// character.
+// C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut. Configuration
+// values hold one character per C byte, so the cut is a plain slice that
+// can split a UTF-8 sequence exactly where C's vsnprintf would.
 export function cutConfigBytes(text, limit) {
-    return new TextDecoder().decode(new TextEncoder().encode(text).subarray(0, limit));
+    return text.slice(0, limit);
 }
 // C cfgfiles.c:get_uchars(). Zeros are stored unless the list is being
 // modified in place, but every parsed number still counts toward the
@@ -229,7 +228,8 @@ function handleConfigStatement(statement, valueBytes, valueText, result, addErro
                 if (separator < 0)
                     continue;
                 const keyText = field.slice(0, separator);
-                const command = field.slice(separator + 1).trim();
+                // parsebindings() runs the command through trimspaces().
+                const command = trimSpaces(field.slice(separator + 1));
                 if (keyText === 'mouse1' || keyText === 'mouse2') {
                     if (result.commandBindings.bindMouseButton(keyText === 'mouse1' ? 1 : 2, command))
                         continue;
@@ -276,9 +276,9 @@ function handleConfigStatement(statement, valueBytes, valueText, result, addErro
             break;
         }
         case 'NAME':
-            // cnf_line_NAME() strncpy's PL_NSIZ-1 bytes; a UTF-8 name cut at
-            // that limit keeps its partial final sequence as one character.
-            result.name = new TextDecoder().decode(valueBytes.subarray(0, PL_NSIZ - 1));
+            // cnf_line_NAME() strncpy's PL_NSIZ-1 bytes, which can split a
+            // UTF-8 sequence; the port keeps C's bytes.
+            result.name = byteStringFromBytes(valueBytes.subarray(0, PL_NSIZ - 1));
             break;
         case 'ROLE':
         case 'CHARACTER':
@@ -363,7 +363,7 @@ function parseConfigLine(bytes, result, state, addError, addRawError) {
     if (mungedBytes[valueStart] === 32)
         valueStart++;
     const valueBytes = mungedBytes.subarray(valueStart);
-    const name = new TextDecoder().decode(mungedBytes.subarray(0, nameEnd)).toLowerCase();
+    const name = byteStringFromBytes(mungedBytes.subarray(0, nameEnd)).toLowerCase();
     let match = null;
     for (const [statement, minimum] of CONFIG_STATEMENTS) {
         if (name.length >= minimum && statement.toLowerCase().startsWith(name)) {
@@ -379,7 +379,7 @@ function parseConfigLine(bytes, result, state, addError, addRawError) {
         parseOptions(bytes.subarray(findOptparam(bytes) + 1), result, state, true, addError, addRawError);
         return;
     }
-    handleConfigStatement(match, valueBytes, new TextDecoder().decode(valueBytes), result, addError, addRawError);
+    handleConfigStatement(match, valueBytes, byteStringFromBytes(valueBytes), result, addError, addRawError);
 }
 // The recorder's HOME (docs/recording-environment.md): the harness wrote each
 // session's nethackrc to $HOME/.nethackrc before launching NetHack.
@@ -407,7 +407,8 @@ export function parseNethackrc(rc, sources = {}) {
         flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: { wc2_petattr: C_ATR_INVERSE }, commandBindings: new CommandBindings(),
     };
     const fileReport = { source: sources.fileName || get_configfile(), errors: [] };
-    parseConfiguration(rc, result, fileReport, true);
+    // The harness wrote the rc file as UTF-8: parse its bytes.
+    parseConfiguration(utf8ByteString(rc), result, fileReport, true);
     result.configErrors.push(fileReport);
     result.commandBindings.finishConfiguration();
     if (sources.nethackOptions != null)
@@ -426,7 +427,7 @@ function* configurationLines(rc, report) {
     const sections = { chosen: null, current: null };
     const physicalLines = rc.split('\n');
     for (const [index, raw] of physicalLines.entries()) {
-        const length = new TextEncoder().encode(raw).length;
+        const length = raw.length;
         const hasNewline = index < physicalLines.length - 1;
         // split() leaves an empty element after the final newline. fgets()
         // never reads that element, so an unfinished continuation stays unused.
@@ -448,7 +449,7 @@ function* configurationLines(rc, report) {
         if (content && !content.startsWith('#')) {
             // Keep native bytes through option parsing: truncation can split
             // a UTF-8 character, and sanitize_name() must see the retained byte.
-            const bytes = new TextEncoder().encode(content);
+            const bytes = bytesFromByteString(content);
             const separator = pending.length ? 1 : 0;
             const joined = new Uint8Array(pending.length + separator + bytes.length);
             joined.set(pending);
@@ -464,7 +465,7 @@ function* configurationLines(rc, report) {
         let end = pending.length;
         while (end > 0 && (pending[end - 1] === 32 || pending[end - 1] === 9))
             end--;
-        const statement = new TextDecoder().decode(pending.subarray(0, end));
+        const statement = byteStringFromBytes(pending.subarray(0, end));
         if (handleConfigSection(statement, sections, report, sourceLine, lineNumber)) {
             pending = new Uint8Array(0);
             continue;
@@ -502,6 +503,9 @@ function* configurationLines(rc, report) {
 // state (the Lua API's config parse), as C does for its Lua callers with
 // config_error_init(FALSE, "parse_conf_str", FALSE) around the same
 // parse_conf_buf() machinery.
+// C cfgfiles.c:parse_conf_str(): the caller passes C's bytes — the Lua
+// parse_config() bridge hands the interpreter's byte strings straight
+// through, like every native caller reading a buffer it was given.
 export function applyNethackrc(rc, state = game) {
     const result = {
         configErrors: [],
@@ -544,10 +548,14 @@ function parseConfiguration(rc, result, report, fromFile) {
         optionsSeen: new Map(),
         characterOptionsSeen: new Map(),
     };
-    if (!rc && fromFile)
+    // rc holds C's bytes already: parseNethackrc() and parseNethackOptions()
+    // encode their caller-supplied text, and the Lua parse_config() caller
+    // (parse_conf_str()) passes the interpreter's byte strings.
+    const rcBytes = rc;
+    if (!rcBytes && fromFile)
         return result;
-    const lines = fromFile ? configurationLines(rc, report)
-        : [{ bytes: new TextEncoder().encode(rc.split('\0')[0] ?? ''), sourceLine: '', lineNumber: 0 }];
+    const lines = fromFile ? configurationLines(rcBytes, report)
+        : [{ bytes: bytesFromByteString(rcBytes.split('\0')[0] ?? ''), sourceLine: '', lineNumber: 0 }];
     for (const { bytes, sourceLine, lineNumber } of lines) {
         const addError = (message) => {
             report.errors.push({ sourceLine, lineNumber, message: message.slice(0, BUFSZ - 1) });
@@ -572,7 +580,7 @@ function parseConfiguration(rc, result, report, fromFile) {
 // parses.
 export function parseNethackOptions(options, result) {
     const report = { source: 'NETHACKOPTIONS', errors: [] };
-    parseConfiguration(options, result, report, false);
+    parseConfiguration(utf8ByteString(options), result, report, false);
     result.configErrors.push(report);
     result.commandBindings.finishConfiguration();
     return report;

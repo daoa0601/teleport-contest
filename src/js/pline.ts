@@ -12,6 +12,7 @@ import {
 } from './topl.js';
 import { nhgetch, rawPrint, writeRawText } from './input.js';
 import { BUFSZ, LL_NONE, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PLNMSG_UNKNOWN, xdir, ydir } from './const.js';
+import { byteStringFromBytes, bytesFromByteString, cByteLength } from './hacklib.js';
 import { isok } from './cmd.js';
 import { diagnosticReason, fuzzerMode } from './diagnostics.js';
 import { panic } from './end.js';
@@ -81,10 +82,10 @@ export async function pline_mon(monster: Monster | Hero, message: string): Promi
 // diagnostics: shorten prose while retaining its last three bytes.
 export function truncatePlineMessage(message: string): string {
     const text = message.split('\0', 1)[0] ?? '';
-    const bytes = new TextEncoder().encode(text);
-    if (bytes.length <= BUFSZ - 1) return text;
-    const decoder = new TextDecoder();
-    return `${decoder.decode(bytes.subarray(0, BUFSZ - 7))}...${decoder.decode(bytes.subarray(-3))}`;
+    if (cByteLength(text) <= BUFSZ - 1) return text;
+    const bytes = bytesFromByteString(text);
+    return `${byteStringFromBytes(bytes.subarray(0, BUFSZ - 7))}...`
+        + byteStringFromBytes(bytes.subarray(-3));
 }
 
 // C pline.c:vpline(). Await the window port before recording the last
@@ -107,7 +108,7 @@ export async function plineWithContinuation(msg: string, {
             !mode || mode === 'n' ? 'f' : mode);
         msg = `${coordinates}: ${msg}`;
     }
-    const length = new TextEncoder().encode(msg).length;
+    const length = cByteLength(msg);
     if (length > 5 * BUFSZ - 1) {
         // end.js statically imports this module; a static import back would
         // be a load cycle, so panic() is fetched lazily.
@@ -254,8 +255,8 @@ export async function setTopline(msg: string) {
 // vraw_printf()'s BUFSZ-1 byte truncate, shared with files.c:paniclog()'s
 // yn-debug line: keep only the prefix, with no ellipsis.
 export function truncateRawMessage(message: string): string {
-    const bytes = new TextEncoder().encode(message.split('\0', 1)[0] ?? '');
-    return new TextDecoder().decode(bytes.subarray(0, BUFSZ - 1));
+    return byteStringFromBytes(
+        bytesFromByteString(message.split('\0', 1)[0] ?? '').subarray(0, BUFSZ - 1));
 }
 
 // C pline.c:vraw_printf(): C raw_printf() is the vararg wrapper; this is

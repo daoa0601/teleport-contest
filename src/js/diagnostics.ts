@@ -1,5 +1,6 @@
 // Diagnostics helpers for pline.c:impossible() and end.c:panic();
 // panic() itself lives in end.ts with its end.c owner.
+import { byteStringFromBytes, bytesFromByteString } from './hacklib.js';
 import { BUFSZ } from './const.js';
 import type { GameState } from './game_state.js';
 
@@ -15,6 +16,6 @@ export function fuzzerMode(state: GameState): number {
 // Part of C pline.c:impossible(), end.c:panic(): NUL-terminate and truncate
 // the reason to BUFSZ-1 like the C char buffers.
 export function diagnosticReason(reason: string): string {
-    const bytes = new TextEncoder().encode(reason.split('\0', 1)[0] ?? '');
-    return new TextDecoder().decode(bytes.subarray(0, BUFSZ - 1));
+    return byteStringFromBytes(
+        bytesFromByteString(reason.split('\0', 1)[0] ?? '').subarray(0, BUFSZ - 1));
 }

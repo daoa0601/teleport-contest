@@ -3,7 +3,7 @@
 // menus, menu-color editing, and status-hilite rule editing.
 import { game } from './gstate.js';
 import { cutConfigBytes } from './cfgfiles.js';
-import { fuzzyMatch } from './hacklib.js';
+import { fuzzyMatch, mungSpacesText } from './hacklib.js';
 import { PosixRegex } from './posix_regex.js';
 import { showMultiSelectWindow } from './windows.js';
 import { BUFSZ, CLR_MAX, HL_BLINK, HL_BOLD, HL_DIM, HL_INVERSE, HL_ITALIC, HL_NONE, HL_ULINE, MENU_ITEMFLAGS_SELECTED } from './const.js';
@@ -206,7 +206,7 @@ export function parseMenuColoring(valueText, addError) {
         addError('Malformed MENUCOLOR');
         return null;
     }
-    let tail = value.slice(equals + 1).replace(/[ \t]+/g, ' ').trim();
+    let tail = mungSpacesText(value.slice(equals + 1));
     const ampersand = tail.indexOf('&');
     if (ampersand >= 0)
         tail = tail.slice(0, ampersand);
@@ -215,8 +215,7 @@ export function parseMenuColoring(valueText, addError) {
         return null;
     let attr = 0;
     if (ampersand >= 0) {
-        const attribute = value.slice(equals + 1)
-            .replace(/[ \t]+/g, ' ').trim().slice(ampersand + 1);
+        const attribute = mungSpacesText(value.slice(equals + 1)).slice(ampersand + 1);
         attr = matchAttributeName(attribute, addError);
         if (attr === -1)
             return null;

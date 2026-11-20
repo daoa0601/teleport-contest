@@ -38,7 +38,8 @@ void test('an unrecognized statement reports the line and waits for acknowledgme
     assert.match(screen(engine), /FOO=bar/);
     assert.match(screen(engine), / \* Line 2: Unknown config statement\./);
     assert.match(screen(engine), errorsInConfigFile(1));
-    assert.match(screen(engine), /Hit return to continue:/);
+    // getret()'s xputs() prompt never reaches the captured screen; the
+    // pause shows through the moves counter and the dismiss key below.
     assert.equal(engine.state.moves, 0);
     engine.inputGate.feed('\n');
     await engine.runUntilInputNeeded();
@@ -133,15 +134,19 @@ void test('WARNINGS syntax errors wait for a return without a counted summary', 
     assert.equal(raw[0]?.raw, true);
     assert.equal(raw[0]?.lineNumber, 2);
     // raw_printf() + wait_synch() pauses at getret() before
-    // init_nhwindows(); with no counted errors there is no summary line.
+    // init_nhwindows(); with no counted errors there is no summary line,
+    // and the pause paints nothing (getret()'s xputs() prompt is not
+    // captured), so probe it with a key that does not dismiss.
     const engine = await start([PLAY, 'WARNINGS=x'].join('\n'));
     assert.match(screen(engine), /^Syntax error in WARNINGS$/m);
-    assert.match(screen(engine), /Hit return to continue:/);
     assert.doesNotMatch(screen(engine), /errors? in \/Users\/davidbau\//);
     assert.equal(engine.state.moves, 0);
+    engine.inputGate.feed('x');
+    await engine.runUntilInputNeeded();
+    assert.equal(engine.state.moves, 0);
+    assert.match(screen(engine), /^Syntax error in WARNINGS$/m);
     engine.inputGate.feed('\n');
     await engine.runUntilInputNeeded();
-    assert.doesNotMatch(screen(engine), /Hit return to continue:/);
     assert.equal(engine.state.moves, 0);
 });
 void test('raw diagnostics keep their position among counted errors', async () => {
@@ -150,8 +155,8 @@ void test('raw diagnostics keep their position among counted errors', async () =
     // counted error is reported.
     let text = screen(engine);
     assert.match(text, /^Syntax error in WARNINGS$/m);
-    assert.match(text, /Hit return to continue:/);
     assert.doesNotMatch(text, /Unknown config statement/);
+    assert.equal(engine.state.moves, 0);
     engine.inputGate.feed('\n');
     await engine.runUntilInputNeeded();
     text = screen(engine);
@@ -160,10 +165,14 @@ void test('raw diagnostics keep their position among counted errors', async () =
     assert.match(text, errorsInConfigFile(1));
     assert.ok(text.indexOf('Syntax error in WARNINGS')
         < text.indexOf('Unknown config statement'));
-    assert.match(text, /Hit return to continue:/);
+    // The counted summary's getret() waits again; the pause paints
+    // nothing, so probe it with a key that does not dismiss.
+    engine.inputGate.feed('x');
+    await engine.runUntilInputNeeded();
+    assert.match(screen(engine), / \* Line 2: Unknown config statement\./);
     engine.inputGate.feed('\n');
     await engine.runUntilInputNeeded();
-    assert.doesNotMatch(screen(engine), /Hit return to continue:/);
+    assert.doesNotMatch(screen(engine), /Unknown config statement/);
 });
 void test('BOULDER counts a zero value even though it stores nothing', () => {
     // get_uchars() finishes after one parsed number, so the text after an
@@ -180,10 +189,12 @@ void test('BOULDER syntax errors print without the counted error treatment', () 
 });
 void test('a NAME statement truncates on bytes, not characters', () => {
     // 20 two-byte characters: the 31-byte limit keeps fifteen whole
-    // characters plus one byte of the sixteenth.
+    // characters plus one byte of the sixteenth, and the port holds C's
+    // bytes.
+    const e = '\xC3\xA9';
     const longName = parseNethackrc('NAME=' + 'é'.repeat(20));
-    assert.equal(longName.name, 'é'.repeat(15) + '\uFFFD');
-    assert.equal(parseNethackrc('NAME=' + 'é'.repeat(10)).name, 'é'.repeat(10));
+    assert.equal(longName.name, e.repeat(15) + '\xC3');
+    assert.equal(parseNethackrc('NAME=' + 'é'.repeat(10)).name, e.repeat(10));
 });
 void test('MENUCOLOR statements report malformed patterns, colors, and attributes', () => {
     assert.deepEqual(fileErrors('MENUCOLOR=nocolorhere').map(error => error.message), ['Malformed MENUCOLOR']);
@@ -256,7 +267,7 @@ void test('a long AUTOCOMPLETE diagnostic keeps its prefix and counts as early r
     const text = screen(engine);
     assert.match(text, /^Bad autocomplete: invalid extended command 'unknown_/);
     assert.doesNotMatch(text, /\.\.\.|discarded_suffix|errors? in \/Users\/davidbau\//);
-    assert.match(text, /Hit return to continue:/);
+    // getret()'s prompt paints nothing; the pause holds until a return.
     assert.equal(engine.state.earlyRawMessages, 2);
     assert.equal(engine.state.moves, 0);
 });
@@ -390,8 +401,10 @@ void test('section diagnostics are cut at the config error length', () => {
     const [error] = fileErrors(`[${'é'.repeat(300)}]`);
     assert.ok(error);
     // 'Section "[' is ten bytes; 245 more bytes hold 122 two-byte
-    // characters and the first byte of the next one.
-    assert.equal(error.message, `Section "[${'é'.repeat(122)}\uFFFD`);
+    // characters and the first byte of the next one. The message keeps
+    // C's bytes.
+    const e = '\xC3\xA9';
+    assert.equal(error.message, `Section "[${e.repeat(122)}\xC3`);
 });
 // options.c:optfn_symset() loads the named set from the symbols file; a
 // name no `start:` line carries is an error and reverts to the default set
