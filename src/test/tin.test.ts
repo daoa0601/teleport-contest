@@ -427,7 +427,7 @@ void test('canceling tin selection keeps the time spent wielding an opener', asy
 
 void test('saving during opening preserves tin identity and stops the occupation on restore', async t => {
     // C topl.c:tty_putmsghistory(): the restoring replay demotes a pending
-    // --More-- topline (topl.c:697-699), so the resumed opening joins its
+    // --More-- topline (topl.c:701-702), so the resumed opening joins its
     // "Using your ..." turns without paging first (topl.c:update_topl()
     // only pages a NEED_MORE topline); the first acknowledgment is the
     // finished-opening line itself.

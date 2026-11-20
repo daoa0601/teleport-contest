@@ -136,7 +136,7 @@ void test('saving an interrupted study restores the actual inventory book and re
     assert.ok(game.context.spbook != null, 'Expected game.context.spbook to be initialized');
     const remaining = game.context.spbook.delay;
     // C topl.c:tty_putmsghistory(): the restoring replay demotes a pending
-    // --More-- topline (topl.c:697-699), so resuming the study shows its
+    // --More-- topline (topl.c:701-702), so resuming the study shows its
     // line directly (topl.c:update_topl() pages nothing for a NON_EMPTY
     // short topline) and the resume consumes no acknowledgment key.
     await stopHeroOccupation();

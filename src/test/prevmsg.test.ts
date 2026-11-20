@@ -406,7 +406,7 @@ void test('save and restore carry the recall ring', async () => {
     assert.equal(rowText(0), 'Three follows.');
     await rhack(16);
     // C topl.c:tty_putmsghistory(): the restoring replay re-adds this
-    // session's banner after the saved entries (topl.c:702-712), so the
+    // session's banner after the saved entries (topl.c:710-720), so the
     // newest recalled entry is "Restoring save file..." and the saved
     // messages follow oldest-first behind it.
     assert.equal(rowText(0), 'Restoring save file...',
