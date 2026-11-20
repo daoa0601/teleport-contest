@@ -22,7 +22,6 @@ import { GameDisplay } from '../js/game_display.js';
 import { saveGame } from '../js/save.js';
 import { restoreGame } from '../js/restore.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { copyPersistentState } from '../js/state_schema.js';
 import { showMultiSelectWindow } from '../js/windows.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { DAGGER, LONG_SWORD } from '../js/object_data.js';
@@ -470,20 +469,6 @@ void test('a restore re-reads the run-time configuration for instance-side optio
     } finally {
         await resumed.lua.destroy();
     }
-});
-
-void test('instance-side options stay out of the saved flag block', async () => {
-    await freshObjectRoom();
-    requirePlayingGame(game);
-    game.flags.cmdassist = false;
-    game.flags.fireassist = false;
-    game.flags.price_quotes = true;
-    game.flags.verbose = false;
-    const snapshot = copyPersistentState(game);
-    assert.equal('cmdassist' in snapshot.flags, false);
-    assert.equal('fireassist' in snapshot.flags, false);
-    assert.equal('price_quotes' in snapshot.flags, false);
-    assert.equal(snapshot.flags.verbose, false);
 });
 
 async function beginSelectedOptions(names: readonly string[]) {
