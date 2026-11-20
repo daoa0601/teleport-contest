@@ -31,6 +31,7 @@ import { restoreCommandMap } from './cmd.js';
 import { docrt, flush_screen, row_refresh } from './display.js';
 import { ROGUE_SYMSETS, shownSymbolSet } from './symbols.js';
 import { getMenuColoring, menuitem_invert_test, readTextPage } from './windows.js';
+import { useMenuGlyphs } from './flags.js';
 import { nhgetch } from './input.js';
 import { tty_getlin } from './query.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
@@ -272,6 +273,13 @@ function toggle_menu_attr(line, col) {
 }
 // C wintty.c:process_menu_window()
 async function process_menu_window(d, rows, layout, how, underlay) {
+    // C wintty.c:1380-1386: show_obj_syms starts as iflags.use_menu_glyphs
+    // and the "conditional" mode (4) drops it when the menu contains any
+    // non-selectable line, checked over the whole list rather than a page.
+    let showObjSyms = useMenuGlyphs();
+    if (((game.iflags.menuobjsyms ?? 4) & 4) !== 0
+        && rows.some(row => row.identifier === null))
+        showObjSyms = false;
     const groups = groupAccelerators(rows, how);
     let page = 0;
     let count = null;
@@ -301,9 +309,9 @@ async function process_menu_window(d, rows, layout, how, underlay) {
             paintMenuPage(d, layout, page, layout.rows.slice(first, first + layout.pageSize).map((row, index) => {
                 const item = pageRows[index];
                 const marker = item?.selected ? item.count === -1 ? '*' : '#' : '-';
-                return { ...row, text: item?.identifier !== null && item?.selected
+                return { ...row, selected: item?.selected, text: item?.identifier !== null && item?.selected
                         ? row.text.slice(0, 2) + marker + row.text.slice(3) : row.text };
-            }), underlay, previousPageLines);
+            }), underlay, previousPageLines, showObjSyms);
             repaint = false;
             key = await dmore(d, layout.boundary + 1, pageRows.length, pageFooter(), inResp);
         }
@@ -511,7 +519,7 @@ function menuSearchMatches(query, text) {
     return new RegExp(pattern).test(lowerAscii(text));
 }
 // Part of C wintty.c:process_menu_window(), wintty.c:process_text_window(): paint page rows and restore uncovered map cells.
-export function paintMenuPage(d, menu, page, rows, underlay, previousPageLines = 0) {
+export function paintMenuPage(d, menu, page, rows, underlay, previousPageLines = 0, showObjSyms = false) {
     const { boundary, maxRows } = menu;
     if (boundary === 0)
         d.clearScreen();
@@ -543,6 +551,15 @@ export function paintMenuPage(d, menu, page, rows, underlay, previousPageLines =
         // tty_end_menu retains the row; process_menu_window also clips it to
         // the current terminal width when a retained menu is redisplayed.
         for (let col = 0; col < line.text.length && left + col < d.cols - 1; col++) {
+            // C wintty.c:1460-1470: at the separator column an unselected
+            // entry with glyph metadata shows the glyph's tty character in
+            // the glyph's own color instead of the stored '-'; a selected
+            // row already replaced that column with its '*' or '#' marker.
+            if (col === 2 && showObjSyms && line.identifier != null && !line.selected
+                && line.glyph) {
+                d.setCell(left + 2, row, line.glyph.ch, line.glyph.color, ATR_NONE);
+                continue;
+            }
             const style = toggle_menu_attr(line, col);
             d.setCell(left + col, row, line.text.charAt(col), style.color, style.attr);
         }
@@ -737,6 +754,7 @@ export function tty_add_menu(window, entry) {
         group: entry.group ?? '',
         itemflags: entry.itemflags ?? 0,
         selected: !!((entry.itemflags ?? 0) & MENU_ITEMFLAGS_SELECTED),
+        glyph: entry.glyph ?? null,
         count: -1,
     });
     window.layout = null;
@@ -780,7 +798,7 @@ export function tty_end_menu(window, prompt = null, putstrMeasured = false) {
     if (prompt !== null) {
         const heading = { text: prompt, attr: terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
             color: game.iflags.menu_headings?.color ?? NO_COLOR,
-            identifier: null, key: '', group: '', itemflags: 0, selected: false, count: -1 };
+            identifier: null, key: '', group: '', itemflags: 0, selected: false, count: -1, glyph: null };
         window.entries.unshift(heading, { ...heading, text: '', attr: ATR_NONE, color: NO_COLOR });
     }
     const d = display();

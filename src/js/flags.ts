@@ -2,6 +2,29 @@ import type { MenuColoringRule } from './coloratt.js';
 import type { MessageTypeRule } from './message_types.js';
 import type { PosixRegex } from './posix_regex.js';
 import type { Position } from './map_types.js';
+import { game } from './gstate.js';
+
+// C iflags.menuobjsyms: the six 'menu_objsyms' values (options.c
+// objsymvals[]), where the bits also derive menu_head_objsym (1) and
+// use_menu_glyphs (2 | 4).
+export type MenuObjsymMode = 0 | 1 | 2 | 3 | 4 | 5;
+
+// Guard for values parsed out of the option's grammar.
+export function isMenuObjsymMode(value: number): value is MenuObjsymMode {
+    return Number.isInteger(value) && value >= 0 && value <= 5;
+}
+
+// C options.c:set_menuobjsyms_flags(): iflags.menu_head_objsym, the bit
+// that appends the class symbol to let_to_name() menu headings.
+export function menuHeadObjsym(): boolean {
+    return ((game.iflags.menuobjsyms ?? 4) & 1) !== 0;
+}
+
+// C options.c:set_menuobjsyms_flags(): iflags.use_menu_glyphs, the bit that
+// shows an entry's object glyph in the tty menu separator column.
+export function useMenuGlyphs(): boolean {
+    return ((game.iflags.menuobjsyms ?? 4) & (2 | 4)) !== 0;
+}
 
 // Options may be absent until their owning startup step supplies a default.
 // A closed list keeps misspelled configuration names out of saved game state.
@@ -117,6 +140,10 @@ export interface InterfaceFlags {
     menu_requested?: boolean;
     deferDecor?: boolean;
     menu_headings?: { attr: number; color: number };
+    // C iflags.menuobjsyms: value of the 'menu_objsyms' option; it also
+    // controls menu_head_objsym and use_menu_glyphs (options.c:
+    // set_menuobjsyms_flags()). Undefined means C's do_init default 4.
+    menuobjsyms?: MenuObjsymMode;
     menuinvertmode?: 0 | 1 | 2;
     menu_tab_sep?: boolean;
     nofollowers?: boolean;

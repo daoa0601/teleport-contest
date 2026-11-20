@@ -17,17 +17,18 @@ import { inventoryActionForObject } from './iactions.js';
 import { killerObjectName, objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, objectName, objectNameIsPlural, objectNeedsFullIdentification, observeObjectForNaming, simpleObjectName, erosionMatters, objectUsesCharges, } from './objnam.js';
 import { rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, placeObject, objectWeight, isContainer, announceGlobMerge, floorPileAt, } from './mkobj.js';
 import { ATTRIBUTE_DISPLAY_ORDER, exerciseAttribute, setMoreLuck } from './attrib.js';
-import { consumeHallucinatedMenuObjectGlyph, transientMonsterGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
+import { menuObjectGlyph, transientMonsterGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { formatStrength } from './botl.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, renderKeyPrompt } from './topl.js';
 import { showMessageMenu, snapshotMenuUnderlay, restoreMenuUnderlay, windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow, } from './wintty.js';
 import { pline, plineWithContinuation, impossible } from './pline.js';
-import { getLine, addMenuHeading, showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
+import { getLine, addMenuHeading, menuHeadingStyle, showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
+import { menuHeadObjsym } from './flags.js';
 import { nhgetch } from './input.js';
 import { readchar, commandResultCancelled, commandResultFailed, cmdq_add_int, cmdq_add_key, cmdq_clear, cmdq_pop, getCount, GC_SAVEHIST, GC_ECHOFIRST, GC_CONDHIST, ynSingleKey, yn_function } from './cmd.js';
 import { recorderSort, ingSuffix, possessiveName, visibleCommandKey } from './hacklib.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
-import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, A_WIS, BY_NEXTHERE, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, INCLUDE_HERO, INVORDER_SORT, Is_airlevel, Is_waterlevel, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, NHW_MENU, PICK_ANY, PICK_NONE, PICK_ONE, SIGNAL_ESCAPE, USE_INVLET, W_ACCESSORY, W_AMUL, W_ARMOR, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, CONTAINED_SYM, MGIVENNAME, HAND, STOMACH } from './const.js';
+import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, A_WIS, BY_NEXTHERE, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, INCLUDE_HERO, INVORDER_SORT, Is_airlevel, Is_waterlevel, MENU_ITEMFLAGS_SKIPMENUCOLORS, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, NHW_MENU, PICK_ANY, PICK_NONE, PICK_ONE, SIGNAL_ESCAPE, USE_INVLET, W_ACCESSORY, W_AMUL, W_ARMOR, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, CONTAINED_SYM, MGIVENNAME, HAND, STOMACH } from './const.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { levelPrizeKind } from './level_prize.js';
 import { recordLiteracy } from './literacy.js';
@@ -1133,7 +1134,7 @@ async function identifyTraditionally(limit) {
         if (answer === null)
             continue;
         if (answer.includes('i')) {
-            await showInventoryWindow(await inventorySections(candidates, false), { pickMode: PICK_ONE });
+            await showInventoryWindow(await inventorySections(candidates, false, null, menuHeadObjsym()), { pickMode: PICK_ONE });
             continue;
         }
         const categories = await parseIdentificationCategories(answer);
@@ -1450,7 +1451,9 @@ async function reportSubset(items, inuse = true, accessoryLabel = 'Accessories')
         // orderclass 0 and is listed without any class heading.  The bare
         // hands entry makes the sorted list big enough to classify.
         const headed = ordered.length >= 2 || (!items && !game.uwep);
-        const sections = [{ heading: null, items: [{ text: 'Inventory in use', attr: 1 }] }];
+        const sections = [{ heading: null, items: [{
+                        text: 'Inventory in use', ...menuHeadingStyle(), itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS,
+                    }] }];
         const rows = ordered.map(object => ({
             object, heading: headed ? inUseHeading(object, accessoryLabel) : null,
         }));
@@ -1461,14 +1464,15 @@ async function reportSubset(items, inuse = true, accessoryLabel = 'Accessories')
         }
         for (const row of rows) {
             const object = row.object;
-            if (object) {
+            if (object)
                 observeObjectForNaming(object);
-                consumeHallucinatedMenuObjectGlyph(object);
-            }
+            // display_pickinv() derives each in-use row's obj_to_glyph()
+            // metadata before its doname() text.
+            const glyph = object ? menuObjectGlyph(object) : null;
             const text = object ? await inventoryItemDescription(object, {
                 primaryHandDetail: inventoryPrimaryHandDetail(object),
             }) : `${game.uarmg ? 'gloved' : 'bare'} ${makePlural(body_part(HAND, game))} (no weapon)`;
-            const item = { key: object?.invlet ?? '-', text };
+            const item = { key: object?.invlet ?? '-', text, ...(glyph ? { glyph } : {}) };
             const last = sections.at(-1);
             if (last?.heading === row.heading)
                 sections[sections.length - 1] = { ...last, items: [...last.items, item] };
@@ -1557,7 +1561,10 @@ export async function selectInventoryObject({ letters, includeGold = true, title
     // (observing every object via loot_classify()) and only afterwards
     // drops entries whose letters are absent from the requested set,
     // treating an empty set as no filter at all.
-    const sections = await inventorySections(game.inventory, includeGold, letters || null);
+    // display_pickinv()'s want_reply is the PICK_ONE query: the class
+    // headings show their symbol only when a reply is wanted and
+    // menu_head_objsym is set (invent.c:3293).
+    const sections = await inventorySections(game.inventory, includeGold, letters || null, pickMode === PICK_ONE && menuHeadObjsym());
     if (extraChoice && !wizardIdentification)
         sections.unshift({
             heading: game.flags.sortpack === false ? null : 'Miscellaneous',
@@ -2134,11 +2141,18 @@ export async function useUpFloorObject(object, count, { state = game, publish = 
         await hideHeroUnder(state);
 }
 // C invent.c:let_to_name() names[]. Conversion from a class to a string
-// for printing; this must match the object class order.
-export function objectClassHeading(oclass) {
-    return [null, 'Illegal objects', 'Weapons', 'Armor', 'Rings', 'Amulets',
+// for printing; this must match the object class order. `showsym` appends
+// let_to_name()'s padded "  ('%c')" class symbol (def_oc_syms[oclass]).
+export function objectClassHeading(oclass, showsym = false) {
+    const name = [null, 'Illegal objects', 'Weapons', 'Armor', 'Rings', 'Amulets',
         'Tools', 'Comestibles', 'Potions', 'Scrolls', 'Spellbooks', 'Wands',
         'Coins', 'Gems/Stones', 'Boulders/Statues', 'Iron balls', 'Chains', 'Venoms'][oclass] || 'Other';
+    if (!showsym)
+        return name;
+    // let_to_name() pads class names shorter than the arbitrary
+    // invbuf_sympadding of 8 by (8 - strlen - 1) spaces before the suffix.
+    const symbol = OBJECT_CLASS_SYMBOLS[oclass] ?? '';
+    return `${name}${' '.repeat(Math.max(0, 7 - name.length))}  ('${symbol}')`;
 }
 // C invent.c:reassign(): give consecutive letters to every carried item
 // for !fixinv mode; gold is always forced to '$' at the head of the list.
@@ -2444,11 +2458,13 @@ async function doorganizeCore(object, splitting, inventory) {
 // and a fake hero entry selectable through CONTAINED_SYM and described
 // by an(self_lookat()).
 export function engulfedHeroMenuSection(monster) {
-    // query_objlist() attaches a monster glyph even though tty only shows text.
-    transientMonsterGlyph({ mnum: heroSpecies(game),
+    // query_objlist() attaches mon_to_glyph()'s monster glyph to the fake
+    // hero row; tty shows it in the menu_objsyms glyph column.
+    const glyph = transientMonsterGlyph({ mnum: heroSpecies(game),
         female: !!(heroIsPolymorphed(game) ? game.u.mfemale : game.flags.female) });
     return { heading: `${monsterDigests(monster) ? 'Swallowed' : 'Engulfed'} Creatures`,
-        items: [{ key: CONTAINED_SYM, text: withIndefiniteArticle(swallowedHeroDescription()) }] };
+        items: [{ key: CONTAINED_SYM, text: withIndefiniteArticle(swallowedHeroDescription()),
+                glyph: { ch: glyph.ch, color: glyph.color } }] };
 }
 // C invent.c:display_minventory(). The swallowed inventory view includes the hero.
 async function displayMonsterInventory(monster, objects, location, blind) {
@@ -3008,6 +3024,9 @@ export async function displayPickinvWizardIdentify() {
         });
         let previousClass = null;
         for (const item of unidentified) {
+            // wiz_identify() reaches display_pickinv() through
+            // display_inventory(0, FALSE) (wizcmds.c:61), so want_reply
+            // stays FALSE and withsym never turns on here.
             if (game.flags.sortpack !== false && item.oclass !== previousClass)
                 addMenuHeading(window, objectClassHeading(item.oclass));
             previousClass = item.oclass;
@@ -3015,10 +3034,11 @@ export async function displayPickinvWizardIdentify() {
             // display_pickinv() derives each row's obj_to_glyph() menu
             // metadata from the display RNG before doname(), which shifts
             // the hallucination stream one draw per listed row.
-            consumeHallucinatedMenuObjectGlyph(item);
+            const glyph = menuObjectGlyph(item);
             tty_add_menu(window, {
                 identifier: item, selector: inventoryCommandLetter(item),
                 group: OBJECT_CLASS_SYMBOLS[item.oclass] ?? '',
+                ...(glyph ? { glyph } : {}),
                 text: await wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
             });
         }
@@ -3055,12 +3075,12 @@ export async function displayPickinvWizardIdentify() {
 }
 // Part of C invent.c:display_pickinv(): sortloot() grouping into class
 // sections under sortpack.
-async function inventorySections(items = game.inventory || [], includeGold = true, letters = null) {
-    return await inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold, letters);
+async function inventorySections(items = game.inventory || [], includeGold = true, letters = null, showSymbol = false) {
+    return await inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold, letters, showSymbol);
 }
 // Part of C invent.c:display_pickinv(): the grouped render in chain order,
 // with letter filtering after naming.
-async function inventorySectionsInOrder(items, includeGold = true, letters = null) {
+async function inventorySectionsInOrder(items, includeGold = true, letters = null, showSymbol = false) {
     const grouped = new Map();
     for (const item of items) {
         if (!includeGold && item.oclass === COIN_CLASS)
@@ -3071,8 +3091,12 @@ async function inventorySectionsInOrder(items, includeGold = true, letters = nul
         if (letters !== null && !letters.includes(item.invlet ?? ''))
             continue;
         observeObjectForNaming(item);
-        consumeHallucinatedMenuObjectGlyph(item);
-        const heading = game.flags.sortpack === false ? null : objectClassHeading(item.oclass);
+        // display_pickinv() derives each row's obj_to_glyph() metadata from
+        // the display RNG before doname(), which shifts the hallucination
+        // stream one draw per listed row.
+        const glyph = menuObjectGlyph(item);
+        const heading = game.flags.sortpack === false ? null
+            : objectClassHeading(item.oclass, showSymbol);
         let section = grouped.get(heading);
         if (!section) {
             section = [];
@@ -3080,6 +3104,7 @@ async function inventorySectionsInOrder(items, includeGold = true, letters = nul
         }
         section.push({
             ...(item.invlet == null ? {} : { key: item.invlet }),
+            ...(glyph ? { glyph } : {}),
             text: await inventoryItemDescription(item, {
                 primaryHandDetail: inventoryPrimaryHandDetail(item),
             }),

@@ -34,7 +34,7 @@ import { isBimanualObject } from './object_properties.js';
 import { weaponDescription, weaponSkillType } from './weapon.js';
 import { newExperienceThreshold } from './exper.js';
 import { pline } from './pline.js';
-import { getLine, showMultiSelectWindow } from './windows.js';
+import { getLine, menuHeadingStyle, showMultiSelectWindow } from './windows.js';
 import { colorName, matchAttributeName, matchColorName, queryAttr, queryColorMenu } from './coloratt.js';
 import { fuzzyMatch, stripChars, sgn } from './hacklib.js';
 import { NO_COLOR, ATR_BOLD, ATR_INVERSE, ATR_UNDERLINE } from './terminal.js';
@@ -482,7 +482,7 @@ export async function condMenu(): Promise<void> {
             sections: [{ items: [
                 { key: 'S', value: 'sort', text: `change sort order from "${current}" to "${next}"`,
                     itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
-                { selectable: false, text: `sorted ${current}`, attr: 1,
+                { selectable: false, text: `sorted ${current}`, ...menuHeadingStyle(),
                     itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
                 ...choices.map(option => ({ value: option.bit, text: `cond_${option.name.padEnd(14)}`,
                     itemFlags: option.enabled ? MENU_ITEMFLAGS_SELECTED : 0 })),
