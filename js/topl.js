@@ -182,14 +182,17 @@ export function replaceTopline(msg) {
     game._retained_message = '';
     game._last_message = msg;
     game._promptOwnsTopline = false;
-    // tty message output continues while level arrival pauses map flushing.
-    // redotoplin() paints immediately; a later flush is not its display owner.
     const display = game.nhDisplay;
     if (display && game._mapFlushPaused) {
-        for (const [row, line] of toplineRows(msg, display.cols, { splitWords: false }).entries()) {
-            display.clearRow(row);
-            for (const [column, cell] of line.entries())
-                display.setCell(column, row, cell.ch, NO_COLOR, 0, cell.dec);
+        const lines = toplineRows(msg, display.cols, { splitWords: false });
+        // redotoplin() paints row 0 over the previous cells and cl_end()s
+        // only the tail (topl.c:126,136-137); rows the text wraps onto were
+        // cleared from column 0 by topl_putsym('\n') (topl.c:322-340) before
+        // their text, so they repaint wholesale.
+        display.writeToplineText(0, lines[0].map(cell => ({ ch: cell.ch, altFont: cell.dec })));
+        for (const [row, line] of lines.slice(1).entries()) {
+            display.clearRow(row + 1);
+            display.writeToplineText(row + 1, line.map(cell => ({ ch: cell.ch, altFont: cell.dec })));
         }
     }
 }
@@ -211,14 +214,18 @@ export async function redotoplin(text) {
     if (lines.length > 1 && !fromPrompt)
         return await pageTopline(text, { dismissKey: CTRL_P, rawGlyphs: true });
     if (display) {
-        for (const [row, line] of lines.entries()) {
-            display.clearRow(row);
-            for (const [column, cell] of line.entries())
-                // redotoplin() runs without ttyDisplay->mixed: its putsyms()
-                // copy of the leading graphics byte never reaches the tty
-                // shadow, so a recorded recall shows a blank in that cell
-                // whether or not the live display painted the glyph.
-                display.setCell(column, row, cell.dec ? ' ' : cell.ch, NO_COLOR, 0);
+        // redotoplin() paints row 0 over the previous cells and cl_end()s
+        // only the tail (topl.c:126,136-137); rows the text wraps onto were
+        // cleared from column 0 by topl_putsym('\n') (topl.c:322-340) before
+        // their text, so they repaint wholesale. redotoplin() runs without
+        // ttyDisplay->mixed: its putsyms() copy of the leading graphics byte
+        // never reaches the tty shadow, so a recorded recall shows a blank
+        // in that cell whether or not the live display painted the glyph.
+        const cells = (line) => line.map(cell => ({ ch: cell.dec ? ' ' : cell.ch }));
+        display.writeToplineText(0, cells(lines[0]));
+        for (const [row, line] of lines.slice(1).entries()) {
+            display.clearRow(row + 1);
+            display.writeToplineText(row + 1, cells(line));
         }
         const last = lines.at(-1) ?? lines[0];
         display.setCursor(last.length, lines.length - 1);
@@ -612,10 +619,19 @@ export async function pageTopline(message, { urgent = false, dismissKey, rawGlyp
     // tty more() only acknowledges the message window. Map changes queued
     // after that message stay buffered until their caller flushes the map.
     if (display?.grid) {
-        for (const [row, line] of lines.entries()) {
-            display.clearRow(row);
-            for (const [col, cell] of line.entries())
-                display.setCell(col, row, rawGlyphs && cell.dec ? ' ' : cell.ch, NO_COLOR, 0, !rawGlyphs && cell.dec);
+        // more() shows the message as redotoplin() painted it — row 0 over
+        // the previous cells with only the tail cl_end()ed (topl.c:126-137),
+        // rows the text wrapped onto cleared from column 0 by
+        // topl_putsym('\n') (topl.c:322-340) — with "--More--" appended at
+        // the cursor or on a freshly wrapped row.
+        const cells = (line) => line.map(cell => ({
+            ch: rawGlyphs && cell.dec ? ' ' : cell.ch,
+            altFont: !rawGlyphs && cell.dec,
+        }));
+        display.writeToplineText(0, cells(lines[0]));
+        for (const [row, line] of lines.slice(1).entries()) {
+            display.clearRow(row + 1);
+            display.writeToplineText(row + 1, cells(line));
         }
         display.setCursor(finalLine.length, lines.length - 1);
     }

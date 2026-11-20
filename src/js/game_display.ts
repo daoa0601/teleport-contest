@@ -9,7 +9,7 @@
 //   const display = new GameDisplay(terminal);
 //   // display.setCell, display.readKey etc. all delegate to terminal
 
-import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
+import { Terminal, CLR_GRAY, NO_COLOR, ATR_INVERSE } from './terminal.js';
 import type { StatusLine2Fields } from './botl.js';
 import { StatusHighlights } from './botl.js';
 import type { TerminalCell } from './terminal.js';
@@ -18,6 +18,10 @@ import type { EmptyQueueHandler, KeyMapper, InterruptHandler, TerminalReadKeyOpt
 // A saved terminal cell together with the g_putch() alternate-font shift it
 // was last drawn with; every snapshot/restore path must carry both.
 export interface UnderlayCell extends TerminalCell { altFont: boolean }
+
+// C win/tty/topl.c:putsyms() input for writeToplineText(): a visible cell
+// and whether its byte carried the g_putch() alternate-font shift.
+export interface ToplineTextCell { ch: string; altFont?: boolean | undefined }
 
 export class GameDisplay {
     readonly terminal: Terminal;
@@ -151,6 +155,35 @@ export class GameDisplay {
         for (const span of this.mapFrameCells) span.style.backgroundColor = '';
         this.mapFrameCells.clear();
         this.terminal.clearScreen();
+    }
+    // Port only: repaint every row below the message line, leaving row 0 to
+    // the topline writers. C's screen flush never touches the physical top
+    // line: redotoplin()/addtopl() paint over the old cells and cl_end()
+    // only the tail (topl.c:136-137, 199-200), so a cell under a high-bit
+    // byte that nomux_putch() skips survives every later flush.
+    repaintRowsBelowTopline() {
+        this.preserveEmptyMessageRow = false;
+        for (let row = 1; row < this.rows; row++) this.repaintRow(row);
+        this.terminal.setCursor(0, 0);
+    }
+    // C win/tty/topl.c:putsyms() followed by cl_end() — redotoplin()'s
+    // home(); putsyms(str); cl_end() (topl.c:126, 136-137) and addtopl()'s
+    // putsyms(s); cl_end() (topl.c:199-200): paint the cells over whatever
+    // the row already holds — nomux_putch() skips a text byte with the high
+    // bit set, so that cell keeps its previous contents — then clear only
+    // the tail after the last cell. Rows the text wraps onto are cleared
+    // from column 0 by topl_putsym('\n') before their text (topl.c:322-323,
+    // 339-340); callers repaint those rows wholesale. The tty cursor stays
+    // where it was.
+    writeToplineText(row: number, cells: readonly ToplineTextCell[]): void {
+        const [cursorCol, cursorRow] = [this.terminal.cursorCol, this.terminal.cursorRow];
+        for (const [column, cell] of cells.entries()) {
+            if (column >= this.cols) break;
+            this.setCell(column, row, cell.ch, NO_COLOR, 0, cell.altFont);
+        }
+        this.setCursor(Math.min(cells.length, this.cols), row);
+        this.clearToEol();
+        this.setCursor(cursorCol, cursorRow);
     }
     clearRow(row: number) {
         this.clearCapturedMapCells(0, row, this.cols);
