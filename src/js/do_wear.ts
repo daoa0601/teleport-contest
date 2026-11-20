@@ -278,7 +278,7 @@ export async function removeWornItem(action: 'remove' | 'take off', itemAction =
         // Worn armor and accessories take no count, so there is no split_otmp tail.
         const selection = await getobj(action, candidate => equipmentClassification(candidate, action, itemAction));
         object = selection.object;
-        if (selection.object === null || !selection.fromMenu)
+        if (selection.object === null || selection.queryShown)
             inventoryPrompt = `What do you want to ${action}? [${letters ? `${letters} or ?*` : '*'}] `;
     }
     if (!object) {
