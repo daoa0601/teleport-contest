@@ -20,6 +20,20 @@ const MESSAGE_WINDOWS = [
     ['full', '[show all available messages,', ' oldest first and most recent last]'],
     ['reversed', '[show all available messages,', ' most recent first]'],
 ];
+// C options.c:objsymvals[] — the menu_objsyms option's modes, in value
+// order. num always equals the table index.
+export const MENU_OBJSYM_MODES = [
+    { name: 'none', descr: "don't show object symbols in menus" },
+    { name: 'headers', descr: 'show object symbols in menu header lines' },
+    { name: 'entries', descr: 'show object symbols in individual menu entries' },
+    { name: 'both', descr: 'show object symbols in headers and menu entries' },
+    { name: 'conditional', descr: 'show objsyms in entries if no headers are shown' },
+    { name: 'one-or-other', descr: 'show objsyms in header, in entries if no header' },
+];
+// Part of C options.c:optfn_menu_objsyms() get_val: the current mode's name.
+export function menuObjsymName(value) {
+    return MENU_OBJSYM_MODES[value]?.name ?? 'conditional';
+}
 export const PARANOIA_CHOICES = [
     [PARANOID_CONFIRM, 'Confirm', 'for "yes" confirmations, require "no" to reject'],
     [PARANOID_QUIT, 'quit', 'yes vs y to quit or to enter explore mode'],
@@ -108,9 +122,30 @@ export async function editCompoundMenu(name, giveMessage) {
         case 'status_conditions':
             await condMenu();
             break;
+        case 'menu_objsyms':
+            await editMenuObjsyms();
+            break;
         default: return false;
     }
     return true;
+}
+// C options.c:handler_menu_objsyms(): the six-mode PICK_ONE menu, with the
+// current value preselected and "set_menuobjsyms_flags" applied to a pick
+// other than the preselected row.
+async function editMenuObjsyms() {
+    const sep = game.iflags.menu_tab_sep ? '\t' : ' ';
+    const current = game.iflags.menuobjsyms ?? 4;
+    const selection = await showInventoryWindow([{ items: MENU_OBJSYM_MODES.map((mode, index) => ({
+                key: String.fromCharCode(48 + index),
+                groupAccelerator: mode.name.charAt(0),
+                // handler_menu_objsyms() formats "%-12.12s%c%.60s".
+                text: `${mode.name.padEnd(12).slice(0, 12)}${sep}${mode.descr.slice(0, 60)}`,
+            })) }], { title: 'Set object symbols in menus to what?', pickMode: PICK_ONE,
+        preselectedKey: String.fromCharCode(48 + current) });
+    const letter = String.fromCharCode(selection.key);
+    const mode = [0, 1, 2, 3, 4, 5].find(value => String.fromCharCode(48 + value) === letter);
+    if (mode !== undefined)
+        game.iflags.menuobjsyms = mode;
 }
 const COORDINATE_CHOICES = [
     ['c', 'compass', "compass ('east' or '3s' or '2n,4w')"],

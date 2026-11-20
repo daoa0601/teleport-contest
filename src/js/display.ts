@@ -1211,12 +1211,19 @@ export function transientObjectGlyph(object: ObjectGlyphSource): DisplayGlyph {
 }
 
 // Port only: obj_to_glyph() metadata for inventory menus.
-// C inventory menus attach obj_to_glyph() metadata to every real item even
-// though tty's text presentation does not show a separate glyph column.  The
-// metadata construction remains display-RNG-visible under Hallucination.
-export function consumeHallucinatedMenuObjectGlyph(object: ObjectGlyphSource | null | undefined) {
-    if (!heroIsHallucinating() || !object) return null;
-    return objectGlyph(object);
+// C display_pickinv(), dotypeinv()'s display_used_invlets(), wizard identify
+// and query_objlist() attach obj_to_glyph() metadata to every real item; tty
+// shows it in the menu_objsyms glyph column. Construction stays
+// display-RNG-visible under Hallucination exactly as C's obj_to_glyph() call
+// is, and gray glyphs fall back to the default foreground like
+// transientObjectGlyph() above.
+export function menuObjectGlyph(object: ObjectGlyphSource | null | undefined): { ch: string; color: number } | null {
+    if (!object) return null;
+    const glyph = objectGlyph(object);
+    return {
+        ch: glyph.ch,
+        color: glyph.color === CLR_GRAY ? NO_COLOR : glyph.color,
+    };
 }
 
 // Port only: mappearance accessor for a disguised creature.

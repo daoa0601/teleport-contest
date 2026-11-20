@@ -37,6 +37,7 @@ import { restoreCommandMap } from './cmd.js';
 import { docrt, flush_screen, row_refresh } from './display.js';
 import { ROGUE_SYMSETS, shownSymbolSet } from './symbols.js';
 import { getMenuColoring, menuitem_invert_test, readTextPage } from './windows.js';
+import { useMenuGlyphs } from './flags.js';
 import type { TextMenuEntry } from './windows.js';
 import { nhgetch } from './input.js';
 import { tty_getlin } from './query.js';
@@ -96,8 +97,23 @@ export interface TextMenuLine {
     // heading out of menucolor rule matching.
     itemflags?: number;
 }
+// Part of C wintty.c:tty_add_menu(): the glyph_info an entry carries. Only
+// ch and color reach the tty glyph column; the glyph number itself is just
+// metadata that no window port beyond tiles uses here.
+export interface MenuGlyph {
+    ch: string;
+    color: TerminalColor;
+}
 export type MenuUnderlay = readonly (readonly UnderlayCell[])[];
-interface PaintedMenuRow extends TextMenuLine { attributeStart: number }
+interface PaintedMenuRow extends TextMenuLine {
+    attributeStart: number;
+    // Entry fields the glyph column tests; present only on rows that came
+    // from tty_add_menu() with an identifier (wintty.c process_menu_window
+    // checks curr->identifier.a_void).
+    identifier?: unknown | undefined;
+    selected?: boolean | undefined;
+    glyph?: MenuGlyph | undefined;
+}
 interface MenuLayout<T extends TextMenuLine> {
     rows: readonly (T & PaintedMenuRow)[];
     pageSize: number;
@@ -116,6 +132,7 @@ interface TtyMenuEntry<T> extends TextMenuLine {
     identifier: T | null;
     selector?: string;
     group?: string;
+    glyph?: MenuGlyph;
 }
 interface TtyMenuRow<T> extends TextMenuLine {
     identifier: T | null;
@@ -124,6 +141,7 @@ interface TtyMenuRow<T> extends TextMenuLine {
     itemflags: number;
     selected: boolean;
     count: number;
+    glyph: MenuGlyph | null;
 }
 export interface TtyMenuWindow<T> {
     entries: TtyMenuRow<T>[];
@@ -351,6 +369,12 @@ async function process_menu_window<T>(
     d: GameDisplay, rows: TtyMenuRow<T>[], layout: DisplayedMenuLayout<TtyMenuRow<T>>,
     how: MenuPickMode, underlay: MenuUnderlay | null,
 ): Promise<TtyMenuResult<T>> {
+    // C wintty.c:1380-1386: show_obj_syms starts as iflags.use_menu_glyphs
+    // and the "conditional" mode (4) drops it when the menu contains any
+    // non-selectable line, checked over the whole list rather than a page.
+    let showObjSyms = useMenuGlyphs();
+    if (((game.iflags.menuobjsyms ?? 4) & 4) !== 0
+        && rows.some(row => row.identifier === null)) showObjSyms = false;
     const groups = groupAccelerators(rows, how);
     let page = 0;
     let count: bigint | null = null;
@@ -380,9 +404,9 @@ async function process_menu_window<T>(
             paintMenuPage(d, layout, page, layout.rows.slice(first, first + layout.pageSize).map((row, index) => {
                 const item = pageRows[index];
                 const marker = item?.selected ? item.count === -1 ? '*' : '#' : '-';
-                return { ...row, text: item?.identifier !== null && item?.selected
+                return { ...row, selected: item?.selected, text: item?.identifier !== null && item?.selected
                     ? row.text.slice(0, 2) + marker + row.text.slice(3) : row.text };
-            }), underlay, previousPageLines);
+            }), underlay, previousPageLines, showObjSyms);
             repaint = false;
             key = await dmore(d, layout.boundary + 1, pageRows.length, pageFooter(), inResp);
         } else {
@@ -579,7 +603,7 @@ function menuSearchMatches(query: string, text: string): boolean {
 export function paintMenuPage<T extends TextMenuLine>(
     d: GameDisplay, menu: DisplayedMenuLayout<T>, page: number,
     rows: readonly PaintedMenuRow[], underlay: MenuUnderlay | null,
-    previousPageLines = 0,
+    previousPageLines = 0, showObjSyms = false,
 ): void {
     const { boundary, maxRows } = menu;
     if (boundary === 0) d.clearScreen();
@@ -610,6 +634,15 @@ export function paintMenuPage<T extends TextMenuLine>(
         // tty_end_menu retains the row; process_menu_window also clips it to
         // the current terminal width when a retained menu is redisplayed.
         for (let col = 0; col < line.text.length && left + col < d.cols - 1; col++) {
+            // C wintty.c:1460-1470: at the separator column an unselected
+            // entry with glyph metadata shows the glyph's tty character in
+            // the glyph's own color instead of the stored '-'; a selected
+            // row already replaced that column with its '*' or '#' marker.
+            if (col === 2 && showObjSyms && line.identifier != null && !line.selected
+                && line.glyph) {
+                d.setCell(left + 2, row, line.glyph.ch, line.glyph.color, ATR_NONE);
+                continue;
+            }
             const style = toggle_menu_attr(line, col);
             d.setCell(left + col, row, line.text.charAt(col), style.color, style.attr);
         }
@@ -802,6 +835,7 @@ export function tty_add_menu<T>(window: TtyMenuWindow<T>, entry: TtyMenuEntry<T>
         group: entry.group ?? '',
         itemflags: entry.itemflags ?? 0,
         selected: !!((entry.itemflags ?? 0) & MENU_ITEMFLAGS_SELECTED),
+        glyph: entry.glyph ?? null,
         count: -1,
     });
     window.layout = null;
@@ -854,7 +888,7 @@ export function tty_end_menu<T>(window: TtyMenuWindow<T>, prompt: string | null 
     if (prompt !== null) {
         const heading: TtyMenuRow<T> = { text: prompt, attr: terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
             color: game.iflags.menu_headings?.color ?? NO_COLOR,
-            identifier: null, key: '', group: '', itemflags: 0, selected: false, count: -1 };
+            identifier: null, key: '', group: '', itemflags: 0, selected: false, count: -1, glyph: null };
         window.entries.unshift(heading, { ...heading, text: '', attr: ATR_NONE, color: NO_COLOR });
     }
     const d = display();

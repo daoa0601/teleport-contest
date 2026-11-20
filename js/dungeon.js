@@ -12,7 +12,7 @@ import { SHOP_TYPES } from './shknam.js';
 import { altarmaskAt, deityName } from './pray.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { questLeaderName } from './questpgr.js';
-import { ATR_INVERSE, addMenuHeading } from './windows.js';
+import { addMenuHeading, menuHeadingStyle } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
 import { canSeeMonster, map_location, mimicAppearance, see_nearby_objects, } from './display.js';
 import { cmapToType } from './mkroom.js';
@@ -494,7 +494,7 @@ export function printDungeon(bymenu) {
         // C print_dungeon() emits the dungeon name via add_menu_heading(),
         // which skips menu coloring.
         if (bymenu)
-            rows.push({ text: dungeonHeading(dnum), attr: ATR_INVERSE,
+            rows.push({ text: dungeonHeading(dnum), ...menuHeadingStyle(),
                 itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
         else
             lines.push(dungeonHeading(dnum));

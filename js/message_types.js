@@ -11,6 +11,7 @@ import { game } from './gstate.js';
 import { clearrolefilter, createCharacterFilters, setrolefilter } from './role.js';
 import { randomCharacterOption, str2align, str2gend, str2race, str2role } from './role.js';
 import { changeCommandAutocompletions, countCommandAutocompletions } from './cmd.js';
+import { isMenuObjsymMode } from './flags.js';
 import { displayHelpFile } from './pager.js';
 import { displayPagerText } from './wintty.js';
 import { setConditionOption } from './botl.js';
@@ -19,7 +20,7 @@ import { rnd } from './rng.js';
 import { isTextOption, textOptionValue, cInteger, optionError } from './option_values.js';
 import { readSymFile, isDefaultSymsetName } from './novel_tribute.js';
 import { featureAlertVersion } from './extversion.js';
-import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
+import { MENU_OBJSYM_MODES, compoundMenuValue, editCompoundMenu, menuObjsymName } from './option_editors.js';
 import { clearStatusHilites, countStatusHilites, statusHiliteMenu, resetStatusHilites } from './botl.js';
 import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
 import { countBindKeys, handlerRebindKeys } from './cmd.js';
@@ -38,7 +39,7 @@ import { vision_recalc } from './vision.js';
 import { getLine } from './windows.js';
 import { inventoryClassOrder, inventoryOrderSymbols } from './invent.js';
 import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
-import { ATR_INVERSE, showInventoryWindow, showMultiSelectWindow } from './windows.js';
+import { menuHeadingStyle, showInventoryWindow, showMultiSelectWindow } from './windows.js';
 import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, WARNCOUNT } from './const.js';
@@ -1095,6 +1096,11 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
                 if (style)
                     result.iflags.menu_headings = style;
             }
+            else if (canonical === 'menu_objsyms') {
+                const mode = optfnMenuObjsyms(val, negated, optionMatch.viaAlias, addError);
+                if (mode !== null)
+                    result.iflags.menuobjsyms = mode;
+            }
             else if (canonical === 'suppress_alert') {
                 const parsed = negated ? null : featureAlertVersion(val);
                 if (parsed && !parsed.future)
@@ -1194,6 +1200,14 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
                     const style = optfnMenuHeadings('', negated, addError);
                     if (style)
                         result.iflags.menu_headings = style;
+                }
+                // optfn_menu_objsyms() without a value: headers (1), or
+                // entries (2) for the obsolete use_menu_glyphs spelling;
+                // negation means none.
+                else if (canonical === 'menu_objsyms') {
+                    const mode = optfnMenuObjsyms('', negated, optionMatch.viaAlias, addError);
+                    if (mode !== null)
+                        result.iflags.menuobjsyms = mode;
                 }
             }
         }
@@ -1317,6 +1331,34 @@ function optfnMenuHeadings(op, negated, addError) {
         return null;
     }
     return parseColorAttr(op, addError);
+}
+// C options.c:optfn_menu_objsyms(): the six-value grammar. Negation means
+// none (0), the bare boolean means headers (1) — entries (2) for the
+// obsolete use_menu_glyphs spelling — a digit is atoi() with an upper
+// bound, and a name matches case-insensitively once at least four
+// characters are present, with "one-or-the-other" accepted for 5 and an
+// unmatched name silently selecting none.
+function optfnMenuObjsyms(op, negated, viaAlias, addError) {
+    if (negated)
+        return 0;
+    if (!op)
+        return viaAlias ? 2 : 1;
+    if (op.charAt(0) >= '0' && op.charAt(0) <= '9') {
+        const value = cInteger(op);
+        if (!isMenuObjsymMode(value)) {
+            addError(`Illegal menu_objsyms parameter '${op}'`);
+            return null;
+        }
+        return value;
+    }
+    for (const index of [0, 1, 2, 3, 4, 5]) {
+        const name = MENU_OBJSYM_MODES[index].name;
+        const length = op.length >= 4 ? op.length : name.length;
+        if (name.toLowerCase().startsWith(op.slice(0, length).toLowerCase())
+            || index === 5 && op.toLowerCase().startsWith('one-or-the-other'))
+            return index;
+    }
+    return 0;
 }
 // Part of C options.c:optfn_disclose(): the per-category values back into
 // the option string.
@@ -1904,7 +1946,7 @@ function requestMenuSections() {
                 dosetAddMenu('glyph', '(to be done)'),
                 dosetAddMenu('hilite_status', countStatusHilites() ? '(see "status highlight rules" below)' : '(none)'),
                 dosetAddMenu('menu_headings', menuHeadingsValue()),
-                dosetAddMenu('menu_objsyms', 'conditional'),
+                dosetAddMenu('menu_objsyms', menuObjsymName(game.iflags.menuobjsyms ?? 4)),
                 dosetAddMenu('menuinvertmode', textOptionValue('menuinvertmode') ?? '1'),
                 dosetAddMenu('menustyle', MENU_STYLES[game.flags.menu_style ?? MENU_FULL][0]),
                 dosetAddMenu('msg_window', compoundMenuValue('msg_window') ?? 'unknown'),
@@ -2871,7 +2913,7 @@ function simpleMenuSections() {
         ...SIMPLE_OPTION_SECTIONS.map(([heading, names]) => {
             const items = [
                 { selectable: false, text: '' },
-                { selectable: false, text: ` ${heading.padEnd(30)} `, attr: ATR_INVERSE,
+                { selectable: false, text: ` ${heading.padEnd(30)} `, ...menuHeadingStyle(),
                     itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
             ];
             for (const [listedName, description] of names) {
@@ -2964,7 +3006,7 @@ async function doRequestMenuOptions() {
     let giveBooleanMessage = game.iflags.optionMessages !== false;
     for (;;) {
         const sections = requestMenuSections().map(section => ({ items: [
-                { selectable: false, text: section.heading ?? '', attr: ATR_INVERSE,
+                { selectable: false, text: section.heading ?? '', ...menuHeadingStyle(),
                     itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
                 ...section.items,
             ] }));

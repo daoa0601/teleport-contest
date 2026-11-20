@@ -39,11 +39,12 @@ import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero, landObj
 import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout, set_corpsenm, fobjChain, floorPileAt } from './mkobj.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
-import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, newsym_force, canSpotMonster } from './display.js';
+import { OBJECT_CLASS_SYMBOLS, menuObjectGlyph, flush_screen, newsym, newsym_force, canSpotMonster } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { FeatureOptions, InventoryClassification } from './invent.js';
 import type { MessagePublisher } from './pline.js';
 import { getLine, showMultiSelectWindow, showInventoryWindow, showDisclosureOverlay, showChoiceWindow } from './windows.js';
+import { menuHeadObjsym } from './flags.js';
 import { snapshotMenuUnderlay, restoreMenuUnderlay, showTextWindow } from './wintty.js';
 import type { ChoiceMenuEntry, CountedSelection, MultiSelectItem, PageLocalMultiSelectItem, SelectableMenuItem } from './windows.js';
 import type { MenuUnderlay } from './wintty.js';
@@ -113,7 +114,7 @@ interface AddedInventoryObject {
 // Part of C pickup.c:query_classes(): the pickup class menu's heading
 // order.
 export function pickupClassOrder(): string[] {
-    return [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(objectClassHeading);
+    return [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(oclass => objectClassHeading(oclass));
 }
 
 // C pickup.c:pickup().
@@ -356,7 +357,7 @@ interface QueryObjlistOptions {
 // adapter; the value is the C menu_item's a_obj.
 interface QueryObjlistSection {
     heading: string | null;
-    items: { key?: string; groupAccelerator?: string; text: string; value: GameObject }[];
+    items: { key?: string; groupAccelerator?: string; glyph?: { ch: string; color: number }; text: string; value: GameObject }[];
 }
 
 export async function queryObjlist(
@@ -424,17 +425,25 @@ export async function queryObjlist(
                         ? String.fromCharCode(97 + nextLetter++) : undefined;
             if (observeRows) observeObjectForNaming(object, { state });
             // pickup.c:1131: obj_to_glyph() consumes the display RNG per
-            // row while hallucinating, before doname_with_price().
-            consumeHallucinatedMenuObjectGlyph(object);
+            // row while hallucinating, before doname_with_price(); tty
+            // shows the resulting glyph in the menu_objsyms glyph column.
+            const glyph = menuObjectGlyph(object);
             items.push({
                 ...(key === undefined ? {} : { key }),
                 ...(groupAccelerators
                     ? { groupAccelerator: OBJECT_CLASS_SYMBOLS[classOf(object)] || '' } : {}),
+                ...(glyph ? { glyph } : {}),
                 text: await describe(object),
                 value: object,
             });
         }
-        sections.push({ heading: oclass === null ? null : objectClassHeading(oclass), items });
+        // pickup.c:1121-1126: let_to_name() appends the class symbol only
+        // when the query takes a selection and menu_head_objsym is set.
+        sections.push({
+            heading: oclass === null ? null
+                : objectClassHeading(oclass, how !== PICK_NONE && menuHeadObjsym()),
+            items,
+        });
     }
     // pickup.c:1146-1164: the INCLUDE_HERO fake hero row closes the list.
     const heroSection = (qflags & INCLUDE_HERO) !== 0 && engulfer
@@ -1947,7 +1956,7 @@ function objectsByClass(objects: readonly GameObject[]): { name: string; members
         members.push(object);
         groups.set(name, members);
     }
-    const headings = [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(objectClassHeading);
+    const headings = [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(oclass => objectClassHeading(oclass));
     return headings.filter(name => groups.has(name))
         .map(name => ({ name, members: groups.get(name) ?? [] }));
 }

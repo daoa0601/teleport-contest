@@ -1,3 +1,18 @@
+import { game } from './gstate.js';
+// Guard for values parsed out of the option's grammar.
+export function isMenuObjsymMode(value) {
+    return Number.isInteger(value) && value >= 0 && value <= 5;
+}
+// C options.c:set_menuobjsyms_flags(): iflags.menu_head_objsym, the bit
+// that appends the class symbol to let_to_name() menu headings.
+export function menuHeadObjsym() {
+    return ((game.iflags.menuobjsyms ?? 4) & 1) !== 0;
+}
+// C options.c:set_menuobjsyms_flags(): iflags.use_menu_glyphs, the bit that
+// shows an entry's object glyph in the tty menu separator column.
+export function useMenuGlyphs() {
+    return ((game.iflags.menuobjsyms ?? 4) & (2 | 4)) !== 0;
+}
 // C flag.h: struct flag (flag.h:18) is the only option block in the save
 // file: save.c:savegamestate() writes it with Sfo_flag() and restore.c
 // restgamestate() reads it back with Sfi_flag(). These GameFlags fields

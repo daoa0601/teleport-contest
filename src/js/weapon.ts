@@ -51,8 +51,7 @@ import { possessiveName } from './hacklib.js';
 import { willWeld } from './wield.js';
 import { flushPendingTopline } from './topl.js';
 import { promptYesNo } from './query.js';
-import { showInventoryWindow } from './windows.js';
-import { ATR_INVERSE } from './terminal.js';
+import { menuHeadingStyle, showInventoryWindow } from './windows.js';
 import { objectMaterial } from './o_init.js';
 import { isPoolAt } from './dbridge.js';
 import { currentAttribute } from './attrib.js';
@@ -1087,7 +1086,7 @@ function enhancementMenu(speedy: boolean, state: GameState): { items: InventoryM
     for (const group of SKILL_GROUPS) {
         // C weapon.c:add_skills_to_menu() emits the group heading through
         // add_menu_heading(), which skips menu coloring.
-        items.push({ text: group.heading, attr: ATR_INVERSE, itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
+        items.push({ text: group.heading, ...menuHeadingStyle(), itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
         for (let skill = group.first; skill <= group.last; skill++) {
             const proficiency = requiredSkill(skills, skill);
             if (proficiency.skill === P_ISRESTRICTED) continue;
