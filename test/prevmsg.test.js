@@ -20,6 +20,7 @@ import { saveGame } from '../js/save.js';
 import { restoreGame } from '../js/restore.js';
 import { resetGame } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
+import { Terminal } from '../js/terminal.js';
 import { promptChoice } from '../js/query.js';
 import { getLine } from '../js/windows.js';
 import { promptDirection } from '../js/cmd.js';
@@ -148,6 +149,69 @@ void test('a dismissed full history window leaves the covered status columns bla
         await input.waitUntilBlocked();
         assert.equal(rowText(0), 'What do you want to call this thing?', 'the getlin prompt returns after the window is dismissed');
         assert.equal(rowText(22), statusLine1.slice(0, 33).trimEnd(), 'bot() stays disabled, so the status keeps only the columns left of the corner');
+        assert.equal(rowText(23), statusLine2.slice(0, 33).trimEnd(), 'the second status row keeps its uncovered columns only');
+    }
+    finally {
+        input.feed('\x1b\x1b');
+        await editor;
+    }
+});
+// Fill the recall ring so the full window's 23 content rows plus its
+// --More-- marker cover both status rows; every line is 44 columns so
+// tty_display_nhwindow() places the corner at offx = 80 - 45 - 1 = 34.
+async function fileFullRecallRing(input) {
+    for (let index = 0; index < 20; index++) {
+        await pline(`History entry number ${String(index + 2).padStart(2, '0')}`.padEnd(44, '.'));
+        await markSeen(input);
+    }
+}
+void test('the wrecked status lines repaint at the first update after the getlin ends', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 'f';
+    const input = resetInputState();
+    await fileFullRecallRing(input);
+    const editor = getLine('What do you want to call this thing?', () => true);
+    try {
+        await input.waitUntilBlocked();
+        const statusLine1 = rowText(22);
+        input.feed(16);
+        await input.waitUntilBlocked();
+        input.feed(' ');
+        await input.waitUntilBlocked();
+        assert.equal(rowText(22), statusLine1.slice(0, 33).trimEnd(), 'bot() stays disabled for the rest of the prompt');
+        input.feed('\x1b');
+        await editor;
+        // docorner() left disp.botlx set (wintty.c:3775); the first
+        // flush after the prompt runs bot() and repaints both rows.
+        await flush_screen(1);
+        assert.equal(rowText(22), statusLine1, 'the queued botlx repaint restores the covered columns');
+    }
+    finally {
+        input.feed('\x1b');
+        await editor;
+    }
+});
+void test('a taller terminal anchors the wrecked status window at row 22', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 'f';
+    game.nhDisplay = new GameDisplay(new Terminal(null, { rows: 30, cols: 80 }));
+    const input = resetInputState();
+    await fileFullRecallRing(input);
+    const editor = getLine('What do you want to call this thing?', () => true);
+    try {
+        await input.waitUntilBlocked();
+        const [statusLine1, statusLine2] = [rowText(22), rowText(23)];
+        assert.ok(statusLine1.length > 34, 'the prompt flushed a painted status line');
+        input.feed(16);
+        await input.waitUntilBlocked();
+        input.feed(' ');
+        await input.waitUntilBlocked();
+        // tty_create_nhwindow() pins the status window at
+        // min(rows - 2, ROWNO + 1) (wintty.c:934-935); on a 30-row
+        // terminal the status stays at rows 22-23, not the last two rows.
+        assert.equal(rowText(22), statusLine1.slice(0, 33).trimEnd(), 'the status window keeps its row-22 anchor on a taller terminal');
         assert.equal(rowText(23), statusLine2.slice(0, 33).trimEnd(), 'the second status row keeps its uncovered columns only');
     }
     finally {

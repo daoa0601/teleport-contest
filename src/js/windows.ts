@@ -8,7 +8,7 @@ import { docrt, flush_screen } from './display.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED,
-    MENU_ITEMFLAGS_SKIPMENUCOLORS, MENU_ITEMFLAGS_SKIPINVERT, CMDQ_KEY } from './const.js';
+    MENU_ITEMFLAGS_SKIPMENUCOLORS, MENU_ITEMFLAGS_SKIPINVERT, CMDQ_KEY, ROWNO } from './const.js';
 import type { MenuColoringRule } from './coloratt.js';
 import { pline } from './pline.js';
 import { cmdq_pop } from './cmd.js';
@@ -364,15 +364,28 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
         // docorner() leaves the covered message columns blank.
         clearRect(Math.max(0, cornerOffset - 1), 0, d.cols, 1);
         // docorner() cl_end()s every covered row from its xmin and then
-        // repaints only the wrecked status lines through bot(); callers
-        // that run with bot() disabled (windows.c getlin() and
-        // select_menu() set gb.bot_disabled) keep those columns blank
-        // until the next status update.
-        const firstStatusRow = d.rows - 2;
+        // repaints only the wrecked status lines through bot():
+        //
+        //     if (ymax >= (int) wins[WIN_STATUS]->offy
+        //         && !ystart_between_menu_pages) {
+        //         /* we have wrecked the bottom line */
+        //         disp.botlx = TRUE;
+        //         bot();
+        //     }
+        //
+        // windows.c getlin()/select_menu() run that bot() disabled
+        // (gb.bot_disabled), so the covered columns stay blank and the
+        // queued full repaint waits for the first status update after the
+        // prompt. tty_create_nhwindow() anchors the status window at
+        // min(rows - 2, ROWNO + 1), which stays row 22 on taller
+        // terminals (wintty.c:934-935).
+        const firstStatusRow = Math.min(d.rows - 2, ROWNO + 1);
         if (game._statusUpdatesDisabled && content.length >= firstStatusRow) {
             const coveredStatusRows = Math.min(2, content.length + 1 - firstStatusRow);
             clearRect(Math.max(0, cornerOffset - 1), firstStatusRow, d.cols,
                 firstStatusRow + coveredStatusRows);
+            game.context.botl = true;
+            d.statusVisible = false;
         }
         d.setCursor(underlayCursor.col, underlayCursor.row);
         d.cursorVisible = underlayCursor.visible;
