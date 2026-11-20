@@ -4,8 +4,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
+import { rhack, cmdq_add_ec } from '../js/cmd.js';
+import { moveloop_core } from '../js/allmain.js';
 import { flush_screen } from '../js/display.js';
+import { CQ_CANNED } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
@@ -22,6 +24,7 @@ import { saveGame } from '../js/save.js';
 import { restoreGame } from '../js/restore.js';
 import { resetGame } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
+import { Terminal } from '../js/terminal.js';
 import { promptChoice } from '../js/query.js';
 import { getLine } from '../js/windows.js';
 import { promptDirection } from '../js/cmd.js';
@@ -131,6 +134,136 @@ void test('msg_window:full lists the ring oldest-first with the pending line las
     await recall;
     assert.doesNotMatch(rowText(0), /Message History/,
         'destroy_nhwindow() erases the recall window');
+});
+
+// C win/tty/wintty.c:erase_menu_or_text() dismisses a corner window with
+// docorner(offx, maxrow + 1): every covered row is cl_end()ed from column
+// offx-1 and the wrecked status lines are repainted by bot() — which
+// windows.c:getlin() has disabled for the whole prompt, so the covered
+// status columns stay blank:
+//
+//     if (ymax >= (int) wins[WIN_STATUS]->offy
+//         && !ystart_between_menu_pages) {
+//         /* we have wrecked the bottom line */
+//         disp.botlx = TRUE;
+//         bot();
+//     }
+void test('a dismissed full history window leaves the covered status columns blank in a getlin', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 'f';
+    const input = resetInputState();
+    // Twenty filed entries put the window's 23 content rows plus its
+    // --More-- marker over both status rows; every line is 44 columns so
+    // tty_display_nhwindow() places the corner at offx = 80 - 45 - 1 = 34.
+    for (let index = 0; index < 20; index++) {
+        await pline(`History entry number ${String(index + 2).padStart(2, '0')}`.padEnd(44, '.'));
+        await markSeen(input);
+    }
+    const editor = getLine('What do you want to call this thing?');
+    try {
+        await input.waitUntilBlocked();
+        const [statusLine1, statusLine2] = [rowText(22), rowText(23)];
+        assert.ok(statusLine1.length > 34, 'the prompt flushed a painted status line');
+        input.feed(16);
+        await input.waitUntilBlocked();
+        assert.match(rowText(0), /Message History/);
+        input.feed(' ');
+        await input.waitUntilBlocked();
+        assert.equal(rowText(0), 'What do you want to call this thing?',
+            'the getlin prompt returns after the window is dismissed');
+        assert.equal(rowText(22), statusLine1.slice(0, 33).trimEnd(),
+            'bot() stays disabled, so the status keeps only the columns left of the corner');
+        assert.equal(rowText(23), statusLine2.slice(0, 33).trimEnd(),
+            'the second status row keeps its uncovered columns only');
+    } finally {
+        input.feed('\x1b\x1b');
+        await editor;
+    }
+});
+
+// Fill the recall ring so the full window's 23 content rows plus its
+// --More-- marker cover both status rows; every line is 44 columns so
+// tty_display_nhwindow() places the corner at offx = 80 - 45 - 1 = 34.
+async function fileFullRecallRing(input: InputGate): Promise<void> {
+    for (let index = 0; index < 20; index++) {
+        await pline(`History entry number ${String(index + 2).padStart(2, '0')}`.padEnd(44, '.'));
+        await markSeen(input);
+    }
+}
+
+void test('the moveloop repaints the wrecked status before a queued annotate', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 'f';
+    const input = resetInputState();
+    // Warm-up: one no-op iteration (Escape) runs the game-start preamble,
+    // whose finishMoveloopPreamble() sets botl itself; the measured
+    // iteration below must reflect only docorner()'s pending repaint.
+    input.feed('\x1b');
+    await moveloop_core();
+    await fileFullRecallRing(input);
+    const editor = getLine('What do you want to call this thing?');
+    await input.waitUntilBlocked();
+    const statusLine1 = rowText(22);
+    input.feed(16);
+    await input.waitUntilBlocked();
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    input.feed('\x1b');
+    await editor;
+    // C allmain.c:473-475 runs the botlx repaint before every rhack(0):
+    //
+    //     if (disp.botl || disp.botlx) {
+    //         bot();
+    //         curs_on_u();
+    //     }
+    //
+    // The queued #annotate bypasses parse(), whose pre-key flush would
+    // otherwise rebuild the status rows from the windowport cache, so its
+    // getlin opens over whole status lines only through docorner()'s
+    // pending disp.botlx.
+    cmdq_add_ec(CQ_CANNED, 'donamelevel');
+    const loop = moveloop_core();
+    try {
+        await input.waitUntilBlocked();
+        assert.match(rowText(0), /What do you want to call/,
+            'the queued annotate opens its line prompt');
+        assert.equal(rowText(22), statusLine1,
+            'the moveloop botlx repaint precedes the queued command');
+    } finally {
+        input.feed('\x1b\x1b');
+        await loop;
+    }
+});
+
+void test('a taller terminal anchors the wrecked status window at row 22', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 'f';
+    game.nhDisplay = new GameDisplay(new Terminal(null, { rows: 30, cols: 80 }));
+    const input = resetInputState();
+    await fileFullRecallRing(input);
+    const editor = getLine('What do you want to call this thing?');
+    try {
+        await input.waitUntilBlocked();
+        const [statusLine1, statusLine2] = [rowText(22), rowText(23)];
+        assert.ok(statusLine1.length > 34, 'the prompt flushed a painted status line');
+        input.feed(16);
+        await input.waitUntilBlocked();
+        input.feed(' ');
+        await input.waitUntilBlocked();
+        // tty_create_nhwindow() pins the status window at
+        // min(rows - 2, ROWNO + 1) (wintty.c:934-935); on a 30-row
+        // terminal the status stays at rows 22-23, not the last two rows.
+        assert.equal(rowText(22), statusLine1.slice(0, 33).trimEnd(),
+            'the status window keeps its row-22 anchor on a taller terminal');
+        assert.equal(rowText(23), statusLine2.slice(0, 33).trimEnd(),
+            'the second status row keeps its uncovered columns only');
+    } finally {
+        input.feed('\x1b\x1b');
+        await editor;
+    }
 });
 
 void test('the first recall from an untouched long line prompt pages its text', async () => {

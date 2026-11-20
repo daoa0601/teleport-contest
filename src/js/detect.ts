@@ -26,7 +26,7 @@ import { currentAttribute, exerciseWisdom } from './attrib.js';
 import {
     canSpotMonster, canSenseMonster, monsterHasWarningProjection, feel_location,
     flush_screen, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object,
-    map_trap, newsym, see_monsters, show_glyph_cell, under_ground, under_water, unmapObject, unmap_invisible,
+    map_trap, newsym, objectGlyphAttr, see_monsters, show_glyph_cell, under_ground, under_water, unmapObject, unmap_invisible,
     flashGlyphAt, back_to_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt,
     feel_newsym, OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, terrainCoversObjectsAt, cmapSymbolAppearance,
 } from './display.js';
@@ -1698,7 +1698,11 @@ export async function revealTerrain(subset: number): Promise<void> {
             const location = level.requireAt(x, y);
             const glyph = terrainViewGlyph(location, x, y, subset,
                 !!constraints.saved.uswallow);
-            await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx ?? false, 0, glyph);
+            // reveal_terrain() shows the piletop glyph itself, so
+            // tty_print_glyph() gives it the hilite_pile inverse attribute
+            // (wintty.c: MG_OBJPILE) exactly as on the ordinary map.
+            await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx ?? false,
+                objectGlyphAttr(glyph), glyph);
         }
         await flush_screen(1);
         const kind = full ? 'underlying terrain' : subset & TER_OBJ

@@ -772,7 +772,7 @@ function objectIsPiletop(object) {
 }
 // Part of C wintty.c:tty_print_glyph(): the hilite_pile inverse attribute
 // (MG_OBJPILE).
-function objectGlyphAttr(glyph) {
+export function objectGlyphAttr(glyph) {
     const useInverse = game.flags?.use_inverse !== false
         && game.iflags?.wc_inverse !== false
         && game.iflags?.use_inverse !== false;
