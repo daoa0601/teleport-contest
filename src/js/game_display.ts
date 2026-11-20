@@ -86,7 +86,18 @@ export class GameDisplay {
     set flags(v: TerminalFlags | undefined) { this.terminal.flags = v; }
 
     // Display methods
+    // Text reaches the recorded tty frame through nomux_putch(char), whose
+    // `ch < 32` guard also rejects a signed byte with the high bit set: the
+    // cell keeps its previous character, color, and font.  Map glyphs come
+    // through g_putch(), which strips that bit first (setMapCell below).
     setCell(col: number, row: number, ch: string, color: TerminalColor, attr?: number, altFont = false) {
+        if (!altFont && ch.charCodeAt(0) >= 0x80) return;
+        this.setFrameCell(col, row, ch, color, attr, altFont);
+    }
+    // Store a cell exactly: repainting a saved cell, and tty_raw_print(),
+    // whose shadow writer takes the byte as unsigned char
+    // (nomux_raw_putch((int)(unsigned char)*p)) and so keeps high-bit bytes.
+    setFrameCell(col: number, row: number, ch: string, color: TerminalColor, attr?: number, altFont = false) {
         const index = row * this.cols + col;
         this.capturedMapCells.delete(index);
         if (altFont) this.altFontCells.add(index);
@@ -107,7 +118,7 @@ export class GameDisplay {
         // stay, so the incoming glyph's own font flag must not touch the
         // retained cell.
         const retainsPreviousCell = code < 32 && !!previous;
-        this.setCell(col, row, ch, color, frameColor === null ? attr : 0,
+        this.setFrameCell(col, row, ch, color, frameColor === null ? attr : 0,
             retainsPreviousCell ? this.altFontCells.has(index) : altFont);
         if (retainsPreviousCell) {
             this.capturedMapCells.set(index, previous);
@@ -124,9 +135,8 @@ export class GameDisplay {
         } else span.style.backgroundColor = attr & ATR_INVERSE ? this.colorToCss(color) : '';
     }
     putstr(col: number, row: number, str: string, color?: TerminalColor, attr?: number) {
-        this.clearCapturedMapCells(col, row, str.length);
-        this.clearMapFrames(col, row, str.length);
-        this.terminal.putstr(col, row, str, color, attr);
+        for (let i = 0; i < str.length && col + i < this.cols; i++)
+            this.setCell(col + i, row, str.charAt(i), color ?? CLR_GRAY, attr);
     }
     setCursor(col: number, row: number) { return this.terminal.setCursor(col, row); }
     clearScreen() {
@@ -174,6 +184,10 @@ export class GameDisplay {
         for (let i = 0; i < str.length; i++) this.putCharAtCursor(str.charAt(i));
     }
     putCharAtCursor(ch: string) {
+        if (ch.charCodeAt(0) >= 0x80) {
+            this.cursorCol++;
+            return;
+        }
         this.clearCapturedMapCells(this.cursorCol, this.cursorRow, 1);
         this.clearMapFrames(this.cursorCol, this.cursorRow, 1);
         this.terminal.putCharAtCursor(ch);

@@ -596,7 +596,7 @@ export function paintMenuPage<T extends TextMenuLine>(
             for (let row = firstRestoredRow; row < maxRows; row++) {
                 for (let col = boundary; col < d.cols; col++) {
                     const cell = underlay[row]?.[col];
-                    if (cell) d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
+                    if (cell) d.setFrameCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
                 }
             }
         }
@@ -955,7 +955,7 @@ export function restoreMenuUnderlay(snapshot: MenuUnderlay | null): void {
             // restored snapshot must not repaint old content there either.
             if (col === d.cols - 1) break;
             if (row === 0 && col >= toplineLimit) break;
-            d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
+            d.setFrameCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
         }
     }
     if (stateOwnsTopline) d.clearRow(0);
@@ -1161,7 +1161,7 @@ export function writeStatusLines(display: GameDisplay, lines: readonly [string, 
                         const cell = display.grid[row]?.[col];
                         if (!cell) continue;
                         const lit = col < span.start + fill;
-                        display.setCell(col, row, cell.ch,
+                        display.setFrameCell(col, row, cell.ch,
                             lit ? bar.color : NO_COLOR, lit ? bar.attr : blink);
                     }
                     continue;
@@ -1170,7 +1170,7 @@ export function writeStatusLines(display: GameDisplay, lines: readonly [string, 
                 for (let col = span.start; col < Math.min(span.end, display.cols - 1); col++) {
                     const cell = display.grid[row]?.[col];
                     if (!cell) continue;
-                    display.setCell(col, row, cell.ch, style.color, style.attr);
+                    display.setFrameCell(col, row, cell.ch, style.color, style.attr);
                 }
             }
         }

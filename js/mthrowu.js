@@ -490,7 +490,7 @@ export function monsterProjectileDisplay(object, state, { tethered = false, } = 
         await flush_screen(1);
         if (retainedTopline && !state._pending_message) {
             for (const [column, cell] of retainedTopline.entries())
-                state.nhDisplay?.setCell(column, 0, cell.ch, cell.color, cell.attr, cell.altFont);
+                state.nhDisplay?.setFrameCell(column, 0, cell.ch, cell.color, cell.attr, cell.altFont);
         }
         if (cursor)
             state.nhDisplay?.setCursor(...cursor);
