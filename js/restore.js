@@ -325,6 +325,21 @@ export function validSavedMonsterTraits(value, context) {
     const { minvent, inventory, mw, wormSegments, wormDetachedSegments, wormHead, wormGrowTime, lightRemoved, headOnMap, ...fields } = monsterFields(value, context);
     return validateSavedEntity(value, 'savedMonster', context, fields);
 }
+// Part of C restore.c:find_lev_obj() (restore.c:1168): each restored floor
+// object is re-placed through mkobj.c:place_object(). rest_rooms() has just
+// zeroed rooms[].resident (mkroom.c) and set_residency() only re-latches it
+// afterwards (restore.c:1181-1220), so shop_keeper() finds no keeper and both
+// costly_spot() and costly_adjacent(find_objowner()) are FALSE; place_object's
+// "if placed outside of shop" rule (mkobj.c:2356-2359) therefore clears every
+// restored floor object's no_charge flag. A drop whose sale the hero refused
+// becomes shop stock ("for sale") again after every level load: the save
+// restore, the bones load, and each revisit of a previously visited level.
+function clearRestoredFloorCharges(level) {
+    for (const object of fobjChain(level)) {
+        if (object.no_charge)
+            object.no_charge = false;
+    }
+}
 // C restore.c:getlev()
 // JSON decoding and validation happen before this live-level boundary.
 // Native sequence: "fmon = restmonchn(nhfp)" (restore.c:1146), "find_lev_obj()"
@@ -340,6 +355,7 @@ export async function getlev(source) {
         game.program_state.in_getlev = true;
     try {
         if (source.kind === 'saved-data') {
+            clearRestoredFloorCharges(requireGameLevel());
             game.stairs = restoreLevelChains(requireGameLevel(), game.stairs);
             await restoreLevelRegions(game, 0);
             restoreSavedLightSources(game);
@@ -349,6 +365,7 @@ export async function getlev(source) {
             const { cached } = source;
             const elapsed = game.moves - cached.savedAt;
             game.level = cached.level;
+            clearRestoredFloorCharges(cached.level);
             game.billObjects = cached.billObjects ?? [];
             restoreEngravings(cached.level);
             cached.stairs = restoreLevelChains(cached.level, cached.stairs);
@@ -366,6 +383,7 @@ export async function getlev(source) {
             restoreMonsterWormHeads(payload.level);
             restoreEngravings(payload.level);
             game.level = payload.level;
+            clearRestoredFloorCharges(payload.level);
             const location = game.u.uz;
             if (!location)
                 throw new Error('Bones restoration requires the receiving level location');
