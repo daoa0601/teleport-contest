@@ -29,6 +29,7 @@ import { completeHeroStartup } from './support/startup.js';
 
 import type { TerminalCell } from '../js/terminal.js';
 import { initializeMonsterVitals } from '../js/allmain.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 void test('tutorial entry retains the old armor class until its entry message is acknowledged', async () => {
     const engine = await runSegment({
@@ -54,6 +55,10 @@ void test('tutorial entry retains the old armor class until its entry message is
     }
 
     assert.equal(entryFound, true, 'startup must reach the tutorial entry message');
+    // C sequesters the inventory before the --More-- acknowledgment (the
+    // pager is reached from docrt() inside goto_level(), after
+    // tutorial(TRUE) -> nh.gamestate()), but bot() has not repainted yet,
+    // so the displayed armor class is still the armored one.
     assert.equal(engine.state.inventory.length, 0);
     assert.equal(engine.state.u.uac, startingArmorClass);
     // C's goto_level() bookkeeping marks the tutorial dungeon's reached
@@ -136,6 +141,98 @@ void test('the tutorial entry pager leaves the displayed map unchanged', async (
                 `screen row ${row} col ${col} changed across the tutorial entry pager`);
         }
     }
+});
+
+void test('the tutorial entry pager keeps the starting gold in the status line', async () => {
+    const engine = await runSegment({
+        seed: 1901573816,
+        datetime: '20261012090000',
+        nethackrc: 'OPTIONS=name:Holdout,role:tourist,race:human,gender:male,align:neutral,!legacy,!autopickup,pettype:none',
+        moves: '', storage: memoryStorage(),
+    });
+    // C deferred_goto() prints dfr_pre_msg without blocking (do.c:2082);
+    // the --More-- is reached from docrt() inside goto_level()
+    // (display.c:2196 -> wintty.c:1874 more()), after tutorial(TRUE) ->
+    // nh.gamestate() has sequestered the gold (do.c:1494-1496,
+    // nhlib.lua tutorial_enter) but before any bot() repaint, so the
+    // status line under that pager still shows the last
+    // pre-sequestration paint; "Tutorial:1 $:0" first appears after the
+    // arrival's post-docrt flush (do.c:1845-1846).
+    const screenRows = (): string[] => {
+        const display = engine.state.nhDisplay;
+        assert.ok(display);
+        return display.grid.map(row => row.map(cell => cell.ch).join(''));
+    };
+    let beforeMenu: string[] | null = null;
+    let previous = screenRows();
+    let entry: string[] | null = null;
+    for (let phase = 0; phase < 10 && !entry; phase++) {
+        const rows = screenRows();
+        const screen = rows.join('\n');
+        if (screen.includes('Entering the tutorial.')) {
+            entry = rows;
+            break;
+        }
+        if (screen.includes('Do you want a tutorial?')) beforeMenu = previous;
+        previous = rows;
+        engine.inputGate.feed(screen.includes('Do you want a tutorial?') ? 'y' : ' ');
+        await engine.runUntilInputNeeded();
+    }
+    assert.ok(entry, 'startup must reach the tutorial entry message');
+    assert.ok(beforeMenu, 'startup must show the pre-menu welcome screen');
+    const beforeGold = beforeMenu[23]?.match(/\$:(\d+)/)?.[1];
+    assert.ok(beforeGold !== undefined && Number(beforeGold) > 0,
+        `the Tourist must start with gold, saw $:${beforeGold ?? 'none'}`);
+    assert.equal(entry[22], beforeMenu[22],
+        'the title status row must not change across the tutorial entry pager');
+    assert.equal(entry[23], beforeMenu[23],
+        'the status row must keep the starting gold until the pager is dismissed');
+});
+
+void test('a MSGTYPE=stop tutorial entry pager acknowledges before the state is sequestered', async () => {
+    const engine = await runSegment({
+        seed: 1901573816,
+        datetime: '20261012090000',
+        nethackrc: 'OPTIONS=name:Holdout,role:tourist,race:human,gender:male,align:neutral,!legacy,!autopickup,pettype:none\n'
+            + 'MSGTYPE=stop "Entering the tutorial"',
+        moves: '', storage: memoryStorage(),
+    });
+    // With MSGTYPE=stop, vpline() blocks in
+    // display_nhwindow(WIN_MESSAGE, TRUE) inside pline1(dfr_pre_msg)
+    // (pline.c:283, do.c:2084) before deferred_goto() proceeds into
+    // goto_level(); tutorial(TRUE) -> nh.gamestate() has not run yet, so
+    // the hero still carries the starting inventory, gold included, at
+    // that acknowledgment boundary, and the status painted by vpline()'s
+    // own flush_screen(1) is likewise the pre-sequestration one.
+    const statusRow = (): string => {
+        const display = engine.state.nhDisplay;
+        assert.ok(display);
+        return display.grid[23]?.map(cell => cell.ch).join('') ?? '';
+    };
+    let entryStatus: string | null = null;
+    let entryGold = 0;
+    for (let phase = 0; phase < 10; phase++) {
+        const display = engine.state.nhDisplay;
+        assert.ok(display);
+        const screen = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+        if (screen.includes('Entering the tutorial.')) {
+            entryStatus = statusRow();
+            entryGold = heroGoldAmount(engine.state);
+            break;
+        }
+        engine.inputGate.feed(screen.includes('Do you want a tutorial?') ? 'y' : ' ');
+        await engine.runUntilInputNeeded();
+    }
+    assert.ok(entryStatus !== null, 'startup must reach the tutorial entry message');
+    assert.ok(engine.state.inventory.length > 0,
+        'a MSGTYPE=stop entry pager blocks before goto_level() sequesters the inventory');
+    assert.ok(entryGold > 0, 'the starting gold is still carried at that boundary');
+    assert.match(entryStatus, new RegExp(`\\$:${entryGold}\\b`),
+        'the status under a MSGTYPE=stop entry pager shows the carried gold');
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    assert.equal(engine.state.inventory.length, 0,
+        'acknowledging the pager lets goto_level() sequester the inventory');
 });
 
 void test('entering the tutorial stores equipment and returning restores the same items', async t => {

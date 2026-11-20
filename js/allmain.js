@@ -262,6 +262,14 @@ export async function restoregamePreamble() {
 // arrival, modeled here as a hand-rolled level transition combining Lua
 // state transfer and that arrival.  Destination construction and arrival
 // precede the entry pager, but that pager still projects the source graph.
+// deferred_goto() prints dfr_pre_msg without blocking unless the message
+// is configured MSGTYPE=stop (do.c:2082 pline1; pline.c:283 blocks inside
+// pline1, before goto_level() sequesters anything).  The default
+// --More-- acknowledgment instead comes from goto_level()'s docrt() ->
+// cls() -> display_nhwindow(WIN_MESSAGE) (display.c:2196, wintty.c:1874),
+// after tutorial(TRUE) -> nh.gamestate() has sequestered the hero's state
+// but before any bot() repaint, so the status under "Entering the
+// tutorial.--More--" keeps its last pre-sequestration paint either way.
 // Tutorial inventory is deliberately sequestered until a later portal
 // restores the saved game state.
 async function maybeDoTutorial() {
@@ -299,7 +307,12 @@ async function maybeDoTutorial() {
         billObjects: game.billObjects ?? [],
     });
     game.u.ucamefrom = { ...oldDepth };
-    await currentLuaLifecycle().changeTutorialMode(game, true);
+    // goto_level() sequesters the hero's state as soon as the destination
+    // dungeon is known (do.c:1494-1496, tutorial(TRUE) -> nh.gamestate());
+    // the sequestering call itself is placed below the entry pager, at
+    // the start of the goto_level() body this hand-rolled transition
+    // inlines around, so both of the pager's input boundaries observe the
+    // state C shows at them (see the comment there).
     game.u.uz = { ...target };
     // C's tutorial entry runs through goto_level(), which records the
     // reached level for the destination dungeon (do.c:1678-1685) before
@@ -347,6 +360,20 @@ async function maybeDoTutorial() {
     oldHero.ux0 = oldPosition.x0;
     oldHero.uy0 = oldPosition.y0;
     await plineWithContinuation('Entering the tutorial.');
+    // pline1(dfr_pre_msg) has returned: vpline() flushed the screen while
+    // the hero still carried the gold and wore the armor, so the status
+    // painted for this pager is the pre-sequestration one.  The pager
+    // blocks only in C's own two ways: MSGTYP_STOP blocks inside pline1
+    // itself (pline.c:283 display_nhwindow(WIN_MESSAGE, TRUE)), before
+    // goto_level() sequesters anything, so that boundary still sees the
+    // intact inventory and spells; otherwise the acknowledgment waits for
+    // docrt() -> cls() -> display_nhwindow(WIN_MESSAGE) inside goto_level()
+    // (display.c:2196, wintty.c:1874 more()), by which point tutorial(TRUE)
+    // -> nh.gamestate() has sequestered the state (do.c:1494-1496).
+    // Placing the sequestration between those two boundaries reproduces
+    // both, and no bot() runs in between, so the displayed wallet stays
+    // stale until the arrival's post-docrt flush (do.c:1845-1846).
+    await currentLuaLifecycle().changeTutorialMode(game, true);
     await flushPendingTopline();
     await checkSpecialRoom({ newLevel: true });
     game.level = tutorialLevel;
