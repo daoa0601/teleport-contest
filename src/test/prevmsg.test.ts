@@ -224,7 +224,7 @@ void test('combination recall opens the full window on its second press when the
         'at write slot zero, C skips the newest saved line and opens the window');
 });
 
-void test('restoring a full recall ring restarts combination mode at write slot zero', async () => {
+void test('restoring a full recall ring recalls the banner before the window', async () => {
     const storage = memoryStorage();
     const saved = await recallGame('combination', ' ' + '$)'.repeat(10) + 'Sy', storage);
     assert.equal(saved.lastRunResult?.kind, 'stopped', 'the save command must finish');
@@ -233,9 +233,20 @@ void test('restoring a full recall ring restarts combination mode at write slot 
 
     engine.inputGate.feed(16);
     await engine.runUntilInputNeeded();
+    // C topl.c:tty_putmsghistory(): the restoring replay re-adds this
+    // session's banner after the saved entries, so the full ring's newest
+    // slot holds "Restoring save file..." and the write slot is one past
+    // zero; combination mode's second single line (tty_doprev_message's
+    // maxcol == maxrow - 1 branch, topl.c:53-60) is the banner itself.
+    assert.match(rowText(0), /Restoring save file\.\.\./,
+        'the second recall pages the banner the restore re-added as newest');
 
+    engine.inputGate.feed(16);
+    await engine.runUntilInputNeeded();
     assert.match(rowText(0), /Message History/,
-        'refilling all twenty slots during restore takes the same wrapped-ring branch');
+        'with the walk past the newest saved line, the full window opens');
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
 });
 
 void test('menu search remembers the message it replaces before recalling it', async () => {
@@ -393,6 +404,13 @@ void test('save and restore carry the recall ring', async () => {
     await pline('Three follows.'); // remembers the restored pending line
     await rhack(16);
     assert.equal(rowText(0), 'Three follows.');
+    await rhack(16);
+    // C topl.c:tty_putmsghistory(): the restoring replay re-adds this
+    // session's banner after the saved entries (topl.c:702-712), so the
+    // newest recalled entry is "Restoring save file..." and the saved
+    // messages follow oldest-first behind it.
+    assert.equal(rowText(0), 'Restoring save file...',
+        'the banner the restore re-added is the newest recall entry');
     await rhack(16);
     assert.equal(rowText(0), 'Two remembered turns.', 'restored entries recall oldest-first');
     await rhack(16);
