@@ -18,7 +18,6 @@ import { memoryStorage } from './support/memory-storage.js';
 // dorecover() spends a dismissal key on display_nhwindow(WIN_MESSAGE, TRUE)
 // before discarding the save file and starting a new game.
 void test('a dead hero is refused at restore, one key dismisses the message, and the save is discarded', async () => {
-    initRng(6103);
     await freshObjectRoom({ role: 'wizard' });
     game.plname = game.displayName = 'Ill';
     const storage = memoryStorage();
@@ -31,7 +30,7 @@ void test('a dead hero is refused at restore, one key dismisses the message, and
     initRng(6103);
     game.nhDisplay = new GameDisplay(null);
     const input = resetInputState();
-    installPagerInput(input, { expected: /not healthy enough/, limit: 2 });
+    installPagerInput(input, { expected: /Restoring save file\.\.\.|not healthy enough/, limit: 2 });
     const reads = [];
     input.beforeRead = () => { reads.push(game._pending_message || ''); };
     assert.equal(await restoreGame('Ill', storage), false);
@@ -41,8 +40,12 @@ void test('a dead hero is refused at restore, one key dismisses the message, and
     await dismissUnhealthyRestore('Ill', storage);
     assert.equal(storage.getItem(key), null, 'The refused save file is discarded.');
     assert.equal(restoreRefusedAsUnhealthy(), false);
-    assert.equal(reads.length, 1, 'The refusal message waits for exactly one dismissal key.');
-    assert.match(reads[0] ?? '', /not healthy enough to survive restoration/, 'The key dismisses the refusal message itself.');
+    // C sys/unix/unixmain.c:261 leaves the restoring banner pending, so the
+    // refusal pline pages it first (topl.c:update_topl()); each page then
+    // waits for its own key.
+    assert.equal(reads.length, 2, 'The restoring banner and the refusal message each wait for one key.');
+    assert.match(reads[0] ?? '', /Restoring save file/, 'The refusal first pages the pending restoring banner.');
+    assert.match(reads[1] ?? '', /not healthy enough to survive restoration/, 'The second key dismisses the refusal message itself.');
 });
 // A polymorphed hero runs on its current body's hit points: the save is
 // refused only when that body is dead too. Both halves of that boundary are
@@ -77,7 +80,7 @@ void test('a polymorphed hero restores only while its current body lives', async
     initRng(6104);
     game.nhDisplay = new GameDisplay(null);
     const input = resetInputState();
-    installPagerInput(input, { expected: /not healthy enough/, limit: 2 });
+    installPagerInput(input, { expected: /Restoring save file\.\.\.|not healthy enough/, limit: 2 });
     assert.equal(await restoreGame('Poly', storage), false);
     assert.equal(restoreRefusedAsUnhealthy(), true);
     await dismissUnhealthyRestore('Poly', storage);

@@ -39,13 +39,14 @@ import { mklev } from './mklev.js';
 import { u_on_upstairs } from './stairs.js';
 import { makemonAt } from './makemon.js';
 import { performQuestExpulsion, ensureQuestStatus } from './quest.js';
+import { prepareQuestText } from './questpgr.js';
 import { amuletTurn, intervene } from './wizard.js';
 import { grantAmuletWish } from './wish.js';
 import { changeHeroLuck, checkAttributeExercise, currentAttribute, exerciseAttribute, periodicTurnExercise } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { bot, rankOf, roleSwitch, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
 import { docrt, redrawMap, flush_screen, see_monsters, see_objects, see_traps, swallowed, under_ground, under_water, curs_on_u } from './display.js';
-import { clearMessageWindow, flushPendingTopline } from './topl.js';
+import { clearMessageWindow, flushPendingTopline, putMessageHistory } from './topl.js';
 import { vision_recalc, vision_reset_new_level } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR } from './terminal.js';
@@ -81,8 +82,9 @@ function putLine(col, row, text, attr = 0) {
 // creation story is laid out by the tty pager; role, rank, and god are live.
 async function showLegacy() {
     const game = requireInitializedGame();
-    // The layout below supplies the legacy text; share the pager's Lua lifetime.
-    await currentLuaLifecycle().withQuestState(game, () => { });
+    // The layout below supplies the legacy text; the pager reads the entry
+    // through its single Lua lifetime.
+    const questText = await prepareQuestText(game.u?.uroleplay?.pauper ? 'pauper_legacy' : 'legacy', game, true);
     const d = requireGameDisplay(game);
     const alignment = game.initAlignment?.name;
     const god = (alignment ? game.urole.gods?.[alignment] : null) || 'your god';
@@ -137,6 +139,11 @@ async function showLegacy() {
     putLine(left, 17, outerLines[8]);
     d.setCursor(left + 8, 17);
     await nhgetch();
+    // C questpgr.c:com_pager() files the block message's one-line synopsis
+    // for ^P recall after the window closes (questpgr.c:608:
+    // putmsghistory(out_line, FALSE)).
+    if (questText?.synopsis)
+        putMessageHistory(questText.synopsis);
 }
 // C allmain.c:welcome(). Greeting, chronicle entry, and restore reminders
 // share the hero's innate identity even while another body is active; the
