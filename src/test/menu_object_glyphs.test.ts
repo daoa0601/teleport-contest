@@ -61,6 +61,18 @@ void test('an unheaded inventory menu shows each object class glyph in the separ
     });
 });
 
+void test('menu glyphs lose their color when the color option is off', async () => {
+    freshPlayableRoom();
+    game.flags.sortpack = false;
+    game.flags.color = false;
+    await addInventoryObject(DAGGER, { invlet: 'a' });
+    await withMenu(() => ddoinv(), () => {
+        const dagger = separatorCell(rowContaining('dagger') ?? [], 'a');
+        assert.equal(dagger?.ch, ')');
+        assert.equal(dagger?.color, NO_COLOR, 'reset_glyphmap() clears sym.color without use_color');
+    });
+});
+
 void test('class headings suppress the conditional glyph column of a sorted inventory', async () => {
     freshPlayableRoom();
     game.flags.sortpack = true;
@@ -111,6 +123,18 @@ void test('menu_objsyms:headers appends the class symbol to queried inventory he
     });
 });
 
+void test('wizard identify headings never append the class symbol', async () => {
+    freshPlayableRoom({ flags: { debug: true } });
+    game.flags.sortpack = true;
+    game.iflags.menuobjsyms = 1;
+    await addInventoryObject(POT_HEALING, { invlet: 'a', known: false, bknown: false });
+    await withMenu(() => displayPickinvWizardIdentify(), () => {
+        const heading = rowContaining('Potions')?.map(cell => cell.ch).join('') ?? '';
+        assert.ok(heading.includes('Potions'), 'the class heading is present');
+        assert.ok(!heading.includes('('), 'wiz_identify() passes want_reply FALSE, so withsym stays off');
+    });
+});
+
 void test('the wizard identify menu follows menu_objsyms beside its non-selectable title', async () => {
     freshPlayableRoom({ flags: { debug: true } });
     game.flags.sortpack = false;
@@ -129,12 +153,13 @@ void test('the wizard identify menu follows menu_objsyms beside its non-selectab
     });
 });
 
-void test('#enhance headings use the menu_headings attribute', async () => {
+void test('#enhance headings use the menu_headings attribute and color', async () => {
     freshPlayableRoom();
-    game.iflags.menu_headings = { attr: C_ATR_BOLD, color: NO_COLOR };
+    game.iflags.menu_headings = { attr: C_ATR_BOLD, color: CLR_RED };
     await withMenu(() => runExtendedCommand('enhance'), () => {
         const heading = rowContaining('Fighting Skills')?.find(cell => cell.ch === 'F');
         assert.equal(heading?.attr, ATR_BOLD, 'the skill heading uses the configured attribute');
+        assert.equal(heading?.color, CLR_RED, 'the skill heading uses the configured color');
     });
 });
 
@@ -170,6 +195,12 @@ void test('menu_objsyms values parse from the configuration file', () => {
     assert.equal(parseNethackrc('OPTIONS=menu_objsyms:both').iflags.menuobjsyms, 3);
     assert.equal(parseNethackrc('OPTIONS=menu_objsyms:cond').iflags.menuobjsyms, 4);
     assert.equal(parseNethackrc('OPTIONS=menu_objsyms:one-or-the-other').iflags.menuobjsyms, 5);
+    assert.equal(parseNethackrc('OPTIONS=menu_objsyms:entr').iflags.menuobjsyms, 2,
+        'four-character prefixes match');
+    // optfn_menu_objsyms() compares strlen(name) characters for shorter
+    // values, so the value's NUL mismatches and the name never matches.
+    assert.equal(parseNethackrc('OPTIONS=menu_objsyms:e').iflags.menuobjsyms, 0);
+    assert.equal(parseNethackrc('OPTIONS=menu_objsyms:ent').iflags.menuobjsyms, 0);
     assert.equal(parseNethackrc('OPTIONS=menu_objsyms:0').iflags.menuobjsyms, 0);
     assert.equal(parseNethackrc('OPTIONS=!menu_objsyms').iflags.menuobjsyms, 0);
     assert.equal(parseNethackrc('OPTIONS=menu_objsyms').iflags.menuobjsyms, 1);

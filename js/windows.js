@@ -155,7 +155,7 @@ export async function showInventoryWindow(sections, { pickMode = PICK_NONE, head
             for (const item of section.items)
                 tty_add_menu(window, {
                     identifier: item.key || item.value !== undefined ? item : null,
-                    text: item.text, attr: item.attr ?? ATR_NONE,
+                    text: item.text, attr: item.attr ?? ATR_NONE, color: item.color ?? NO_COLOR,
                     ...(item.key ? { selector: item.key } : {}),
                     ...(item.groupAccelerator ? { group: item.groupAccelerator } : {}),
                     ...(item.glyph ? { glyph: item.glyph } : {}),

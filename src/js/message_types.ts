@@ -1371,8 +1371,13 @@ function optfnMenuObjsyms(
     for (const index of [0, 1, 2, 3, 4, 5] as const) {
         const name = MENU_OBJSYM_MODES[index].name;
         const length = op.length >= 4 ? op.length : name.length;
-        if (name.toLowerCase().startsWith(op.slice(0, length).toLowerCase())
-            || index === 5 && op.toLowerCase().startsWith('one-or-the-other')) return index;
+        // strncmpi(nam, op, l) compares l characters of both strings: a
+        // value shorter than l mismatches at its terminator, so "e" or
+        // "ent" never matches "entries" the way a four-plus prefix does.
+        if (op.length >= length
+            && name.toLowerCase().startsWith(op.slice(0, length).toLowerCase()))
+            return index;
+        if (index === 5 && op.toLowerCase().startsWith('one-or-the-other')) return index;
     }
     return 0;
 }

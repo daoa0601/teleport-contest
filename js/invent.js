@@ -3024,8 +3024,11 @@ export async function displayPickinvWizardIdentify() {
         });
         let previousClass = null;
         for (const item of unidentified) {
+            // wiz_identify() reaches display_pickinv() through
+            // display_inventory(0, FALSE) (wizcmds.c:61), so want_reply
+            // stays FALSE and withsym never turns on here.
             if (game.flags.sortpack !== false && item.oclass !== previousClass)
-                addMenuHeading(window, objectClassHeading(item.oclass, menuHeadObjsym()));
+                addMenuHeading(window, objectClassHeading(item.oclass));
             previousClass = item.oclass;
             observeObjectForNaming(item);
             // display_pickinv() derives each row's obj_to_glyph() menu

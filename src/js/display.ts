@@ -1222,7 +1222,11 @@ export function menuObjectGlyph(object: ObjectGlyphSource | null | undefined): {
     const glyph = objectGlyph(object);
     return {
         ch: glyph.ch,
-        color: glyph.color === CLR_GRAY ? NO_COLOR : glyph.color,
+        // C display.c reset_glyphmap() clears glyphmap[].sym.color when
+        // !iflags.use_color, so map_glyphinfo() hands menus NO_COLOR;
+        // gray keeps the default foreground like every other tty glyph.
+        color: game.flags.color === false || glyph.color === CLR_GRAY
+            ? NO_COLOR : glyph.color,
     };
 }
 
