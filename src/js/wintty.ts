@@ -1357,24 +1357,25 @@ export function _buildScreenOutput() {
         if (preserveMessageRow) {
             for (let row = 1; row < display.rows; row++) display.repaintRow(row);
         } else {
-            display.repaintScreen();
+            // The flush repaints every row but the top line: C's flush_screen
+            // never writes row 0, and the topline writer that produced
+            // messageText painted it over the previous cells and cl_end()ed
+            // only the tail (topl.c:redotoplin()/addtopl()), so the repaint
+            // must repeat that order — clearing first would blank a cell
+            // under a high-bit byte nomux_putch() skips.
+            display.repaintRowsBelowTopline();
             // tty_putmixed() folds DEC markers before update_topl() paints.
             // Only the graphics kludge paints the leading glyph cell.
             const msg = messageText;
             if (msg.includes('\x0e')) {
                 const cells = decodeMixedTopline(msg);
-                for (const [c, cell] of cells.entries()) {
-                    if (c >= display.cols) break;
-                    display.setCell(
-                        c, 0,
-                        cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch,
-                        NO_COLOR, 0,
-                        cell.dec && game._toplineGlyphPainted,
-                    );
-                }
+                display.writeToplineText(0, cells.map(cell => ({
+                    ch: cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch,
+                    altFont: cell.dec && game._toplineGlyphPainted,
+                })));
             } else {
-                for (let c = 0; c < Math.min(msg.length, display.cols); c++)
-                    display.setCell(c, 0, msg.charAt(c), NO_COLOR, 0);
+                display.writeToplineText(0,
+                    [...msg.slice(0, display.cols)].map(ch => ({ ch })));
             }
         }
         if (!blankMainWindow) {
