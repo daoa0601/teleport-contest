@@ -100,6 +100,18 @@ export function inspectRecording(session: Session): RecordingMetrics {
 
 export function inspectCandidate(spec: CandidateSpec, recorded: Session) {
     const metrics = inspectRecording(recorded);
+    // A chain must stay one game: a death before the last segment would let
+    // the next segment start a fresh game instead of restoring the save.
+    if (spec.segments !== undefined) {
+        if (recorded.segments.length !== spec.segments) {
+            throw new Error(`chain recorded ${recorded.segments.length}/${spec.segments} segments`);
+        }
+        recorded.segments.forEach((segment, index) => {
+            if (index === 0) return;
+            const opening = (segment.steps ?? []).slice(0, 4).map(step => step.screen).join('\n');
+            if (!/welcome back/.test(opening)) throw new Error(`chain segment ${index} did not restore the saved game`);
+        });
+    }
     if ((spec.kind === 'deep' || spec.kind === 'deepwide') && (spec.targetDepth === undefined
         || metrics.maxDepth < spec.targetDepth
         || metrics.maxExperienceLevel < 20)) {
