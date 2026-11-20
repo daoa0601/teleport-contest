@@ -10,7 +10,7 @@ import { NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_
 import { pline } from './pline.js';
 import { cmdq_pop } from './cmd.js';
 import { tty_getlin } from './query.js';
-import { compressStr, dmore, windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss, tty_destroy_nhwindow, textWindowRows } from './wintty.js';
+import { compressStr, dmore, mixedGlyphColumns, windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss, tty_destroy_nhwindow, textWindowRows } from './wintty.js';
 export const ATR_NONE = 0;
 export const ATR_INVERSE = 1;
 // C windows.c:decode_mixed(), for the literal portions of putmixed() lines.
@@ -196,7 +196,7 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     if (pagerStyle === 'menu') {
         return await showTextMenuOverlay(entries);
     }
-    const prose = entries.map(line => ({ ...line, text: compressStr(line.text, d.cols) }));
+    const prose = entries.map(line => ({ ...line, text: compressStr(mixedGlyphColumns(line.text), d.cols) }));
     const dataWidth = prose.reduce((widest, line) => Math.max(widest, line.text.length), 0);
     // putstr-built windows wrap prose but retain their original width
     // when deciding placement.

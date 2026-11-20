@@ -550,6 +550,33 @@ export function expandTabs(line: string): string {
 }
 
 
+// Part of C win/tty/wintty.c:tty_putstr() and process_text_window(): a
+// stored mixed top line keeps each glyph as one high-bit character while
+// putstr() compresses and measures the row (compress_str at :2263, maxcol
+// at :2458), and only the process_text_window() replay loses the glyph
+// cell: putchar()/g_putch() output never reaches the recorder's shadow
+// buffer (nomux_putch rejects control and high-bit bytes as signed chars,
+// and the g_putch mirror lands one column right under the description's
+// padding spaces). The display's setCell() drops the high-bit glyph the
+// same way, leaving the cleared blank while the glyph still consumes its
+// column.
+export function mixedGlyphColumns(text: string): string {
+    let out = '';
+    let dec = false;
+    for (const ch of text) {
+        if (ch === '\x0e') {
+            dec = true;
+            continue;
+        }
+        if (ch === '\x0f') {
+            dec = false;
+            continue;
+        }
+        out += dec ? String.fromCharCode(ch.charCodeAt(0) | 0x80) : ch;
+    }
+    return out;
+}
+
 // C wintty.c:process_text_window()
 // A window tty_putstr() filled and display_nhwindow() showed without
 // tty_end_menu() has no menu items, so wintty.c:1943-1946 renders it here
