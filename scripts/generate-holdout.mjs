@@ -62,8 +62,8 @@ function options(argv) {
         else if (flag === '--recipes')
             opts.recipes = selectRecipes(value);
         else if (flag === '--options') {
-            if (value !== 'fixed' && value !== 'public')
-                throw new Error('--options must be fixed or public');
+            if (value !== 'fixed' && value !== 'public' && value !== 'wide')
+                throw new Error('--options must be fixed, public or wide');
             opts.optionMix = value;
         }
         else
@@ -182,7 +182,7 @@ async function record(input, output, install) {
 async function main() {
     const opts = options(process.argv.slice(2));
     if (!opts) {
-        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide,deepwide] [--recipes NAME,...] [--options fixed|public] [--long] [--meta] [--chain] [--max-attempts N]');
+        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide,deepwide] [--recipes NAME,...] [--options fixed|public|wide] [--long] [--meta] [--chain] [--max-attempts N]');
         return;
     }
     const lock = await reserveOutput(opts);
