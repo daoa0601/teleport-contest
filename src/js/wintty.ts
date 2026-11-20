@@ -161,16 +161,14 @@ interface TtyMenuResult<T> {
 
 // C wintty.c:getret()
 // One more newline, then the prompt (cbreak is off before
-// init_nhwindows(), so it asks for "return"), then xwaitforspace().
-// The caller has already checked that a display exists.
+// init_nhwindows(), so it asks for "return"), then xwaitforspace() —
+// which accepts only return at startup, when cbreak is still off.
+// getret() writes its newline and prompt through xputs(), and the
+// capture shadow has no hook there (termcap.c xputs is untouched by the
+// recorder's patch): neither the newline nor the "Hit return" text ever
+// reaches the recorded screen, and the raw cursor stays where the last
+// raw_print() left it.
 export async function getret(): Promise<void> {
-    rawPrint('');
-    const display = game.nhDisplay;
-    if (!display) return;
-    const prompt = 'Hit return to continue: ';
-    display.putstr(0, display.cursorRow, prompt, NO_COLOR, 0);
-    display.setCursor(prompt.length, display.cursorRow);
-    display.flush();
     let key;
     do key = await nhgetch();
     while (key !== 10 && key !== 13);

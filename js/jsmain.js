@@ -170,7 +170,7 @@ class SegmentCapture {
         const display = this.engine.display;
         this.screens.push(serializeCapture(display));
         this.cursors.push(display
-            ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
+            ? [display.captureCursorCol ?? 0, display.captureCursorRow ?? 0, 1]
             : null);
         this.animationFramesByStep.push(this.pendingAnimationFrames);
         this.pendingAnimationFrames = [];
@@ -180,7 +180,7 @@ class SegmentCapture {
         this.pendingAnimationFrames.push({
             screen: serializeCapture(display),
             cursor: display
-                ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
+                ? [display.captureCursorCol ?? 0, display.captureCursorRow ?? 0, 1]
                 : null,
         });
         if (typeof requestAnimationFrame === 'function') {

@@ -144,8 +144,8 @@ export class GameDisplay {
     }
     setCursor(col: number, row: number) { return this.terminal.setCursor(col, row); }
     clearScreen() {
+        this.rawRowBytes = [];
         this.capturedMapCells.clear();
-        this.altFontCells.clear();
         this.repaintScreen();
     }
     // The browser rebuilds its grid on each flush; the tty recorder only
@@ -186,6 +186,7 @@ export class GameDisplay {
         this.setCursor(cursorCol, cursorRow);
     }
     clearRow(row: number) {
+        this.rawRowBytes = [];
         this.clearCapturedMapCells(0, row, this.cols);
         this.repaintRow(row);
     }
@@ -195,6 +196,7 @@ export class GameDisplay {
         this.terminal.clearRow(row);
     }
     scrollUp() {
+        this.rawRowBytes = [];
         this.terminal.scrollUp();
         this.mapFrameCells.clear();
         const movedCells = [...this.capturedMapCells];
@@ -236,6 +238,81 @@ export class GameDisplay {
     getCanvas() { return this.terminal.getCanvas?.(); }
     colorToCss(color: TerminalColor) { return this.terminal.colorToCss(color); }
     captureForShell() { return this.terminal.captureForShell(); }
+
+    // termcap.c:nomux_raw_putch()/nomux_raw_emit(): tty_raw_print() writes
+    // its bytes to the shadow buffer as unsigned characters — one byte per
+    // cell, dropping everything at or past column 80 and row 24 with no
+    // wrap and no scroll — while the cursor counters keep counting. The
+    // recorder decodes each captured row as UTF-8, so a multi-byte sequence
+    // written raw occupies one recorded cell and the rest of the row shifts
+    // left; an invalid or split sequence decodes as U+FFFD, exactly as the
+    // recorder's TextDecoder does. Keep the row's bytes and materialize the
+    // decoded cells as the row grows.
+    private rawRowBytes: number[] = [];
+    // termcap.c:nomux_enter_raw_mode()/nomux_get_cursor(): raw output runs
+    // on its own row/column counters from a cleared shadow buffer, and no
+    // code ever leaves raw mode — later tty painting continues through
+    // nomux_putch() while the capture keeps reporting the frozen raw
+    // counters.
+    private rawModeActive = false;
+    private rawCol = 0;
+    private rawRow = 0;
+
+    writeRawText(text: string): void {
+        if (!this.rawModeActive) {
+            this.rawModeActive = true;
+            this.rawCol = 0;
+            this.rawRow = 0;
+            this.clearScreen();
+        }
+        for (const character of text) {
+            if (character === '\r') {
+                this.rawRowBytes = [];
+                this.rawCol = 0;
+                continue;
+            }
+            if (character === '\n') {
+                this.rawRowBytes = [];
+                this.rawCol = 0;
+                this.rawRow++;
+                continue;
+            }
+            if (character === '\t') {
+                // nomux_raw_putch() rejects every character below 32 before
+                // its column counter moves: the shadow buffer never even
+                // sees tty_raw_print()'s tabs.
+                continue;
+            }
+            const code = character.codePointAt(0) ?? 0;
+            const bytes = code <= 0xFF ? [code]
+                : new TextEncoder().encode(character);
+            for (const byte of bytes) {
+                // The shadow writer drops bytes at or past the last column;
+                // its column counter still advances.
+                if (this.rawCol < this.cols) this.rawRowBytes.push(byte);
+                this.rawCol++;
+            }
+            this.materializeRawRow();
+        }
+        this.setCursor(this.rawCol, this.rawRow);
+        this.flush();
+    }
+
+    private materializeRawRow(): void {
+        if (this.rawRow < 0 || this.rawRow >= this.rows) return;
+        this.repaintRow(this.rawRow);
+        const decoded = new TextDecoder().decode(Uint8Array.from(this.rawRowBytes));
+        for (let column = 0; column < decoded.length && column < this.cols; column++)
+            this.setFrameCell(column, this.rawRow, decoded.charAt(column), NO_COLOR, 0);
+    }
+
+    // The cursor the recorder reports (nomux_get_cursor()).
+    get captureCursorCol(): number {
+        return this.rawModeActive ? this.rawCol : this.terminal.cursorCol;
+    }
+    get captureCursorRow(): number {
+        return this.rawModeActive ? this.rawRow : this.terminal.cursorRow;
+    }
 
     private clearCapturedMapCells(col: number, row: number, length: number): void {
         for (let c = Math.max(0, col); c < Math.min(this.cols, col + length); c++) {

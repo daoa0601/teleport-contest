@@ -256,6 +256,56 @@ export function mungSpaces(bytes) {
     }
     return new Uint8Array(out);
 }
+// Port only: C's byte-string model. The recorded harness wrote the rc file
+// (and every other text NetHack reads) as UTF-8, so a native buffer holds
+// one byte per non-ASCII character. Configuration values are therefore
+// kept as one JS character per byte (0x00-0xFF): every .length and limit
+// counts bytes exactly like the C code does. The helpers below convert at
+// the boundaries where the port's Unicode strings meet those buffers.
+// The UTF-8 bytes of a caller-supplied string, as one character per byte.
+export function utf8ByteString(text) {
+    return byteStringFromBytes(new TextEncoder().encode(text));
+}
+// C bytes (or code points at or below 0xFF) as one JS character each.
+export function byteStringFromBytes(bytes) {
+    let out = '';
+    for (const byte of bytes)
+        out += String.fromCharCode(byte);
+    return out;
+}
+// The C bytes a byte string holds. A character above 0xFF cannot come from
+// the parse boundary; it would reach a native buffer as its UTF-8 bytes,
+// which is what this returns for it.
+export function bytesFromByteString(text) {
+    const bytes = [];
+    for (let index = 0; index < text.length; index++) {
+        const code = text.codePointAt(index) ?? 0;
+        if (code <= 0xFF)
+            bytes.push(code);
+        else {
+            for (const byte of new TextEncoder().encode(String.fromCodePoint(code)))
+                bytes.push(byte);
+            if (code > 0xFFFF)
+                index++;
+        }
+    }
+    return new Uint8Array(bytes);
+}
+// The C byte length of a string, without building the byte sequence.
+export function cByteLength(text) {
+    let length = 0;
+    for (let index = 0; index < text.length; index++) {
+        const code = text.codePointAt(index) ?? 0;
+        if (code <= 0xFF)
+            length++;
+        else {
+            length += new TextEncoder().encode(String.fromCodePoint(code)).length;
+            if (code > 0xFFFF)
+                index++;
+        }
+    }
+    return length;
+}
 // C hacklib.c:str_start_is(): case-insensitive leading-substring test.
 // C hacklib.c str_start_is(name, value, TRUE): the value is a leading
 // substring of the name, case-insensitively; an empty value matches.

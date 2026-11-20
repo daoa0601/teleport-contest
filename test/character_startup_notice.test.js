@@ -30,7 +30,8 @@ for (const source of configurationSources) {
         try {
             const text = screenText(capturedScreen(engine));
             assert.match(text, /Unrecognized pet type 'lizard'/);
-            assert.match(text, /Hit return to continue/);
+            // getret()'s xputs() prompt never reaches the capture; the
+            // dismiss key in the next test proves the pause.
             assert.doesNotMatch(text, /NetHack, Copyright|See license for details/);
         }
         finally {

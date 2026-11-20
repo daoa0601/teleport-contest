@@ -2,6 +2,7 @@
 // Public and fresh sessions are recorded on macOS (.github/workflows/fresh-batches.yml).
 // The recorder never calls setlocale(), so classes and collation use the C locale.
 
+import { byteStringFromBytes, bytesFromByteString } from './hacklib.js';
 type Assertion = 'start' | 'end' | 'word-start' | 'word-end';
 type RegexNode =
     | { readonly kind: 'literal'; readonly value: number }
@@ -30,11 +31,12 @@ export class PosixRegex {
 }
 
 // Port only: encodes a JS string as C locale bytes for the ERE engine
-// (the libc regcomp that sys/share/posixregex.c delegates to).
+// (the libc regcomp that sys/share/posixregex.c delegates to). Byte
+// strings (configuration values) already hold one character per byte; a
+// character above 0xFF would reach the native buffer as its UTF-8 bytes.
 function cStringBytes(text: string): string {
     const nul = text.indexOf('\0');
-    const bytes = new TextEncoder().encode(nul < 0 ? text : text.slice(0, nul));
-    return Array.from(bytes, byte => String.fromCharCode(byte)).join('');
+    return byteStringFromBytes(bytesFromByteString(nul < 0 ? text : text.slice(0, nul)));
 }
 
 class EreParser {

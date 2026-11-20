@@ -55,7 +55,10 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, WARNCOUNT } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
-import { mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf, visibleCommandKey } from './hacklib.js';
+import {
+    byteStringFromBytes, bytesFromByteString, mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual,
+    ciPrefixOf, visibleCommandKey,
+} from './hacklib.js';
 
 import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
@@ -574,7 +577,7 @@ export function parseOptions(
             continue;
         }
         const trimmedBytes = trimConfigurationOption(optionBytes);
-        const trimmed = new TextDecoder().decode(trimmedBytes);
+        const trimmed = byteStringFromBytes(trimmedBytes);
         if (!trimmed) {
             addError('Empty statement');
             continue;
@@ -1482,11 +1485,11 @@ interface FruitNameSettings {
 // one-character-per-byte string: a typed getlin answer already is one, and
 // the config path converts its decoded value back to bytes below.
 function sanitizeFruitCopy(name: string, iflags?: Pick<InterfaceFlags, 'wc_eight_bit_input'>): string {
-    return [...name].slice(0, FRUIT_NAME_BYTES).map(character => {
-        const byte = character.charCodeAt(0);
+    const bytes = bytesFromByteString(name).subarray(0, FRUIT_NAME_BYTES);
+    return [...bytes].map(byte => {
         const low = byte & 127;
         if (low < 32 || low === 127) return '.';
-        return byte > 127 && !iflags?.wc_eight_bit_input ? '_' : character;
+        return byte > 127 && !iflags?.wc_eight_bit_input ? '_' : String.fromCharCode(byte);
     }).join('');
 }
 
@@ -2374,7 +2377,7 @@ async function editAutopickupExceptions(): Promise<void> {
         if (action === 'add') {
             const answer = await getLine('What new autopickup exception pattern?');
             if (answer === null) return;
-            const pattern = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer)));
+            const pattern = byteStringFromBytes(mungSpaces(bytesFromByteString(answer)));
             if (!pattern) continue;
             // The handler wraps the answer in quotes (apebuf's bounds cap the
             // whole mapping at 255 bytes) and reuses the config parser; its
@@ -2474,7 +2477,7 @@ function menuColoringRow(rule: MenuColoringRule): string {
     const suffix = `"=${color}${rule.attr !== 0 ? `&${attributeName(rule.attr)}` : ''}`;
     // C: ln = BUFSZ - strlen("\"\"=suffix") - 1, and strncat() counts bytes.
     const limit = 254 - suffix.length;
-    const shown = new TextEncoder().encode(rule.origstr).length > limit
+    const shown = rule.origstr.length > limit
         ? `${cutConfigBytes(rule.origstr, limit - 3)}...` : rule.origstr;
     return `"${shown}${suffix}`;
 }
@@ -2538,7 +2541,7 @@ function messageTypeRow(rule: MessageTypeRule): string {
     const prefix = `${choice[0].padEnd(5)} "`;
     // handler_msgtype() reserves the closing quote and NUL in its BUFSZ buffer.
     const limit = BUFSZ - prefix.length - 2;
-    const pattern = new TextEncoder().encode(rule.patternText).length > limit
+    const pattern = rule.patternText.length > limit
         ? `${cutConfigBytes(rule.patternText, limit - 3)}...` : rule.patternText;
     return `${prefix}${pattern}"`;
 }
@@ -2573,7 +2576,7 @@ function configuredPetName(value: Uint8Array, eightBitInput: boolean): string {
 // C options.c:escapes()
 // Byte-oriented control, numeric, and meta escapes.
 export function decodeOptionEscapes(value: string): string {
-    const bytes = String.fromCharCode(...new TextEncoder().encode(value));
+    const bytes = value;
     let decoded = '';
     let index = 0;
     while (index < bytes.length) {
@@ -2607,7 +2610,7 @@ export function decodeOptionEscapes(value: string): string {
 // txt2key() consumes bytes, not Unicode code points. Only the first decoded
 // escape is needed: Native returns the first byte of escapes()' output.
 export function bindingKeyCode(value: string): number {
-    let key = String.fromCharCode(...new TextEncoder().encode(value.trim()));
+    let key = value.trim();
     if (!key.length) return 0;
     if (key.length === 1) return key.charCodeAt(0);
     if (key === '<enter>') return 10;
@@ -3322,18 +3325,18 @@ export async function toggleBooleanOptionPrefix(prefix: string): Promise<boolean
 export function parseAutopickupException(
     value: string, addError: (message: string) => void,
 ): AutopickupExceptionRule | null {
-    const bytes = new TextEncoder().encode(value);
+    const bytes = bytesFromByteString(value);
     const scan = (prefix: string): { text: string; trailing: string | null } | null => {
         const start = 1 + prefix.length;
         if (!value.startsWith('"' + prefix)) return null;
         const close = bytes.indexOf(34, start);
         const end = Math.min(close < 0 ? bytes.length : close, start + 253);
         if (end === start) return null;
-        const text = new TextDecoder().decode(bytes.subarray(start, end));
+        const text = byteStringFromBytes(bytes.subarray(start, end));
         // Once the scanset captures text, sscanf() returns one conversion
         // even if the closing quote is missing or beyond the 253-byte limit.
         if (bytes[end] !== 34) return { text, trailing: null };
-        const rest = new TextDecoder().decode(bytes.subarray(end + 1)).replace(/^[ \t\n\r\f\v]+/, '');
+        const rest = byteStringFromBytes(bytes.subarray(end + 1)).replace(/^[ \t\n\r\f\v]+/, '');
         return { text, trailing: rest.charAt(0) || null };
     };
     const compile = (text: string, grab: boolean): AutopickupExceptionRule | null => {

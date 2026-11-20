@@ -28,7 +28,7 @@ import { newExperienceThreshold } from './exper.js';
 import { pline } from './pline.js';
 import { getLine, menuHeadingStyle, showMultiSelectWindow } from './windows.js';
 import { colorName, matchAttributeName, matchColorName, queryAttr, queryColorMenu } from './coloratt.js';
-import { fuzzyMatch, stripChars, sgn } from './hacklib.js';
+import { cByteLength, fuzzyMatch, stripChars, sgn } from './hacklib.js';
 import { NO_COLOR, ATR_BOLD, ATR_INVERSE, ATR_UNDERLINE } from './terminal.js';
 import { classifyStatusTerrain, heroGoldAmount, nearCapacity } from './hack.js';
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
@@ -1618,9 +1618,8 @@ async function statusHiliteMenuAdd(origfld) {
                         const answer = await getLine(query);
                         if (answer === null || answer === '')
                             continue chooseBehavior;
-                        // struct hilite_s.textmatch[MAXVALWIDTH]; each typed
-                        // byte is one character, so strlen() is the length.
-                        if (answer.length >= 80)
+                        // struct hilite_s.textmatch[MAXVALWIDTH]
+                        if (cByteLength(answer) >= 80)
                             return false;
                         rule.rel = TXT_VALUE;
                         rule.textmatch = answer;

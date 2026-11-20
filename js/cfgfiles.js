@@ -7,7 +7,7 @@
 // parseoptions(), parsebindings(), add_autopickup_exception()), keeping
 // C's cfgfiles.c → options.c call direction.
 import { bindingFields, bindingKeyCode, menuCommandKeyError, parseAutopickupException, parseOptions, MENU_KEY_OPTIONS, } from './message_types.js';
-import { mungSpaces, visibleCommandKey } from './hacklib.js';
+import { byteStringFromBytes, bytesFromByteString, mungSpaces, utf8ByteString, visibleCommandKey, } from './hacklib.js';
 import { parseMenuColoring } from './coloratt.js';
 import { parseAutocomplete, resetCommandAutocomplete } from './cmd.js';
 import { addMessageTypeRule } from './message_types.js';
@@ -60,12 +60,11 @@ export async function displayConfigurationErrors(reports) {
         await getret();
     }
 }
-// C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut, kept UTF-8
-// safe — vsnprintf's buf[BUFSZ-1] = '\0' and printf's %.Ns precision
-// count bytes; a UTF-8 sequence split by the cut survives as one
-// character.
+// C cfgfiles.c:vconfig_error_add(): the BUFSZ-1 byte cut. Configuration
+// values hold one character per C byte, so the cut is a plain slice that
+// can split a UTF-8 sequence exactly where C's vsnprintf would.
 export function cutConfigBytes(text, limit) {
-    return new TextDecoder().decode(new TextEncoder().encode(text).subarray(0, limit));
+    return text.slice(0, limit);
 }
 // C cfgfiles.c:get_uchars(). Zeros are stored unless the list is being
 // modified in place, but every parsed number still counts toward the
@@ -276,9 +275,9 @@ function handleConfigStatement(statement, valueBytes, valueText, result, addErro
             break;
         }
         case 'NAME':
-            // cnf_line_NAME() strncpy's PL_NSIZ-1 bytes; a UTF-8 name cut at
-            // that limit keeps its partial final sequence as one character.
-            result.name = new TextDecoder().decode(valueBytes.subarray(0, PL_NSIZ - 1));
+            // cnf_line_NAME() strncpy's PL_NSIZ-1 bytes, which can split a
+            // UTF-8 sequence; the port keeps C's bytes.
+            result.name = byteStringFromBytes(valueBytes.subarray(0, PL_NSIZ - 1));
             break;
         case 'ROLE':
         case 'CHARACTER':
@@ -363,7 +362,7 @@ function parseConfigLine(bytes, result, state, addError, addRawError) {
     if (mungedBytes[valueStart] === 32)
         valueStart++;
     const valueBytes = mungedBytes.subarray(valueStart);
-    const name = new TextDecoder().decode(mungedBytes.subarray(0, nameEnd)).toLowerCase();
+    const name = byteStringFromBytes(mungedBytes.subarray(0, nameEnd)).toLowerCase();
     let match = null;
     for (const [statement, minimum] of CONFIG_STATEMENTS) {
         if (name.length >= minimum && statement.toLowerCase().startsWith(name)) {
@@ -379,7 +378,7 @@ function parseConfigLine(bytes, result, state, addError, addRawError) {
         parseOptions(bytes.subarray(findOptparam(bytes) + 1), result, state, true, addError, addRawError);
         return;
     }
-    handleConfigStatement(match, valueBytes, new TextDecoder().decode(valueBytes), result, addError, addRawError);
+    handleConfigStatement(match, valueBytes, byteStringFromBytes(valueBytes), result, addError, addRawError);
 }
 // The recorder's HOME (docs/recording-environment.md): the harness wrote each
 // session's nethackrc to $HOME/.nethackrc before launching NetHack.
@@ -426,7 +425,7 @@ function* configurationLines(rc, report) {
     const sections = { chosen: null, current: null };
     const physicalLines = rc.split('\n');
     for (const [index, raw] of physicalLines.entries()) {
-        const length = new TextEncoder().encode(raw).length;
+        const length = raw.length;
         const hasNewline = index < physicalLines.length - 1;
         // split() leaves an empty element after the final newline. fgets()
         // never reads that element, so an unfinished continuation stays unused.
@@ -448,7 +447,7 @@ function* configurationLines(rc, report) {
         if (content && !content.startsWith('#')) {
             // Keep native bytes through option parsing: truncation can split
             // a UTF-8 character, and sanitize_name() must see the retained byte.
-            const bytes = new TextEncoder().encode(content);
+            const bytes = bytesFromByteString(content);
             const separator = pending.length ? 1 : 0;
             const joined = new Uint8Array(pending.length + separator + bytes.length);
             joined.set(pending);
@@ -464,7 +463,7 @@ function* configurationLines(rc, report) {
         let end = pending.length;
         while (end > 0 && (pending[end - 1] === 32 || pending[end - 1] === 9))
             end--;
-        const statement = new TextDecoder().decode(pending.subarray(0, end));
+        const statement = byteStringFromBytes(pending.subarray(0, end));
         if (handleConfigSection(statement, sections, report, sourceLine, lineNumber)) {
             pending = new Uint8Array(0);
             continue;
@@ -544,10 +543,15 @@ function parseConfiguration(rc, result, report, fromFile) {
         optionsSeen: new Map(),
         characterOptionsSeen: new Map(),
     };
-    if (!rc && fromFile)
+    // Both text sources are byte strings in C: the harness wrote the rc
+    // file as UTF-8, and the environment variable holds the same bytes.
+    // Encode once here, so every statement and value below carries one
+    // character per C byte and every length counts bytes.
+    const rcBytes = utf8ByteString(rc);
+    if (!rcBytes && fromFile)
         return result;
-    const lines = fromFile ? configurationLines(rc, report)
-        : [{ bytes: new TextEncoder().encode(rc.split('\0')[0] ?? ''), sourceLine: '', lineNumber: 0 }];
+    const lines = fromFile ? configurationLines(rcBytes, report)
+        : [{ bytes: bytesFromByteString(rcBytes.split('\0')[0] ?? ''), sourceLine: '', lineNumber: 0 }];
     for (const { bytes, sourceLine, lineNumber } of lines) {
         const addError = (message) => {
             report.errors.push({ sourceLine, lineNumber, message: message.slice(0, BUFSZ - 1) });
