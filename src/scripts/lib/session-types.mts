@@ -40,6 +40,9 @@ export interface PolicyConfig {
     /** The character plays in debug (wizard) mode; the driver must not
      *  fire debug-only commands beyond its setup keys. */
     debug?: boolean;
+    /** The wide policy also types meta (Alt) keys, which the tty reads as
+     *  one byte with the high bit set: M-d is #dip, M-h is unbound. */
+    meta?: boolean;
 }
 export type DriverConfig = SessionAction[] | PolicyConfig;
 export interface DriverSummary {
@@ -170,7 +173,8 @@ export function decodePolicyConfig(value: unknown): PolicyConfig {
     return { kind: driver.kind, seed: numberValue(driver.seed, 'driver seed'), maxSteps: numberValue(driver.maxSteps, 'driver maxSteps'),
         ...(driver.name === undefined ? {} : { name: stringValue(driver.name, 'driver name') }),
         ...(driver.setup === undefined ? {} : { setup: decodeActions(driver.setup) }),
-        ...(driver.debug === undefined ? {} : { debug: booleanValue(driver.debug, 'driver debug') }) };
+        ...(driver.debug === undefined ? {} : { debug: booleanValue(driver.debug, 'driver debug') }),
+        ...(driver.meta === undefined ? {} : { meta: booleanValue(driver.meta, 'driver meta') }) };
 }
 function decodeSummary(value: unknown): DriverSummary {
     const data = objectValue(value, 'driver summary');

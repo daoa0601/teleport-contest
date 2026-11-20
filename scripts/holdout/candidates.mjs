@@ -27,7 +27,43 @@ function characterAt(index) {
     }
     return itemAt(ordered, index % ordered.length);
 }
-export function makeCandidate(index, seeds, kinds, recipes) {
+function chance(percent) { return randomInt(100) < percent; }
+function publicOptions(debug) {
+    const options = [];
+    if (chance(14))
+        options.push('!legacy');
+    // The debug setup types #levelchange at once, so it must not meet the tutorial question.
+    if (debug || chance(27))
+        options.push('!tutorial');
+    if (chance(86))
+        options.push('symset:DECgraphics');
+    if (chance(80))
+        options.push(`suppress_alert:${chance(12) ? '3.3.1' : '3.4.3'}`);
+    const pickup = randomInt(100);
+    if (pickup < 61)
+        options.push('!autopickup');
+    else if (pickup < 66)
+        options.push('autopickup');
+    for (const [option, percent] of [['time', 18], ['color', 18], ['showexp', 18], ['lit_corridor', 14],
+        ['pushweapon', 14], ['msg_window:reversed', 9], ['pettype:none', 7], ['!splash_screen', 7],
+        ['!verbose', 5], ['runmode:walk', 5], ['mention_walls', 3]]) {
+        if (chance(percent))
+            options.push(option);
+    }
+    if (!debug && chance(25))
+        options.push('disclose:yi ya yv yg yc yo');
+    return options.join(',');
+}
+function publicDisplayOptions() {
+    const options = [];
+    for (const [option, percent] of [['color', 18], ['lit_corridor', 14], ['msg_window:reversed', 9],
+        ['showexp', 18], ['pushweapon', 14], ['suppress_alert:3.4.3', 68]]) {
+        if (chance(percent))
+            options.push(option);
+    }
+    return options.join(',');
+}
+export function makeCandidate(index, seeds, kinds, recipes, optionMix = 'fixed', long = false, meta = false) {
     const rotation = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', ...(kinds.includes('deep') ? ['deep'] : [])];
@@ -61,27 +97,37 @@ export function makeCandidate(index, seeds, kinds, recipes) {
             spec.character = character;
         }
         session = makeRecipe(recipe, { seed, datetime: date.datetime, character, name: 'Holdout' });
+        if (optionMix === 'public') {
+            // Recipes script their own keys and check their own messages, so
+            // only display options join them: no intro, prompt or message changes.
+            const display = publicDisplayOptions();
+            spec.options = display;
+            if (display)
+                for (const segment of session.segments)
+                    segment.nethackrc += `OPTIONS=${display}\n`;
+        }
         spec.debug = session.segments.some(segment => /playmode:debug/.test(segment.nethackrc));
     }
     else {
         const lengthSlot = Math.floor(index / schedule.length) % 20;
-        const ranges = lengthSlot < 7 ? [35, 59] : lengthSlot < 12 ? [60, 149]
+        const ranges = long ? [600, 2000] : lengthSlot < 7 ? [35, 59] : lengthSlot < 12 ? [60, 149]
             : lengthSlot < 17 ? [150, 399] : [400, 1800];
         spec.targetKeys = randomInt(ranges[0], ranges[1] + 1);
         const variants = ['!autopickup,runmode:teleport', 'autopickup,runmode:walk',
             '!autopickup,runmode:run', 'autopickup,showexp', '!autopickup,showexp'];
-        spec.options = itemAt(variants, Math.floor(index / 10) % variants.length);
-        const rc = `OPTIONS=name:Holdout,role:${character.role},race:${character.race},gender:${character.gender},align:${character.align},!legacy,!tutorial,!news,symset:DECgraphics,time,${spec.options}\n`;
+        spec.options = optionMix === 'public' ? publicOptions(kind === 'deep' || kind === 'deepwide')
+            : `!legacy,!tutorial,!news,symset:DECgraphics,time,${itemAt(variants, Math.floor(index / 10) % variants.length)}`;
+        const rc = `OPTIONS=name:Holdout,role:${character.role},race:${character.race},gender:${character.gender},align:${character.align}${spec.options ? `,${spec.options}` : ''}\n`;
         // 'deep' plays the narrow explore policy at a debug-mode depth;
         // 'deepwide' plays the wide policy over the same setup.
         const driver = { kind: kind === 'deep' ? 'explore' : kind === 'deepwide' ? 'wide' : kind,
             seed: randomInt(1, 0x7fffffff), maxSteps: spec.targetKeys,
-            ...(kind === 'deepwide' ? { debug: true } : {}) };
+            ...(kind === 'deepwide' ? { debug: true } : {}), ...(meta ? { meta: true } : {}) };
         let nethackrc = rc;
         if (kind === 'deep' || kind === 'deepwide') {
             spec.debug = true;
             spec.targetDepth = itemAt([3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45], index % 13);
-            spec.targetKeys = itemAt([80, 120, 240, 400], Math.floor(index / 13) % 4);
+            spec.targetKeys = itemAt(long ? [800, 1200, 1600, 2000] : [80, 120, 240, 400], Math.floor(index / 13) % 4);
             nethackrc += 'OPTIONS=playmode:debug,disclose:-i -a -v -g -c -o\n';
             driver.maxSteps = spec.targetKeys;
             // teleport.c sends the first cross-dungeon numeric teleport to
