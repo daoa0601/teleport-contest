@@ -65,12 +65,20 @@ const WIDE_OPTIONS: readonly (readonly [string | readonly string[], number])[] =
     [['msg_window:single', 'msg_window:combination', 'msg_window:full'], 12], [['runmode:crawl', 'runmode:teleport', 'runmode:run'], 12],
     [['sortloot:full', 'sortloot:loot', 'sortloot:none'], 15], ['hilite_pet', 15], ['hilite_pile', 12], ['showscore', 12],
     ['!autoquiver', 8], ['autoquiver', 8], ['rest_on_space', 8], ['!sparkle', 10], ['standout', 8], ['!safe_pet', 6], ['!confirm', 6],
-    ['autodig', 8], ['!autoopen', 8], [['fruit:kumquat', 'fruit:slime mold', 'fruit:lembas'], 10], ['packorder:")[%?+!=/(*`0_', 6],
+    ['autodig', 8], ['!autoopen', 8], [['fruit:kumquat', 'fruit:slime mold', 'fruit:lembas', 'fruit:crème brûlée', 'fruit:piña', 'fruit:jalapeño'], 10], ['packorder:")[%?+!=/(*`0_', 6],
     [['pickup_types:$?!/="+', 'pickup_types:$', 'pickup_types:all'], 12], [['pickup_burden:unencumbered', 'pickup_burden:overloaded'], 8],
     [['paranoid_confirmation:pray', 'paranoid_confirmation:attack quit', 'paranoid_confirmation:wand-break eat'], 10],
     [['sortpack', '!sortpack'], 8], ['!implicit_uncursed', 8], [['menu_headings:bold', 'menu_headings:underline'], 8],
     ['showrace', 8], ['force_invmenu', 6], ['goldX', 6], ['lootabc', 8], ['hitpointbar', 10], ['!travel', 6], ['!mention_walls', 4],
 ];
+
+// The recorder writes the nethackrc as UTF-8, so a non-ASCII name reaches
+// NetHack as multi-byte text; the wide mix sometimes plays one.
+const WIDE_NAMES = ['Zoë', 'Ångström', 'Renée', 'Søren', 'José'];
+
+function characterName(optionMix: OptionMix): string {
+    return optionMix === 'wide' && chance(15) ? itemAt(WIDE_NAMES, randomInt(WIDE_NAMES.length)) : 'Holdout';
+}
 
 // One setting per option family: a repeated option is a configuration
 // error, so a wide draw replaces the public setting of the same option.
@@ -145,7 +153,7 @@ export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly
         spec.options = optionMix === 'wide' ? wideOptions(kind === 'deep' || kind === 'deepwide')
             : optionMix === 'public' ? publicOptions(kind === 'deep' || kind === 'deepwide')
             : `!legacy,!tutorial,!news,symset:DECgraphics,time,${itemAt(variants, Math.floor(index / 10) % variants.length)}`;
-        const rc = `OPTIONS=name:Holdout,role:${character.role},race:${character.race},gender:${character.gender},align:${character.align}${spec.options ? `,${spec.options}` : ''}\n`;
+        const rc = `OPTIONS=name:${characterName(optionMix)},role:${character.role},race:${character.race},gender:${character.gender},align:${character.align}${spec.options ? `,${spec.options}` : ''}\n`;
         // 'deep' plays the narrow explore policy at a debug-mode depth;
         // 'deepwide' plays the wide policy over the same setup.
         const driver: PolicyConfig = { kind: kind === 'deep' ? 'explore' : kind === 'deepwide' ? 'wide' : kind,
