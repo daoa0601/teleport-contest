@@ -14,7 +14,7 @@ import { pline } from './pline.js';
 import { cmdq_pop } from './cmd.js';
 import { tty_getlin, type LineInputOptions } from './query.js';
 import type { GameDisplay } from './game_display.js';
-import { compressStr, dmore, windowOrigin, tty_create_nhwindow, tty_start_menu,
+import { compressStr, dmore, mixedGlyphColumns, windowOrigin, tty_create_nhwindow, tty_start_menu,
     tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss,
     tty_destroy_nhwindow, textWindowRows } from './wintty.js';
 import type { MenuGlyph, TextMenuLine, TtyMenuWindow } from './wintty.js';
@@ -311,7 +311,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     if (pagerStyle === 'menu') {
         return await showTextMenuOverlay(entries);
     }
-    const prose = entries.map(line => ({ ...line, text: compressStr(line.text, d.cols) }));
+    const prose = entries.map(line => ({ ...line, text: compressStr(mixedGlyphColumns(line.text), d.cols) }));
     const dataWidth = prose.reduce((widest, line) => Math.max(widest, line.text.length), 0);
     // putstr-built windows wrap prose but retain their original width
     // when deciding placement.

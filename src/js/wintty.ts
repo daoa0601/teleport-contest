@@ -550,6 +550,29 @@ export function expandTabs(line: string): string {
 }
 
 
+// Part of C wintty.c:process_text_window(): a recalled mixed top line
+// replays its glyph through g_putch()/putchar(), which the recorder's
+// shadow buffer never receives (nomux_putch rejects control and high-bit
+// bytes, and the g_putch mirror lands one column right where the
+// description's padding spaces overwrite it), so in a text window each
+// recorded glyph byte costs one blank column and the shift markers none.
+export function mixedGlyphColumns(text: string): string {
+    let out = '';
+    let dec = false;
+    for (const ch of text) {
+        if (ch === '\x0e') {
+            dec = true;
+            continue;
+        }
+        if (ch === '\x0f') {
+            dec = false;
+            continue;
+        }
+        out += dec ? ' ' : ch;
+    }
+    return out;
+}
+
 // C wintty.c:process_text_window()
 // A window tty_putstr() filled and display_nhwindow() showed without
 // tty_end_menu() has no menu items, so wintty.c:1943-1946 renders it here

@@ -773,6 +773,16 @@ export function repairBonesConnections(level: GameMap, location: DungeonLocation
  */
 // C restore.c:restore_msghistory().
 export function restoreMessageHistory(saved: readonly string[]): void {
+    // C topl.c:tty_putmsghistory(): a pending --More-- topline is marked
+    // seen before the saved messages take over the ring, so the restored
+    // session's next pline repaints the row instead of paging it. Every
+    // native save carries at least the welcome line, so restore_msghistory()
+    // always reaches the clearing putmsghistory(); the port clears for an
+    // empty saved ring too rather than paging the restoring banner.
+    if (game._pending_message) {
+        game._retained_message = game._pending_message;
+        game._pending_message = '';
+    }
     if (!saved.length) return;
     rememberToplines();
     const session = game._messageHistory.splice(0);
@@ -870,6 +880,18 @@ export async function restoreGame(
     try {
         const encoded = storage.getItem(key);
         if (!encoded) return false;
+        // C sys/unix/unixmain.c:261 plines the restoring banner once the
+        // save file is open, before dorecover(); restore_msghistory()
+        // then files this session line back on top of the messages read
+        // from the save file (topl.c:tty_putmsghistory()). A topline the
+        // caller left unacknowledged is marked seen first: native startup
+        // always reaches this boundary with an empty pager, and the
+        // banner repaints the row rather than waiting on the old page.
+        if (game._pending_message) {
+            game._retained_message = game._pending_message;
+            game._pending_message = '';
+        }
+        await pline('Restoring save file...');
         const snapshot = decodeSavedGame(encoded);
         if (!snapshot.state.level || !snapshot.state.urole || !snapshot.state.urace)
             return false;
