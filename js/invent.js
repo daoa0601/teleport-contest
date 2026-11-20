@@ -19,7 +19,7 @@ import { rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, 
 import { ATTRIBUTE_DISPLAY_ORDER, exerciseAttribute, setMoreLuck } from './attrib.js';
 import { menuObjectGlyph, transientMonsterGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { formatStrength } from './botl.js';
-import { clearMessageWindow, displayMessageWindow, flushPendingTopline, renderKeyPrompt } from './topl.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, renderKeyPrompt, putMessageHistory } from './topl.js';
 import { showMessageMenu, snapshotMenuUnderlay, restoreMenuUnderlay, windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow, } from './wintty.js';
 import { pline, plineWithContinuation, impossible } from './pline.js';
 import { getLine, addMenuHeading, menuHeadingStyle, showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
@@ -950,7 +950,8 @@ export async function getobj(word, classify, { forcePrompt = false, allowCount =
     }
     const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
     const buf = handsSuggested ? letters ? `- ${letters}` : '-' : letters;
-    const prompt = `What do you want to ${word}? [${buf ? `${buf} or ?*` : '*'}]`;
+    const question = `What do you want to ${word}?`;
+    const prompt = `${question} [${buf ? `${buf} or ?*` : '*'}]`;
     const forcedMenu = !!game.flags.force_invmenu;
     let oneloop = false;
     let key = 0;
@@ -970,8 +971,12 @@ export async function getobj(word, classify, { forcePrompt = false, allowCount =
         else if (forcedMenu) {
             // The first forced menu lists likely candidates; a rejected
             // count retries the letter already chosen from it.
-            if (!oneloop)
+            if (!oneloop) {
                 key = suggested.length || downplayed.length || handsDownplayed ? QUESTION : ASTERISK;
+                // C invent.c:getobj(): "if (!msggiven) putmsghistory(qbuf, FALSE);"
+                // Remember the menu question without displaying a message.
+                putMessageHistory(question);
+            }
             oneloop = true;
         }
         else
@@ -1012,8 +1017,6 @@ export async function getobj(word, classify, { forcePrompt = false, allowCount =
                 : undefined;
             const extraChoice = allowNone && (key === ASTERISK
                 || useAlternates && handsDownplayed || handsSuggested) ? handsText : null;
-            const letterCount = letters?.length ?? 0;
-            const listed = letterCount > 0;
             // The query has been read before the menu opens. Its dismissal
             // can redraw vision and print a fresh monster notice, which
             // belongs to the following action rather than the old query.
@@ -1023,12 +1026,8 @@ export async function getobj(word, classify, { forcePrompt = false, allowCount =
             const selection = await selectInventoryObject({
                 ...(letters === undefined ? {} : { letters }),
                 ...(extraChoice ? { extraChoice } : {}),
-                ...(forcedMenu ? {
-                    title: `What do you want to ${word}?`,
-                    menuOptions: allowNone && !extraChoice || listed && letterCount < game.inventory.length
-                        ? [{ key: '*', text: '(list everything)' }]
-                        : !listed ? [{ key: '?', text: '(list likely candidates)' }] : [],
-                } : {}),
+                allowExtra: allowNone,
+                ...(forcedMenu ? { title: question } : {}),
             });
             key = selection.key;
             if (key === 0)
@@ -1487,7 +1486,20 @@ async function reportSubset(items, inuse = true, accessoryLabel = 'Accessories')
 // C invent.c:ddoinv().
 export async function ddoinv() {
     const inventory = game.inventory || [];
-    const { key } = await selectInventoryObject();
+    // C dispinv_with_action(): "iflags.force_invmenu = FALSE;"
+    // Context-sensitive inventory actions do not offer getobj's selectors.
+    const forceMenu = game.flags.force_invmenu;
+    let key;
+    game.flags.force_invmenu = false;
+    try {
+        key = (await selectInventoryObject()).key;
+    }
+    finally {
+        if (forceMenu === undefined)
+            delete game.flags.force_invmenu;
+        else
+            game.flags.force_invmenu = forceMenu;
+    }
     const selected = inventory.find(item => item.invlet === String.fromCharCode(key));
     let action = null;
     if (selected) {
@@ -1522,14 +1534,15 @@ export function oOn(oId, list) {
     }
     return null;
 }
-// C invent.c:display_pickinv(): the getobj inventory menu, including the
+// C invent.c:display_pickinv(): the shared inventory menu, including the
 // "Not carrying anything" shortcut and the hands entry when allowed.
-export async function selectInventoryObject({ letters, includeGold = true, title = null, extraChoice = null, pickMode = PICK_ONE, headingAttr, menuOptions = [], } = {}) {
+export async function selectInventoryObject({ letters, includeGold = true, title = null, extraChoice = null, allowExtra = extraChoice !== null, pickMode = PICK_ONE, headingAttr, } = {}) {
     const filtered = !!letters;
+    const useExtra = allowExtra && extraChoice !== null;
     const candidates = letters ? game.inventory.filter(item => item.invlet && letters.includes(item.invlet))
         : game.inventory;
     const visible = includeGold ? candidates : candidates.filter(item => item.oclass !== COIN_CLASS);
-    if (!visible.length && !extraChoice) {
+    if (!visible.length && !useExtra) {
         await pline('Not carrying anything.');
         return { key: 0, count: null };
     }
@@ -1540,10 +1553,10 @@ export async function selectInventoryObject({ letters, includeGold = true, title
     const wizardIdentification = game.flags.debug && game.iflags.override_ID;
     // Native counts '-' as a filter letter as well as an extra hands entry,
     // so a hands-only filter stays in a menu window.
-    const singleton = !menuOptions.length && !game.flags.force_invmenu
+    const singleton = !game.flags.force_invmenu
         && !game.iflags.menu_requested && !wizardIdentification
-        && (letters?.length === 1 && !extraChoice
-            || !filtered && visible.length === 0 && !!extraChoice);
+        && (letters?.length === 1 && !useExtra
+            || !filtered && visible.length === 0 && useExtra);
     if (singleton) {
         const item = visible[0];
         if (item)
@@ -1565,17 +1578,21 @@ export async function selectInventoryObject({ letters, includeGold = true, title
     // headings show their symbol only when a reply is wanted and
     // menu_head_objsym is set (invent.c:3293).
     const sections = await inventorySections(game.inventory, includeGold, letters || null, pickMode === PICK_ONE && menuHeadObjsym());
-    if (extraChoice && !wizardIdentification)
+    if (useExtra && !wizardIdentification)
         sections.unshift({
             heading: game.flags.sortpack === false ? null : 'Miscellaneous',
             items: [{ text: extraChoice, key: '-' }],
         });
-    if (menuOptions.length)
-        sections.push({
-            heading: 'Special', items: menuOptions.map(option => ({
-                text: option.text, key: option.key,
-            })),
-        });
+    if (game.flags.force_invmenu && pickMode === PICK_ONE) {
+        const listEverything = allowExtra && !useExtra
+            || filtered && (letters?.length ?? 0) < game.inventory.length;
+        if (listEverything || !filtered)
+            sections.push({
+                heading: 'Special', items: [listEverything
+                        ? { key: '*', text: '(list everything)' }
+                        : { key: '?', text: '(list likely candidates)' }],
+            });
+    }
     return showInventoryWindow(sections, {
         pickMode, title, ...(headingAttr === undefined ? {} : { headingAttr }),
     });
