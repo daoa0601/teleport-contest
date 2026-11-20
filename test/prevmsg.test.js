@@ -3,8 +3,10 @@
 // tty_doprev_message()/remember_topl()/update_topl(), win/tty/getline.c.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rhack } from '../js/cmd.js';
+import { rhack, cmdq_add_ec } from '../js/cmd.js';
+import { moveloop_core } from '../js/allmain.js';
 import { flush_screen } from '../js/display.js';
+import { CQ_CANNED } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
@@ -165,31 +167,47 @@ async function fileFullRecallRing(input) {
         await markSeen(input);
     }
 }
-void test('the wrecked status lines repaint at the first update after the getlin ends', async () => {
+void test('the moveloop repaints the wrecked status before a queued annotate', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 'f';
     const input = resetInputState();
+    // Warm-up: one no-op iteration (Escape) runs the game-start preamble,
+    // whose finishMoveloopPreamble() sets botl itself; the measured
+    // iteration below must reflect only docorner()'s pending repaint.
+    input.feed('\x1b');
+    await moveloop_core();
     await fileFullRecallRing(input);
     const editor = getLine('What do you want to call this thing?', () => true);
+    await input.waitUntilBlocked();
+    const statusLine1 = rowText(22);
+    input.feed(16);
+    await input.waitUntilBlocked();
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    input.feed('\x1b');
+    await editor;
+    // C allmain.c:473-475 runs the botlx repaint before every rhack(0):
+    //
+    //     if (disp.botl || disp.botlx) {
+    //         bot();
+    //         curs_on_u();
+    //     }
+    //
+    // The queued #annotate bypasses parse(), whose pre-key flush would
+    // otherwise rebuild the status rows from the windowport cache, so its
+    // getlin opens over whole status lines only through docorner()'s
+    // pending disp.botlx.
+    cmdq_add_ec(CQ_CANNED, 'donamelevel');
+    const loop = moveloop_core();
     try {
         await input.waitUntilBlocked();
-        const statusLine1 = rowText(22);
-        input.feed(16);
-        await input.waitUntilBlocked();
-        input.feed(' ');
-        await input.waitUntilBlocked();
-        assert.equal(rowText(22), statusLine1.slice(0, 33).trimEnd(), 'bot() stays disabled for the rest of the prompt');
-        input.feed('\x1b');
-        await editor;
-        // docorner() left disp.botlx set (wintty.c:3775); the first
-        // flush after the prompt runs bot() and repaints both rows.
-        await flush_screen(1);
-        assert.equal(rowText(22), statusLine1, 'the queued botlx repaint restores the covered columns');
+        assert.match(rowText(0), /What do you want to call/, 'the queued annotate opens its line prompt');
+        assert.equal(rowText(22), statusLine1, 'the moveloop botlx repaint precedes the queued command');
     }
     finally {
-        input.feed('\x1b');
-        await editor;
+        input.feed('\x1b\x1b');
+        await loop;
     }
 });
 void test('a taller terminal anchors the wrecked status window at row 22', async () => {
