@@ -3,7 +3,7 @@ import test from 'node:test';
 import { parseNethackrc } from '../js/cfgfiles.js';
 import { addMessageTypeRule } from '../js/message_types.js';
 import { luaPline } from '../js/lua/messages.js';
-import { rawPrint } from '../js/input.js';
+import { pushKey, rawPrint } from '../js/input.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -68,20 +68,27 @@ void test('engine screens stay comparable for an ASCII rc', async () => {
 });
 void test('a Lua pline message carries the source UTF-8 bytes', async () => {
     freshPlayableRoom();
+    const display = requireGameDisplay();
+    const topline = () => display.grid[0]?.map(cell => cell.ch).join('').trimEnd() ?? '';
+    const before = topline();
     // nhlua.c nhl_pline() hands luaL_checkstring's bytes to pline("%s"):
-    // Lua source is UTF-8, so the message holds one character per byte.
-    const rules = [];
-    assert.equal(addMessageTypeRule('hide "^\xC3\xA9$"', rules), null);
-    game.iflags.messageTypes = rules;
-    game._lastPlineMessage = 'sentinel';
-    await luaPline('é');
-    // The two bytes match the whole-line pattern, so the message is hidden
-    // and the previous line stays the last one shown.
-    assert.equal(game._lastPlineMessage, 'sentinel');
-    delete game.iflags.messageTypes;
-    await luaPline('é');
-    assert.equal(game._lastPlineMessage, '\xC3\xA9');
-    assert.equal(game._pending_message, '\xC3\xA9');
+    // Lua source is UTF-8, so the message "abé" holds five bytes. Only a
+    // two-byte pattern reaches the é, and the match decides visibility.
+    const twoBytes = [];
+    assert.equal(addMessageTypeRule('hide "^ab..$"', twoBytes), null);
+    game.iflags.messageTypes = twoBytes;
+    await luaPline('abé');
+    assert.equal(topline(), before);
+    const oneByte = [];
+    assert.equal(addMessageTypeRule('hide "^ab.$"', oneByte), null);
+    game.iflags.messageTypes = oneByte;
+    const shown = luaPline('abé', true);
+    pushKey(10);
+    await shown;
+    // Not matched, so the line shows and pages: 'ab' paints, both of é's
+    // bytes skip their topline cells (two blanks survive), and the é
+    // glyph itself never appears.
+    assert.equal(topline(), 'ab  --More--');
 });
 void test('raw output resumes over painted cells without clearing the row', () => {
     freshPlayableRoom();
@@ -90,10 +97,18 @@ void test('raw output resumes over painted cells without clearing the row', () =
     assert.equal(display.cursorRow, 1);
     // Painting continues through nomux_putch() while raw mode is active.
     display.putstr(0, display.cursorRow, 'existing tail');
+    // A one-byte raw write replaces the first byte cell; the painted tail
+    // keeps its byte cells and decodes back verbatim.
     rawPrint('X');
-    // nomux_raw_putch() overwrites only the cells its bytes reach: the
-    // first byte replaces 'e' and the rest of the painted row survives.
-    const row = display.grid[1]?.map(cell => cell.ch).join('') ?? '';
-    assert.equal(row.trimEnd(), 'Xxisting tail');
+    const resumed = display.grid[1]?.map(cell => cell.ch).join('') ?? '';
+    assert.equal(resumed.trimEnd(), 'Xxisting tail');
+    // "é" is two bytes to the shadow: they consume the first two byte
+    // cells, and the row decode yields one character followed by the
+    // tail from the third byte cell on.
+    display.putstr(0, display.cursorRow, 'existing tail');
+    display.setCursor(0, display.cursorRow);
+    rawPrint('\xC3\xA9');
+    const merged = display.grid[2]?.map(cell => cell.ch).join('') ?? '';
+    assert.equal(merged.trimEnd(), 'éisting tail');
 });
 //# sourceMappingURL=rc_bytes.test.js.map

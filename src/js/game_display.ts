@@ -10,6 +10,7 @@
 //   // display.setCell, display.readKey etc. all delegate to terminal
 
 import { Terminal, CLR_GRAY, NO_COLOR, ATR_INVERSE } from './terminal.js';
+import { bytesFromByteString } from './hacklib.js';
 import type { StatusLine2Fields } from './botl.js';
 import { StatusHighlights } from './botl.js';
 import type { TerminalCell } from './terminal.js';
@@ -145,6 +146,7 @@ export class GameDisplay {
     setCursor(col: number, row: number) { return this.terminal.setCursor(col, row); }
     clearScreen() {
         this.rawRowBytes = [];
+        this.rawRowTail = null;
         this.capturedMapCells.clear();
         this.repaintScreen();
     }
@@ -187,6 +189,7 @@ export class GameDisplay {
     }
     clearRow(row: number) {
         this.rawRowBytes = [];
+        this.rawRowTail = null;
         this.clearCapturedMapCells(0, row, this.cols);
         this.repaintRow(row);
     }
@@ -197,6 +200,7 @@ export class GameDisplay {
     }
     scrollUp() {
         this.rawRowBytes = [];
+        this.rawRowTail = null;
         this.terminal.scrollUp();
         this.mapFrameCells.clear();
         const movedCells = [...this.capturedMapCells];
@@ -243,12 +247,21 @@ export class GameDisplay {
     // its bytes to the shadow buffer as unsigned characters — one byte per
     // cell, dropping everything at or past column 80 and row 24 with no
     // wrap and no scroll — while the cursor counters keep counting. The
-    // recorder decodes each captured row as UTF-8, so a multi-byte sequence
-    // written raw occupies one recorded cell and the rest of the row shifts
-    // left; an invalid or split sequence decodes as U+FFFD, exactly as the
-    // recorder's TextDecoder does. Keep the row's bytes and materialize the
-    // decoded cells as the row grows.
+    // recorder decodes each captured row as UTF-8, so a multi-byte
+    // sequence written raw occupies one recorded cell and everything
+    // after it shifts left; an invalid or split sequence decodes as
+    // U+FFFD, exactly as the recorder's TextDecoder does.
+    //
+    // The shadow row is a byte array, so the raw prefix and whatever the
+    // earlier painting left from the first raw column on are decoded
+    // together: rawRowBytes holds the raw-written prefix, rawRowTail the
+    // row's cell bytes snapped before that prefix began (painting over an
+    // already raw-written row is not something the game does, and the
+    // snap would go stale there). Materializing rewrites the row from
+    // that one byte layout, so a sequence that consumes two byte cells
+    // shortens the decoded row the way the capture does.
     private rawRowBytes: number[] = [];
+    private rawRowTail: number[] | null = null;
     // termcap.c:nomux_enter_raw_mode()/nomux_get_cursor(): raw output runs
     // on its own row/column counters from a cleared shadow buffer, and no
     // code ever leaves raw mode — later tty painting continues through
@@ -268,6 +281,7 @@ export class GameDisplay {
         for (const character of text) {
             if (character === '\n') {
                 this.rawRowBytes = [];
+                this.rawRowTail = null;
                 this.rawCol = 0;
                 this.rawRow++;
                 continue;
@@ -280,6 +294,7 @@ export class GameDisplay {
                 // after one continue at the current column.
                 continue;
             }
+            if (this.rawRowTail === null) this.snapRawRowTail();
             const bytes = code <= 0xFF ? [code]
                 : new TextEncoder().encode(character);
             for (const byte of bytes) {
@@ -294,13 +309,25 @@ export class GameDisplay {
         this.flush();
     }
 
+    // The row's cell bytes at the moment raw output reaches it — the tail
+    // the raw prefix will be decoded with.
+    private snapRawRowTail(): void {
+        const cells = this.terminal.grid[this.rawRow];
+        this.rawRowTail = cells
+            ? [...bytesFromByteString(cells.map(cell => cell.ch).join(''))]
+            : [];
+    }
+
     private materializeRawRow(): void {
         if (this.rawRow < 0 || this.rawRow >= this.rows) return;
-        // nomux_raw_putch() overwrites only the cells its bytes reach;
-        // the rest of the row keeps whatever earlier painting left there,
-        // so no blanket clear. Appending bytes can only extend (or keep)
-        // the decoded length, never shrink it.
-        const decoded = new TextDecoder().decode(Uint8Array.from(this.rawRowBytes));
+        const tail = this.rawRowTail ?? [];
+        const layout = [...this.rawRowBytes, ...tail.slice(this.rawRowBytes.length)];
+        // nomux_capture_screen() trims trailing blank bytes before the
+        // recorder decodes the row.
+        let end = layout.length;
+        while (end > 0 && layout[end - 1] === 32) end--;
+        const decoded = new TextDecoder().decode(Uint8Array.from(layout.slice(0, end)));
+        this.repaintRow(this.rawRow);
         for (let column = 0; column < decoded.length && column < this.cols; column++)
             this.setFrameCell(column, this.rawRow, decoded.charAt(column), NO_COLOR, 0);
     }
