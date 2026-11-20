@@ -147,7 +147,7 @@ export class GameDisplay {
     setCursor(col: number, row: number) { return this.terminal.setCursor(col, row); }
     clearScreen() {
         this.rawRowBytes = [];
-        this.rawRowTail = null;
+        this.rawRowTailOffset = 0;
         this.capturedMapCells.clear();
         this.repaintScreen();
     }
@@ -190,7 +190,7 @@ export class GameDisplay {
     }
     clearRow(row: number) {
         this.rawRowBytes = [];
-        this.rawRowTail = null;
+        this.rawRowTailOffset = 0;
         this.clearCapturedMapCells(0, row, this.cols);
         this.repaintRow(row);
     }
@@ -201,7 +201,7 @@ export class GameDisplay {
     }
     scrollUp() {
         this.rawRowBytes = [];
-        this.rawRowTail = null;
+        this.rawRowTailOffset = 0;
         this.terminal.scrollUp();
         this.mapFrameCells.clear();
         const movedCells = [...this.capturedMapCells];
@@ -260,7 +260,11 @@ export class GameDisplay {
     // have already been rendered. A multi-byte prefix consumes its byte
     // count from the tail before the decoded cells are joined to it.
     private rawRowBytes: number[] = [];
-    private rawRowTail: RawRowCell[] | null = null;
+    // Where the tail begins in the grid relative to the raw byte count:
+    // decoded length minus byte length of the last materialization (0
+    // until one runs), so a multi-byte merge shifts the tail left and a
+    // later write consumes from the right place.
+    private rawRowTailOffset = 0;
     // termcap.c:nomux_enter_raw_mode()/nomux_get_cursor(): raw output runs
     // on its own row/column counters from a cleared shadow buffer, and no
     // code ever leaves raw mode — later tty painting continues through
@@ -280,7 +284,7 @@ export class GameDisplay {
         for (const character of text) {
             if (character === '\n') {
                 this.rawRowBytes = [];
-                this.rawRowTail = null;
+                this.rawRowTailOffset = 0;
                 this.rawCol = 0;
                 this.rawRow++;
                 continue;
@@ -293,7 +297,6 @@ export class GameDisplay {
                 // after one continue at the current column.
                 continue;
             }
-            if (this.rawRowTail === null) this.snapRawRowTail();
             const bytes = code <= 0xFF ? [code]
                 : new TextEncoder().encode(character);
             for (const byte of bytes) {
@@ -308,11 +311,13 @@ export class GameDisplay {
         this.flush();
     }
 
-    // The row's cells before raw output reaches it. Keep the capture's
-    // g_putch() result and every cell property, including styled blanks.
-    private snapRawRowTail(): void {
+    // The row's cells as they stand now — one shadow buffer in C: painting
+    // between raw writes is part of the row the raw prefix joins. Keep the
+    // capture's g_putch() result and every cell property, including styled
+    // blanks.
+    private liveRawRowCells(): RawRowCell[] {
         const captured = this.captureGrid[this.rawRow] ?? [];
-        this.rawRowTail = captured.map((cell, column) => ({
+        return captured.map((cell, column) => ({
             ...cell,
             ch: this.grid[this.rawRow]?.[column]?.ch ?? cell.ch,
             capturedCh: cell.ch,
@@ -326,8 +331,13 @@ export class GameDisplay {
         const prefix: RawRowCell[] = Array.from(decoded, ch => ({
             ch, capturedCh: ch, color: NO_COLOR, attr: 0, altFont: false,
         }));
-        const tail = this.rawRowTail?.slice(this.rawRowBytes.length) ?? [];
+        // The tail starts where the last materialization left it, advanced
+        // by the bytes written since: painting between raw writes is part
+        // of the row (one shadow buffer), and a merge consumes tail cells.
+        const tail = this.liveRawRowCells()
+            .slice(this.rawRowTailOffset + this.rawRowBytes.length);
         const cells = [...prefix, ...tail];
+        this.rawRowTailOffset = decoded.length - this.rawRowBytes.length;
         this.clearCapturedMapCells(0, this.rawRow, this.cols);
         this.repaintRow(this.rawRow);
         for (const [column, cell] of cells.entries()) {

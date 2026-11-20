@@ -5,8 +5,9 @@ import { parseNethackrc } from '../js/cfgfiles.js';
 import { addMessageTypeRule } from '../js/message_types.js';
 import type { MessageTypeRule } from '../js/message_types.js';
 import { luaPline } from '../js/lua/messages.js';
-import { pushKey, rawPrint } from '../js/input.js';
+import { pushKey, rawPrint, writeRawText } from '../js/input.js';
 import { editExtendedCommand } from '../js/query.js';
+import { LuaState } from '../js/lua/runtime.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { runSegment, serializeCapture } from '../js/jsmain.js';
 import type { Engine } from '../js/jsmain.js';
@@ -97,31 +98,50 @@ void test('engine screens stay comparable for an ASCII rc', async () => {
     assert.match(rows[0] ?? '', /^Velkommen Traveler, welcome to NetHack!/);
 });
 
-void test('a Lua pline message carries the source UTF-8 bytes', async () => {
+void test('a Lua pline message carries its bytes unchanged', async () => {
     freshPlayableRoom();
     const display = requireGameDisplay();
     const topline = () => display.grid[0]?.map(cell => cell.ch).join('').trimEnd() ?? '';
     const before = topline();
 
-    // nhlua.c nhl_pline() hands luaL_checkstring's bytes to pline("%s"):
-    // Lua source is UTF-8, so the message "abé" holds five bytes. Only a
-    // two-byte pattern reaches the é, and the match decides visibility.
+    // Lua strings hold one character per byte: source literals are lexed
+    // from the file's bytes, and game values enter as byte strings.
+    // nhlua.c nhl_pline() hands them to pline("%s") verbatim — an é that
+    // arrived as two bytes stays two bytes (two skipped cells), never a
+    // doubled four-byte encoding.
     const twoBytes: MessageTypeRule[] = [];
     assert.equal(addMessageTypeRule('hide "^ab..$"', twoBytes), null);
     game.iflags.messageTypes = twoBytes;
-    await luaPline('abé');
+    await luaPline('ab\xC3\xA9');
     assert.equal(topline(), before);
 
     const oneByte: MessageTypeRule[] = [];
     assert.equal(addMessageTypeRule('hide "^ab.$"', oneByte), null);
     game.iflags.messageTypes = oneByte;
-    const shown = luaPline('abé', true);
+    const shown = luaPline('ab\xC3\xA9', true);
     pushKey(10);
     await shown;
     // Not matched, so the line shows and pages: 'ab' paints, both of é's
     // bytes skip their topline cells (two blanks survive), and the é
     // glyph itself never appears.
     assert.equal(topline(), 'ab  --More--');
+});
+
+void test('a Lua source string literal holds the file\'s bytes', () => {
+    // llex() reads the .lua file's bytes, so a non-ASCII source character
+    // enters its literal as the UTF-8 bytes C's lexer would collect.
+    const captured: string[] = [];
+    const state = new LuaState({
+        capture: (value: unknown) => {
+            captured.push(String(value));
+        },
+    });
+    try {
+        state.execute('capture("xé") capture([[é]])');
+    } finally {
+        void state.destroy();
+    }
+    assert.deepEqual(captured, ['x\xC3\xA9', '\xC3\xA9']);
 });
 
 void test('raw output resumes over painted cells without clearing the row', () => {
@@ -146,6 +166,22 @@ void test('raw output resumes over painted cells without clearing the row', () =
     rawPrint('\xC3\xA9');
     const merged = display.grid[2]?.map(cell => cell.ch).join('') ?? '';
     assert.equal(merged.trimEnd(), 'éisting tail');
+});
+
+void test('painting between raw writes stays in the shadow row', () => {
+    freshPlayableRoom();
+    const display = requireGameDisplay();
+
+    writeRawText('A');
+    // getret()-style painting goes through nomux_putch() into the same
+    // shadow buffer the raw writer uses.
+    display.putstr(5, 0, 'Z');
+    writeRawText('B');
+
+    // nomux_raw_putch('B') overwrites only its own column; the painted Z
+    // keeps its cell in the one shadow row.
+    const row = display.grid[0]?.map(cell => cell.ch).join('') ?? '';
+    assert.equal(row.trimEnd(), 'AB   Z');
 });
 
 void test('raw output leaves a retained IBM wall glyph in the captured row', () => {

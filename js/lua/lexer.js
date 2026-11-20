@@ -1,3 +1,4 @@
+import { utf8ByteString } from '../hacklib.js';
 import { luaSyntaxError } from './syntax_error.js';
 const keywords = new Set([
     'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for',
@@ -66,7 +67,7 @@ export function lexLua(source, filename = '<lua>') {
         }
         while (offset < end)
             advance();
-        const value = source.slice(start, end).replace(/\r\n|\n\r|\r/gu, '\n');
+        const value = utf8ByteString(source.slice(start, end).replace(/\r\n|\n\r|\r/gu, '\n'));
         for (let index = 0; index < closing.length; index++)
             advance();
         return value;
@@ -93,7 +94,9 @@ export function lexLua(source, filename = '<lua>') {
             if (char === quote)
                 return value;
             if (char !== '\\') {
-                value += char;
+                // The lexer reads the file's bytes: a source character
+                // enters the literal as its UTF-8 bytes.
+                value += utf8ByteString(char);
                 continue;
             }
             const escaped = advance();

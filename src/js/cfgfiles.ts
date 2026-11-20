@@ -450,7 +450,8 @@ export function parseNethackrc(rc: string, sources: ConfigurationSources = {}): 
         flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: { wc2_petattr: C_ATR_INVERSE }, commandBindings: new CommandBindings(),
     };
     const fileReport: ConfigurationErrorReport = { source: sources.fileName || get_configfile(), errors: [] };
-    parseConfiguration(rc, result, fileReport, true);
+    // The harness wrote the rc file as UTF-8: parse its bytes.
+    parseConfiguration(utf8ByteString(rc), result, fileReport, true);
     result.configErrors.push(fileReport);
     result.commandBindings.finishConfiguration();
     if (sources.nethackOptions != null) parseNethackOptions(sources.nethackOptions, result);
@@ -553,6 +554,9 @@ type ConfigurationState = Pick<ConfigurationSettings, 'flags' | 'iflags' | 'comm
 // state (the Lua API's config parse), as C does for its Lua callers with
 // config_error_init(FALSE, "parse_conf_str", FALSE) around the same
 // parse_conf_buf() machinery.
+// C cfgfiles.c:parse_conf_str(): the caller passes C's bytes — the Lua
+// parse_config() bridge hands the interpreter's byte strings straight
+// through, like every native caller reading a buffer it was given.
 export function applyNethackrc(rc: string, state: ConfigurationState = game): ConfigurationSettings {
     const result: ConfigurationSettings = {
         configErrors: [],
@@ -590,11 +594,10 @@ function parseConfiguration(
         optionsSeen: new Map(),
         characterOptionsSeen: new Map(),
     };
-    // Both text sources are byte strings in C: the harness wrote the rc
-    // file as UTF-8, and the environment variable holds the same bytes.
-    // Encode once here, so every statement and value below carries one
-    // character per C byte and every length counts bytes.
-    const rcBytes = utf8ByteString(rc);
+    // rc holds C's bytes already: parseNethackrc() and parseNethackOptions()
+    // encode their caller-supplied text, and the Lua parse_config() caller
+    // (parse_conf_str()) passes the interpreter's byte strings.
+    const rcBytes = rc;
     if (!rcBytes && fromFile) return result;
     const lines = fromFile ? configurationLines(rcBytes, report)
         : [{ bytes: bytesFromByteString(rcBytes.split('\0')[0] ?? ''), sourceLine: '', lineNumber: 0 }];
@@ -620,7 +623,7 @@ function parseConfiguration(
 // parses.
 export function parseNethackOptions(options: string, result: NethackConfiguration): ConfigurationErrorReport {
     const report: ConfigurationErrorReport = { source: 'NETHACKOPTIONS', errors: [] };
-    parseConfiguration(options, result, report, false);
+    parseConfiguration(utf8ByteString(options), result, report, false);
     result.configErrors.push(report);
     result.commandBindings.finishConfiguration();
     return report;
