@@ -910,8 +910,13 @@ export function restoreMenuUnderlay(snapshot) {
     // restore must not resurrect the columns past it. When no state line
     // owns the row, the surviving prefix is the seen text the preserve
     // cache reads (tty_display_nhwindow(WIN_MESSAGE) demoted it without
-    // erasing). When a pending/retained/prompt line is repainted from
-    // state, the row is blanked so the stale snapshot cannot bleed through.
+    // erasing). When a pending/retained/prompt line owns the row, nothing
+    // is restored and the row keeps exactly what that line's own paint
+    // left: redotoplin() and addtopl() write over the previous cells and
+    // cl_end() only the tail (topl.c:126-137, 198-201), and an answered
+    // one-line question stays painted (topl.c:551-556), so blanking here
+    // would erase cells under high-bit bytes that nomux_putch() skips
+    // (termcap.c:755-757) before the line's next paint-over repaint.
     const stateOwnsTopline = !!(game._pending_message || game._retained_message
         || game._promptOwnsTopline);
     const toplineLimit = stateOwnsTopline ? 0 : d.toplineClipColumn ?? d.cols - 1;
@@ -931,8 +936,6 @@ export function restoreMenuUnderlay(snapshot) {
             d.setFrameCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
         }
     }
-    if (stateOwnsTopline)
-        d.clearRow(0);
 }
 // C wintty.c:docorner()
 async function docorner(d, left, bottom) {
