@@ -43,6 +43,9 @@ export interface PolicyConfig {
     /** The wide policy also types meta (Alt) keys, which the tty reads as
      *  one byte with the high bit set: M-d is #dip, M-h is unbound. */
     meta?: boolean;
+    /** Keys sent once the policy stops at a command prompt, unless the game
+     *  already ended (e.g. the save-and-quit that closes a chained segment). */
+    finish?: SessionAction[];
 }
 export type DriverConfig = SessionAction[] | PolicyConfig;
 export interface DriverSummary {
@@ -174,7 +177,8 @@ export function decodePolicyConfig(value: unknown): PolicyConfig {
         ...(driver.name === undefined ? {} : { name: stringValue(driver.name, 'driver name') }),
         ...(driver.setup === undefined ? {} : { setup: decodeActions(driver.setup) }),
         ...(driver.debug === undefined ? {} : { debug: booleanValue(driver.debug, 'driver debug') }),
-        ...(driver.meta === undefined ? {} : { meta: booleanValue(driver.meta, 'driver meta') }) };
+        ...(driver.meta === undefined ? {} : { meta: booleanValue(driver.meta, 'driver meta') }),
+        ...(driver.finish === undefined ? {} : { finish: decodeActions(driver.finish) }) };
 }
 function decodeSummary(value: unknown): DriverSummary {
     const data = objectValue(value, 'driver summary');

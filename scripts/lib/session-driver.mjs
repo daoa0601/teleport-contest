@@ -20,23 +20,34 @@ export function createSessionDriver(actions) {
     if (!Array.isArray(actions)) {
         return import('./holdout-policy.mjs').then(({ createHoldoutPolicy }) => {
             const policy = createHoldoutPolicy(actions);
-            if (!actions.setup)
+            if (!actions.setup && !actions.finish)
                 return policy;
-            const setup = createSessionDriver(actions.setup);
-            let settingUp = true;
+            const setup = actions.setup ? createSessionDriver(actions.setup) : null;
+            const finish = actions.finish ? createSessionDriver(actions.finish) : null;
+            let settingUp = setup !== null;
+            let finishing = false;
             return {
                 nextKey(lines, info) {
-                    if (settingUp) {
+                    if (settingUp && setup) {
                         const key = setup.nextKey(lines, info);
                         if (key !== null)
                             return key;
                         settingUp = false;
                     }
-                    return policy.nextKey(lines, info);
+                    if (!finishing) {
+                        const key = policy.nextKey(lines, info);
+                        if (key !== null || !finish || policy.summary.dead)
+                            return key;
+                        finishing = true;
+                    }
+                    return finish ? finish.nextKey(lines, info) : null;
                 },
-                get exhausted() { return !settingUp && policy.exhausted; },
+                get exhausted() {
+                    return !settingUp && policy.exhausted && (!finish || policy.summary.dead || (finishing && finish.exhausted));
+                },
                 get acceptsGameExit() { return !settingUp && policy.acceptsGameExit === true; },
-                get summary() { return { ...policy.summary, setupComplete: !settingUp }; },
+                get expectsExit() { return finishing && finish?.expectsExit === true; },
+                get summary() { return { ...policy.summary, ...(setup ? { setupComplete: !settingUp } : {}) }; },
             };
         });
     }
