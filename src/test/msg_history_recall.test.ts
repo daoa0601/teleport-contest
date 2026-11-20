@@ -5,7 +5,7 @@ import type { Engine } from '../js/jsmain.js';
 import { runSegment } from '../js/jsmain.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
-import { flushPendingTopline, ttyDoprevMessage } from '../js/topl.js';
+import { flushPendingTopline, rememberToplines, ttyDoprevMessage } from '../js/topl.js';
 import { pline } from '../js/pline.js';
 import { rhack } from '../js/cmd.js';
 import { flush_screen, newsym } from '../js/display.js';
