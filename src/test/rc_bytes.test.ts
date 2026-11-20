@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseNethackrc } from '../js/cfgfiles.js';
+import { addMessageTypeRule } from '../js/message_types.js';
+import type { MessageTypeRule } from '../js/message_types.js';
+import { luaPline } from '../js/lua/messages.js';
+import { rawPrint } from '../js/input.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
 import type { Engine } from '../js/jsmain.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 // The recorded harness wrote each session's .nethackrc to disk as UTF-8,
@@ -67,4 +73,38 @@ void test('engine screens stay comparable for an ASCII rc', async () => {
     });
     const rows = engine.display?.grid.map(row => row.map(cell => cell.ch).join('')) ?? [];
     assert.match(rows[0] ?? '', /^Velkommen Traveler, welcome to NetHack!/);
+});
+
+void test('a Lua pline message carries the source UTF-8 bytes', async () => {
+    freshPlayableRoom();
+    // nhlua.c nhl_pline() hands luaL_checkstring's bytes to pline("%s"):
+    // Lua source is UTF-8, so the message holds one character per byte.
+    const rules: MessageTypeRule[] = [];
+    assert.equal(addMessageTypeRule('hide "^\xC3\xA9$"', rules), null);
+    game.iflags.messageTypes = rules;
+    game._lastPlineMessage = 'sentinel';
+    await luaPline('é');
+    // The two bytes match the whole-line pattern, so the message is hidden
+    // and the previous line stays the last one shown.
+    assert.equal(game._lastPlineMessage, 'sentinel');
+
+    delete game.iflags.messageTypes;
+    await luaPline('é');
+    assert.equal(game._lastPlineMessage, '\xC3\xA9');
+    assert.equal(game._pending_message, '\xC3\xA9');
+});
+
+void test('raw output resumes over painted cells without clearing the row', () => {
+    freshPlayableRoom();
+    const display = requireGameDisplay();
+
+    rawPrint('first');
+    assert.equal(display.cursorRow, 1);
+    // Painting continues through nomux_putch() while raw mode is active.
+    display.putstr(0, display.cursorRow, 'existing tail');
+    rawPrint('X');
+    // nomux_raw_putch() overwrites only the cells its bytes reach: the
+    // first byte replaces 'e' and the rest of the painted row survives.
+    const row = display.grid[1]?.map(cell => cell.ch).join('') ?? '';
+    assert.equal(row.trimEnd(), 'Xxisting tail');
 });

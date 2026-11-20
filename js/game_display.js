@@ -259,24 +259,20 @@ export class GameDisplay {
             this.clearScreen();
         }
         for (const character of text) {
-            if (character === '\r') {
-                this.rawRowBytes = [];
-                this.rawCol = 0;
-                continue;
-            }
             if (character === '\n') {
                 this.rawRowBytes = [];
                 this.rawCol = 0;
                 this.rawRow++;
                 continue;
             }
-            if (character === '\t') {
+            const code = character.codePointAt(0) ?? 0;
+            if (code < 32) {
                 // nomux_raw_putch() rejects every character below 32 before
-                // its column counter moves: the shadow buffer never even
-                // sees tty_raw_print()'s tabs.
+                // its column counter moves: the shadow buffer never sees
+                // tty_raw_print()'s tabs or carriage returns, and the bytes
+                // after one continue at the current column.
                 continue;
             }
-            const code = character.codePointAt(0) ?? 0;
             const bytes = code <= 0xFF ? [code]
                 : new TextEncoder().encode(character);
             for (const byte of bytes) {
@@ -294,7 +290,10 @@ export class GameDisplay {
     materializeRawRow() {
         if (this.rawRow < 0 || this.rawRow >= this.rows)
             return;
-        this.repaintRow(this.rawRow);
+        // nomux_raw_putch() overwrites only the cells its bytes reach;
+        // the rest of the row keeps whatever earlier painting left there,
+        // so no blanket clear. Appending bytes can only extend (or keep)
+        // the decoded length, never shrink it.
         const decoded = new TextDecoder().decode(Uint8Array.from(this.rawRowBytes));
         for (let column = 0; column < decoded.length && column < this.cols; column++)
             this.setFrameCell(column, this.rawRow, decoded.charAt(column), NO_COLOR, 0);

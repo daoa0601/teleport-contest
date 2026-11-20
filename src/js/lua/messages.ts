@@ -1,8 +1,11 @@
-// C nhlua.c:nhl_pline() and nhl_text().
+// C nhlua.c:nhl_pline() and nhl_text(). Lua source files are UTF-8, and
+// luaL_checkstring hands their bytes to C verbatim, so the message text
+// holds one character per source byte on this side of the boundary.
 
 import { flushPendingTopline } from '../topl.js';
 import { plineWithContinuation } from '../pline.js';
 import { NethackLuaError } from './errors.js';
+import { utf8ByteString } from '../hacklib.js';
 import { showTextMenuOverlay } from '../windows.js';
 import { luaCheckString } from './runtime.js';
 import type { LuaValue } from './runtime.js';
@@ -29,9 +32,11 @@ export async function luaText(...args: LuaValue[]) {
 }
 
 // Part of C nhlua.c:nhl_pline(), nhl_text(): the luaL_checkstring read.
+// The Lua interpreter holds decoded Unicode text; C receives its UTF-8
+// bytes, like every other string crossing into a native buffer.
 function messageString(value: LuaValue | undefined): string {
     // nhl_pline() and nhl_text() read their text with luaL_checkstring.
-    return luaCheckString(1, value);
+    return utf8ByteString(luaCheckString(1, value));
 }
 
 // Part of C nhlua.c:nhl_text(): the 76-column line split at blanks and
