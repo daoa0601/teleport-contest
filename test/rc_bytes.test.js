@@ -124,12 +124,12 @@ void test('a Lua source string literal holds the file\'s bytes', () => {
         },
     });
     try {
-        state.execute('capture("xé") capture([[é]])');
+        state.execute('capture("xé") capture([[é]]) capture("\u{1F600}")');
     }
     finally {
         void state.destroy();
     }
-    assert.deepEqual(captured, ['x\xC3\xA9', '\xC3\xA9']);
+    assert.deepEqual(captured, ['x\xC3\xA9', '\xC3\xA9', '\xF0\x9F\x98\x80']);
 });
 void test('raw output resumes over painted cells without clearing the row', () => {
     freshPlayableRoom();
@@ -164,6 +164,18 @@ void test('painting between raw writes stays in the shadow row', () => {
     // keeps its cell in the one shadow row.
     const row = display.grid[0]?.map(cell => cell.ch).join('') ?? '';
     assert.equal(row.trimEnd(), 'AB   Z');
+});
+void test('an astral raw sequence keeps the untouched tail characters', () => {
+    freshPlayableRoom();
+    const display = requireGameDisplay();
+    rawPrint('first');
+    display.putstr(0, display.cursorRow, 'existing tail');
+    display.setCursor(0, display.cursorRow);
+    // "😀X" is five bytes: they consume the first five byte cells, and the
+    // row decode joins the tail from the sixth byte cell on.
+    rawPrint('\xF0\x9F\x98\x80X');
+    const row = display.grid[1]?.map(cell => cell.ch).join('') ?? '';
+    assert.equal(row.trimEnd(), '\u{1F600}Xing tail');
 });
 void test('raw output leaves a retained IBM wall glyph in the captured row', () => {
     freshPlayableRoom();

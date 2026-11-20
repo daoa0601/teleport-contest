@@ -328,7 +328,9 @@ export class GameDisplay {
         const tail = this.liveRawRowCells()
             .slice(this.rawRowTailOffset + this.rawRowBytes.length);
         const cells = [...prefix, ...tail];
-        this.rawRowTailOffset = decoded.length - this.rawRowBytes.length;
+        // prefix counts code points; decoded.length would count UTF-16
+        // units and drop an astral character's second unit from the shift.
+        this.rawRowTailOffset = prefix.length - this.rawRowBytes.length;
         this.clearCapturedMapCells(0, this.rawRow, this.cols);
         this.repaintRow(this.rawRow);
         for (const [column, cell] of cells.entries()) {

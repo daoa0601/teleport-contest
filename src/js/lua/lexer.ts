@@ -108,7 +108,14 @@ export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
             if (char !== '\\') {
                 // The lexer reads the file's bytes: a source character
                 // enters the literal as its UTF-8 bytes.
-                value += utf8ByteString(char);
+                // An astral character is its four bytes, never two
+                // broken UTF-16 units.
+                let character = char;
+                const code = char.charCodeAt(0);
+                const next = source[offset];
+                if (code >= 0xD800 && code <= 0xDBFF && next !== undefined
+                    && next >= '\uDC00' && next <= '\uDFFF') character += advance();
+                value += utf8ByteString(character);
                 continue;
             }
             const escaped = advance();
