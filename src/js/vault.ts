@@ -59,6 +59,7 @@ import { currency, freeInventoryObject, stack_object, goldAt } from './invent.js
 import { enexto } from './teleport.js';
 import type { MessagePublisher } from './pline.js';
 import { heroGoldAmount, roomForRoomno, roomsAt } from './hack.js';
+import { mungSpacesText } from './hacklib.js';
 
 const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;
@@ -307,8 +308,8 @@ async function readGuardName() {
         : '"Hello stranger, who are you?" -';
     for (let tries = 5; tries > 0; tries--) {
         const response = await getLine(prompt);
-        // C mungspaces() trims and collapses ordinary spaces only.
-        const name = response?.replace(/^ +| +$/g, '').replace(/ +/g, ' ') ?? '\x1b';
+        // vault.c condenses the guard's reply with mungspaces().
+        const name = mungSpacesText(response ?? '\x1b');
         if (name) return name;
     }
     return '';

@@ -260,6 +260,49 @@ export function mungSpaces(bytes: Uint8Array): Uint8Array {
     return new Uint8Array(out);
 }
 
+// C hacklib.c:mungspaces() over a byte string: the same fold as
+// mungSpaces() above, without the byte-array round trip. JS trim() and
+// \s must not substitute for it — they also fold bytes like 0x85 and
+// 0xA0, which C's C-locale helpers never treat as whitespace.
+export function mungSpacesText(text: string): string {
+    let out = '';
+    let pendingSpace = false;
+    for (const character of text) {
+        if (character === '\n') break;
+        const folded = character === '\t' ? ' ' : character;
+        if (folded === ' ') {
+            pendingSpace = out.length > 0;
+            continue;
+        }
+        if (pendingSpace && out.length) out += ' ';
+        pendingSpace = false;
+        out += folded;
+    }
+    return out;
+}
+
+// C isspace() in the C locale: the six whitespace bytes, and nothing
+// above 0x7F. Used where C calls isspace() over a byte string.
+export const C_ISSPACE = ' \t\n\v\f\r';
+
+export function trimCIsspace(text: string): string {
+    let start = 0;
+    let end = text.length;
+    while (start < end && C_ISSPACE.includes(text.charAt(start))) start++;
+    while (end > start && C_ISSPACE.includes(text.charAt(end - 1))) end--;
+    return text.slice(start, end);
+}
+
+// C hacklib.c:trimspaces(): skip leading and remove trailing ' ' and
+// '\t' only, leaving any other byte in place.
+export function trimSpaces(text: string): string {
+    let start = 0;
+    let end = text.length;
+    while (start < end && (text.charAt(start) === ' ' || text.charAt(start) === '\t')) start++;
+    while (end > start && (text.charAt(end - 1) === ' ' || text.charAt(end - 1) === '\t')) end--;
+    return text.slice(start, end);
+}
+
 // Port only: C's byte-string model. The recorded harness wrote the rc file
 // (and every other text NetHack reads) as UTF-8, so a native buffer holds
 // one byte per non-ASCII character. Configuration values are therefore

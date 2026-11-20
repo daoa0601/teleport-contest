@@ -54,6 +54,7 @@ import { makemonNear } from './mklev.js';
 import { courtMonsterType } from './mkroom.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, removePermanentIntrinsicProperty } from './properties.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
+import { cInteger } from './option_values.js';
 const CLOTH = 6;
 const S_DRAGON = 30;
 const PM_GREMLIN = 40;
@@ -408,7 +409,8 @@ export async function throneSitEffect({ gotoLevel = null, chooseTeleportDestinat
                 await plineWithContinuation('Never mind.');
                 return;
             }
-            const requested = Number.parseInt(answer, 10);
+            // atoi() skips only the C-locale isspace() bytes.
+            const requested = cInteger(answer);
             if (requested >= 1 && requested <= 13)
                 effect = requested;
         }

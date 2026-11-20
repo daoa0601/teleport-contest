@@ -10,7 +10,7 @@ import { nhgetch } from './input.js';
 import { NO_COLOR } from './terminal.js';
 import { extcmdsMatch, yn_function } from './cmd.js';
 import { ttyDoprevMessage } from './topl.js';
-import { visibleCommandKey } from './hacklib.js';
+import { mungSpacesText, visibleCommandKey } from './hacklib.js';
 // C getline.c:tty_getlin()
 // Also C getline.c:hooked_tty_getlin(): line editing is inlined here
 // Direct tty callers, such as menu search, read live input without consuming
@@ -332,10 +332,9 @@ export async function editExtendedCommand() {
     game._toplines = '';
     game._promptOwnsTopline = false;
     game.nhDisplay?.clearRow(0);
-    const normalizedCommand = (completion || command)
-        .trim()
-        .replace(/\s+/g, ' ')
-        .toLowerCase();
+    // getline.c tty_get_ext_cmd() condenses the typed line with
+    // mungspaces() before the exact-match lookup.
+    const normalizedCommand = mungSpacesText(completion || command).toLowerCase();
     if (!normalizedCommand) {
         game._pending_message = '';
         game.nhDisplay?.clearRow(0);

@@ -31,6 +31,7 @@ import { rn1, rn2, rnl } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { carriedObjectOwner, chargeUnpaidUsage, deleteObject } from './shk.js';
 import { knownSpell } from './spell.js';
+import { mungSpacesText } from './hacklib.js';
 
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 
@@ -77,10 +78,13 @@ export async function useMagicMarker(pen: GameObject): Promise<boolean> {
     // Native makes the scroll type known even when writing on a blank book.
     learnObjectType(SCR_BLANK_PAPER);
     const answer = await getLine(`What type of ${typeword} do you want to write?`);
-    if (answer === null || !answer.trim()) return true;
-    const name = answer.trim().replace(/\s+/g, ' ')
+    // write.c dowrite() condenses the answer with mungspaces().
+    const munged = mungSpacesText(answer ?? '');
+    if (answer === null || !munged) return true;
+    // One strncmpi strip of each prefix, and the armour fixup re-munges.
+    const name = mungSpacesText(munged
         .replace(/^(scroll |spellbook )/i, '').replace(/^of /i, '')
-        .replace(/ armour/i, ' armor ').replace(/\s+/g, ' ').trim();
+        .replace(/ armour/i, ' armor '));
     const target = findWritingType(name, paper.oclass);
     if (!target) {
         await pline(`There is no such ${typeword}!`);

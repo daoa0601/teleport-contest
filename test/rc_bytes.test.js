@@ -5,6 +5,7 @@ import { parseNethackrc } from '../js/cfgfiles.js';
 import { addMessageTypeRule } from '../js/message_types.js';
 import { luaPline } from '../js/lua/messages.js';
 import { pushKey, rawPrint } from '../js/input.js';
+import { editExtendedCommand } from '../js/query.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { runSegment, serializeCapture } from '../js/jsmain.js';
 import { ATR_INVERSE, CLR_BROWN, CLR_GREEN, NO_COLOR } from '../js/terminal.js';
@@ -22,6 +23,24 @@ void test('a non-ASCII name is parsed as its UTF-8 bytes', () => {
     // can split a sequence; C keeps the first byte of "ë".
     const statement = parseNethackrc(`NAME=${'x'.repeat(28)}Zoë\n`);
     assert.equal(statement.name, `${'x'.repeat(28)}Zo\xC3`);
+});
+void test('a name ending in a non-breaking-space byte survives the option parse', () => {
+    // à is C3 A0. JS trim() folds 0xA0 (NBSP) as whitespace; C's
+    // isspace() in the C locale never does, so string_for_opt() and
+    // nmcpy() keep both bytes of the name.
+    const options = parseNethackrc('OPTIONS=name:Zoà\n');
+    assert.equal(options.name, 'Zo\xC3\xA0');
+});
+void test('a typed extended command keeps a trailing NBSP byte', async () => {
+    freshPlayableRoom();
+    // getline.c tty_get_ext_cmd() runs mungspaces() — folding only ' '
+    // and '\t' — and requires an exact extcmds_match(): the 0xA0 byte
+    // stays in "version\xA0", so the command is unknown. JS trim()
+    // would strip it and run #version.
+    for (const character of 'version\xA0\n')
+        pushKey(character.charCodeAt(0));
+    const command = await editExtendedCommand();
+    assert.equal(command, null);
 });
 void test('a non-ASCII name skips cells in the greeting and the status title', async () => {
     const engine = await runSegment({

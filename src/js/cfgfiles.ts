@@ -13,7 +13,7 @@ import {
     parseOptions, MENU_KEY_OPTIONS,
 } from './message_types.js';
 import {
-    byteStringFromBytes, bytesFromByteString, mungSpaces, utf8ByteString, visibleCommandKey,
+    byteStringFromBytes, bytesFromByteString, mungSpaces, trimSpaces, utf8ByteString, visibleCommandKey,
 } from './hacklib.js';
 import { parseMenuColoring } from './coloratt.js';
 import { parseAutocomplete, resetCommandAutocomplete } from './cmd.js';
@@ -254,7 +254,8 @@ function handleConfigStatement(
             const separator = field.indexOf(':');
             if (separator < 0) continue;
             const keyText = field.slice(0, separator);
-            const command = field.slice(separator + 1).trim();
+            // parsebindings() runs the command through trimspaces().
+            const command = trimSpaces(field.slice(separator + 1));
             if (keyText === 'mouse1' || keyText === 'mouse2') {
                 if (result.commandBindings.bindMouseButton(keyText === 'mouse1' ? 1 : 2, command)) continue;
                 addError(`Error binding mouse button ${keyText === 'mouse1' ? 1 : 2}`);

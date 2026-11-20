@@ -12,6 +12,7 @@ import { flushPendingTopline } from './topl.js';
 import { showPagedPickOneMenu } from './windows.js';
 import { addInventoryItem } from './invent.js';
 import { finishHeroDeath } from './end.js';
+import { cInteger } from './option_values.js';
 import { dist2, distmin } from './hacklib.js';
 import { within_bounded_area } from './rect.js';
 import { clampHoleDestination, deleteTrap, seeTrap, mintrap, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious, trapAt } from './trap.js';
@@ -906,7 +907,8 @@ async function readLevelRequest(state, menuRequested) {
             return null;
         if (wizard && text === '?')
             return chooseWizardLevelDestination();
-        const requested = levelDepthByName(text, state) || Number.parseInt(text, 10) || 0;
+        // atoi() skips only the C-locale isspace() bytes.
+        const requested = levelDepthByName(text, state) || cInteger(text);
         if (requested || /^-?\d/.test(text))
             return !requested && attempt === 10 ? { random: true } : { depth: requested };
     }

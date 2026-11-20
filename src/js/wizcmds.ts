@@ -25,6 +25,7 @@ import { promptYesNoQuit, promptChoice, promptYesNo } from './query.js';
 import { paranoidQuery, yn_function } from './cmd.js';
 import { promptDirection } from './cmd.js';
 import { mungSpaces, visibleCommandKey } from './hacklib.js';
+import { cInteger } from './option_values.js';
 import { setMulti, makemapPrepost } from './cmd.js';
 import { displayPickinvWizardIdentify } from './invent.js';
 import { askTeleportDestination } from './teleport.js';
@@ -926,7 +927,8 @@ export async function wizMigrateMonsters(): Promise<void> {
     }
     const input = await getLine('How many random monsters to migrate to next level? [0]');
     if (!input) return;
-    const count = Number.parseInt(input, 10) || 0;
+    // atoi() skips only the C-locale isspace() bytes.
+    const count = cInteger(input);
     const limit = Math.min(Math.abs(count), (COLNO - 1) * ROWNO);
     for (let index = 0; index < limit; index++) {
         // makemon appends here; native fmon prepends each new monster.

@@ -7,7 +7,7 @@
 // parseoptions(), parsebindings(), add_autopickup_exception()), keeping
 // C's cfgfiles.c → options.c call direction.
 import { bindingFields, bindingKeyCode, menuCommandKeyError, parseAutopickupException, parseOptions, MENU_KEY_OPTIONS, } from './message_types.js';
-import { byteStringFromBytes, bytesFromByteString, mungSpaces, utf8ByteString, visibleCommandKey, } from './hacklib.js';
+import { byteStringFromBytes, bytesFromByteString, mungSpaces, trimSpaces, utf8ByteString, visibleCommandKey, } from './hacklib.js';
 import { parseMenuColoring } from './coloratt.js';
 import { parseAutocomplete, resetCommandAutocomplete } from './cmd.js';
 import { addMessageTypeRule } from './message_types.js';
@@ -228,7 +228,8 @@ function handleConfigStatement(statement, valueBytes, valueText, result, addErro
                 if (separator < 0)
                     continue;
                 const keyText = field.slice(0, separator);
-                const command = field.slice(separator + 1).trim();
+                // parsebindings() runs the command through trimspaces().
+                const command = trimSpaces(field.slice(separator + 1));
                 if (keyText === 'mouse1' || keyText === 'mouse2') {
                     if (result.commandBindings.bindMouseButton(keyText === 'mouse1' ? 1 : 2, command))
                         continue;

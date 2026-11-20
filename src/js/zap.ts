@@ -65,7 +65,7 @@ import {
     meltIceTrap, activateStatueTrapAt, animateStatue, trapAt,
 } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName, monsterTypeName } from './do_name.js';
-import { possessiveName, mungSpaces } from './hacklib.js';
+import { mungSpacesText, possessiveName } from './hacklib.js';
 import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor, isEyewear, wearEyewear } from './do_wear.js';
 import { removeWornHeroItem } from './steal.js';
@@ -6068,7 +6068,7 @@ async function showWishHelp(triesLeft: number): Promise<void> {
 // running game, is limited to twenty entries, and omits repeated prefixes.
 function rememberWish(value: string): void {
     if (!game.flags.debug) return;
-    const wish = value.trim().replace(/\s+/g, ' ');
+    const wish = mungSpacesText(value);
     const history = game._wishHistory ?? [];
     if (history.some(previous => wish.toLowerCase().startsWith(previous.toLowerCase()))) return;
     game._wishHistory = [wish, ...history].slice(0, 20);
@@ -6113,7 +6113,7 @@ export async function makeWish(): Promise<void> {
         );
         // zap.c:makewish() mungspaces() the typed line before comparing it,
         // parsing it, recording it in the history, and livelogging it.
-        value = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(value ?? '')));
+        value = mungSpacesText(value ?? '');
         // strcmpi() compares the mungspaces() result as it stands; a byte
         // like 0x85 survives mungspaces() and keeps "help..." unequal.
         if ((value ?? '').toLowerCase() === 'help') {
@@ -6137,7 +6137,7 @@ export async function makeWish(): Promise<void> {
     }
 
     if (result.noWish) {
-        if (!['nothing', 'nil', 'none'].includes((value ?? '').trim().toLowerCase()))
+        if (!['nothing', 'nil', 'none'].includes((value ?? '').toLowerCase()))
             rememberWish(value ?? '');
         else recordGameLogEvent('declined to make a wish', { flags: LL_WISH });
         game.context.move = 0;

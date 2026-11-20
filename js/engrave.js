@@ -47,6 +47,7 @@ import { unlinkObject, splitObjectStack } from './mkobj.js';
 import { exceedsActionCapacity } from './hack.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { RANDOM_ENGRAVINGS, RANDOM_EPITAPHS } from './random_text_data.js';
+import { mungSpacesText } from './hacklib.js';
 import { monsterHasAttackType, monsterIsAnimal, monsterIsDemon, monsterIsWhirly, cantwield, resistsBlnd, } from './mondata.js';
 const RUBOUTS = new Map([
     ['A', '^'],
@@ -1065,9 +1066,10 @@ export async function doengrave(state = game) {
     }
     // Prompt for the engraving text.
     const line = await getLine(`What do you want to ${everb} the ${eloc} here?`);
+    // engrave.c doengrave() condenses the line with mungspaces().
     const text = line === null
         ? '\x1b'
-        : line.replace(/\t/g, ' ').replace(/ +/g, ' ').replace(/^ | $/g, '');
+        : mungSpacesText(line);
     const length = text.replaceAll(' ', '').length;
     if (length === 0 || text.includes('\x1b')) {
         if (setup.zapwand && object) {

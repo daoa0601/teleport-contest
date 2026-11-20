@@ -44,7 +44,7 @@ import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, WARNCOUNT } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
-import { byteStringFromBytes, bytesFromByteString, mungSpaces, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf, visibleCommandKey, } from './hacklib.js';
+import { byteStringFromBytes, bytesFromByteString, mungSpaces, mungSpacesText, fuzzyMatch, asciiLower, asciiNameEqual, ciPrefixOf, trimCIsspace, trimSpaces, visibleCommandKey, } from './hacklib.js';
 import { DISCLOSURE_CATEGORIES } from './end.js';
 import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
@@ -367,7 +367,8 @@ function optfnParanoidConfirmation(current, rawValue, addError) {
     // + or - as augmenting, matches arguments case-insensitively through
     // match_optname(), and reports the first unmatched token verbatim
     // while keeping the changes before it.
-    let fields = rawValue.trim().replace(/[ \t]+/g, ' ');
+    // optfn_paranoid_confirmation() condenses its value with mungspaces().
+    let fields = mungSpacesText(rawValue);
     const augmenting = fields.startsWith('+') || fields.startsWith('-');
     const removing = fields.startsWith('-');
     let bits = augmenting ? current : 0;
@@ -398,7 +399,7 @@ function optfnParanoidConfirmation(current, rawValue, addError) {
 // C options.c:optfn_scores(): the top/around/own value parsing.
 function optfnScores(value, negated) {
     // string_for_opt() trims the value; an empty one is a missing parameter.
-    const text = value?.trim();
+    const text = value == null ? '' : trimCIsspace(value);
     if (!text)
         return null;
     const choices = { end_top: 0, end_around: 0, end_own: false, error: null };
@@ -578,9 +579,8 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
             continue;
         }
         const colonIdx = stripped.search(/[:=]/);
-        const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx))
-            .trimEnd().toLowerCase().trimStart();
-        const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+        const bindingOption = trimCIsspace(colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).toLowerCase();
+        const optionValue = colonIdx < 0 ? null : trimCIsspace(stripped.slice(colonIdx + 1));
         // optfn_petattr(): the attribute also controls hilite_pet.
         // Even a missing parameter reapplies that boolean, but an
         // unknown attribute leaves both settings unchanged.
@@ -1027,7 +1027,7 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
         // optfn_name(): the value is mandatory at startup
         // (string_for_env_opt(FALSE)), with or without a delimiter.
         if (canonical === 'name') {
-            const val = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1).trim();
+            const val = colonIdx < 0 ? '' : trimCIsspace(stripped.slice(colonIdx + 1));
             if (val)
                 result.name = val;
             else
@@ -1042,7 +1042,7 @@ export function parseOptions(optionList, result, state, fromFile, addError, addR
             continue;
         }
         if (colonIdx >= 0) {
-            const val = stripped.slice(colonIdx + 1).trim();
+            const val = trimCIsspace(stripped.slice(colonIdx + 1));
             // optfn_playmode(): duplicates refuse outright; the value
             // prefixes normal/play, explore/discovery, debug/wizard.
             if (canonical === 'playmode') {
@@ -1280,10 +1280,10 @@ function optfnAutounlock(op, negated, addError) {
     const sep = op.includes('+') ? '+' : ' ';
     let bits = 0;
     let none = negated;
-    let rest = op.trim();
+    let rest = trimSpaces(op);
     for (;;) {
         const cut = rest.indexOf(sep);
-        const element = (cut < 0 ? rest : rest.slice(0, cut)).trim();
+        const element = trimSpaces(cut < 0 ? rest : rest.slice(0, cut));
         if (ciPrefixOf('none', element)) {
             none = true;
         }
@@ -1297,7 +1297,7 @@ function optfnAutounlock(op, negated, addError) {
         }
         if (cut < 0)
             break;
-        rest = rest.slice(cut + 1).trim();
+        rest = trimSpaces(rest.slice(cut + 1));
     }
     if (none && bits !== 0) {
         addError("Invalid value combination for \"autounlock\": 'none' with some");
@@ -1390,7 +1390,7 @@ export function parseDisclosureSettings(raw) {
     // An unset option leaves the zero-initialized defaults: ask, answer no.
     if (raw === undefined || raw === null)
         return settings;
-    const text = String(raw).trim();
+    const text = trimCIsspace(String(raw));
     if (text === '' || text.toLowerCase() === 'all') {
         for (const category of DISCLOSURE_CATEGORIES)
             settings[category] = 'y';
@@ -2049,7 +2049,8 @@ const MESSAGE_TYPES = [
 export function addMessageTypeRule(value, rules) {
     // sscanf() accepts a ten-character type and up to 255 pattern characters;
     // the closing quote and trailing input do not affect its two conversions.
-    const match = value.match(/^\s*(\S{1,10})\s+"([^"]{1,255})/);
+    // sscanf()'s %s and the literal blank skip isspace() bytes only.
+    const match = value.match(/^[ \t\n\v\f\r]*([^ \t\n\v\f\r]{1,10})[ \t\n\v\f\r]+"([^"]{1,255})/);
     if (!match?.[1] || !match[2])
         return 'Malformed MSGTYPE';
     const name = match[1];
@@ -2571,7 +2572,7 @@ export function decodeOptionEscapes(value) {
 // txt2key() consumes bytes, not Unicode code points. Only the first decoded
 // escape is needed: Native returns the first byte of escapes()' output.
 export function bindingKeyCode(value) {
-    let key = value.trim();
+    let key = trimSpaces(value);
     if (!key.length)
         return 0;
     if (key.length === 1)
@@ -2720,8 +2721,9 @@ function configureCharacterOption(result, { facet, value, spelling, negated, pre
     let positiveValue = null;
     let filterOnly = false;
     const duplicate = fromFile && previous.has(facet);
-    const words = value.trim();
-    for (let token of words ? words.split(/\s+/) : []) {
+    // parse_role_opt() runs mungspaces() and then splits on single spaces.
+    const words = mungSpacesText(value);
+    for (let token of words ? words.split(' ') : []) {
         let tokenNegated = false;
         while (token.startsWith('!') || /^no/i.test(token)) {
             tokenNegated = !tokenNegated;
@@ -2827,7 +2829,8 @@ export function addFruit(name, { preferred = false, initial = false, replacement
             const actual = foodName === 'slime mold' ? 'fruit' : foodName;
             return actual === value || size && actual === value.slice(size);
         });
-        const numeric = /^\d*(?:$|\s)/.test(value);
+        // atoi() skips only the C-locale isspace() bytes.
+        const numeric = /^\d*(?:$|[ \t\n\v\f\r])/.test(value);
         const monsterTin = value.startsWith('tin of ')
             && (value.slice(7) === 'spinach' || nameToMonster(value.slice(7)) >= 0);
         const monsterProduct = /(?: corpse| egg)$/.test(value) && nameToMonster(value) >= 0;
