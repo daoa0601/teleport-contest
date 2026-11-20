@@ -187,7 +187,7 @@ export function writeRawText(text: string) {
             display.setCursor(Math.min(nextTab, display.cols - 1), display.cursorRow);
         } else {
             if (display.cursorCol >= display.cols) writeRawText('\n');
-            display.setCell(display.cursorCol, display.cursorRow, ch, NO_COLOR, 0);
+            display.setFrameCell(display.cursorCol, display.cursorRow, ch, NO_COLOR, 0);
             display.setCursor(display.cursorCol + 1, display.cursorRow);
         }
     }

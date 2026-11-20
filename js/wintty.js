@@ -529,7 +529,7 @@ export function paintMenuPage(d, menu, page, rows, underlay, previousPageLines =
                 for (let col = boundary; col < d.cols; col++) {
                     const cell = underlay[row]?.[col];
                     if (cell)
-                        d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
+                        d.setFrameCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
                 }
             }
         }
@@ -884,7 +884,7 @@ export function restoreMenuUnderlay(snapshot) {
                 break;
             if (row === 0 && col >= toplineLimit)
                 break;
-            d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
+            d.setFrameCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
         }
     }
     if (stateOwnsTopline)
@@ -1114,7 +1114,7 @@ export function writeStatusLines(display, lines) {
                         if (!cell)
                             continue;
                         const lit = col < span.start + fill;
-                        display.setCell(col, row, cell.ch, lit ? bar.color : NO_COLOR, lit ? bar.attr : blink);
+                        display.setFrameCell(col, row, cell.ch, lit ? bar.color : NO_COLOR, lit ? bar.attr : blink);
                     }
                     continue;
                 }
@@ -1123,7 +1123,7 @@ export function writeStatusLines(display, lines) {
                     const cell = display.grid[row]?.[col];
                     if (!cell)
                         continue;
-                    display.setCell(col, row, cell.ch, style.color, style.attr);
+                    display.setFrameCell(col, row, cell.ch, style.color, style.attr);
                 }
             }
         }

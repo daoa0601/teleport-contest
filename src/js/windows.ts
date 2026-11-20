@@ -339,7 +339,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     } else if (underlay && underlayCursor) {
         for (const [row, cells] of underlay.entries()) {
             for (const [col, cell] of cells.entries()) {
-                d.setCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
+                d.setFrameCell(col, row, cell.ch, cell.color, cell.attr, cell.altFont);
             }
         }
         // docorner() leaves the covered message columns blank.

@@ -92,9 +92,12 @@ export class GameDisplay {
     // through g_putch(), which strips that bit first (setMapCell below).
     setCell(col: number, row: number, ch: string, color: TerminalColor, attr?: number, altFont = false) {
         if (!altFont && ch.charCodeAt(0) >= 0x80) return;
-        this.storeCell(col, row, ch, color, attr, altFont);
+        this.setFrameCell(col, row, ch, color, attr, altFont);
     }
-    private storeCell(col: number, row: number, ch: string, color: TerminalColor, attr?: number, altFont = false) {
+    // Store a cell exactly: repainting a saved cell, and tty_raw_print(),
+    // whose shadow writer takes the byte as unsigned char
+    // (nomux_raw_putch((int)(unsigned char)*p)) and so keeps high-bit bytes.
+    setFrameCell(col: number, row: number, ch: string, color: TerminalColor, attr?: number, altFont = false) {
         const index = row * this.cols + col;
         this.capturedMapCells.delete(index);
         if (altFont) this.altFontCells.add(index);
@@ -115,7 +118,7 @@ export class GameDisplay {
         // stay, so the incoming glyph's own font flag must not touch the
         // retained cell.
         const retainsPreviousCell = code < 32 && !!previous;
-        this.storeCell(col, row, ch, color, frameColor === null ? attr : 0,
+        this.setFrameCell(col, row, ch, color, frameColor === null ? attr : 0,
             retainsPreviousCell ? this.altFontCells.has(index) : altFont);
         if (retainsPreviousCell) {
             this.capturedMapCells.set(index, previous);
