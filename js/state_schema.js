@@ -1,5 +1,6 @@
 // state_schema.js — Versioned boundary between saved game data and runtime state.
 // C refs: save.c, restore.c, decl.h, you.h, rm.h.
+import { INSTANCE_FLAG_OPTION_KEYS } from './flags.js';
 // Format 47 saves light_source coordinates and LSF_SHOW between vision
 // passes. Older saves cannot recover these fields while the hero is Blind.
 export const SAVE_VERSION = 47;
@@ -198,9 +199,35 @@ const persistentKeyNames = persistentStateKeys;
 function isPersistentStateKey(key) {
     return persistentKeyNames.has(key);
 }
+// Port only: the flag fields that survive a save. C save.c:savegamestate()
+// writes struct flag alone (Sfo_flag); the option fields C stores in
+// struct instance_flags, the a11y struct, botl.c condition statics, or the
+// decl.c pet-name globals stay out of the save file.
+function copySavedFlags(flags) {
+    const saved = { ...flags };
+    for (const key of INSTANCE_FLAG_OPTION_KEYS)
+        delete saved[key];
+    return saved;
+}
 // Port only: copy one declared persistent field into a snapshot.
 function copyStateKey(snapshot, state, key) {
     snapshot[key] = state[key];
+}
+// Port only: the run-time-configuration values of the option fields C
+// stores outside struct flag, harvested from the live process before the
+// saved flags replace them.
+function configuredInstanceOptions(flags) {
+    const configured = {};
+    for (const key of INSTANCE_FLAG_OPTION_KEYS) {
+        const value = flags[key];
+        if (value !== undefined)
+            assignFlagOption(configured, key, value);
+    }
+    return configured;
+}
+// Port only: checked field write; the option keys carry mixed value types.
+function assignFlagOption(flags, key, value) {
+    flags[key] = value;
 }
 // Port only: restore the validated persistent state graph.
 // Also C artifact.c:restore_artifacts(): restore persistent artifact existence,
@@ -209,9 +236,20 @@ function copyStateKey(snapshot, state, key) {
 // object and the decoded graph references;
 // process-only fields stay in place.
 export function restorePersistentState(state, snapshot) {
-    // An absent optional field must clear its previous live value too.
-    for (const key of persistentStateKeys)
-        restoreStateKey(state, snapshot, key);
+    // Install only fields admitted by the saved-state schema; an absent
+    // optional field must clear its previous live value too.
+    for (const key of persistentStateKeys) {
+        if (key !== 'flags')
+            restoreStateKey(state, snapshot, key);
+    }
+    // C restore.c:restgamestate() reads the save back into struct flag
+    // alone (Sfi_flag); every option C stores in struct instance_flags or
+    // its siblings is absent from the save, so it keeps the value this
+    // process parsed from its run-time configuration.
+    const saved = { ...snapshot.flags };
+    for (const key of INSTANCE_FLAG_OPTION_KEYS)
+        delete saved[key];
+    state.flags = { ...saved, ...configuredInstanceOptions(state.flags) };
 }
 // Port only: restore one declared persistent field.
 function restoreStateKey(state, snapshot, key) {
@@ -224,7 +262,7 @@ export function copyPersistentState(state) {
     const snapshot = {
         u: state.u, urole: state.urole, urace: state.urace,
         initAlignment: state.initAlignment, context: copyPersistentContext(state.context),
-        flags: state.flags, moves: state.moves, inventory: state.inventory,
+        flags: copySavedFlags(state.flags), moves: state.moves, inventory: state.inventory,
         spells: state.spells,
         level: state.level, dungeons: state.dungeons, branches: state.branches,
         stairs: state.stairs,
@@ -233,8 +271,10 @@ export function copyPersistentState(state) {
         _messageHistory: state._messageHistory,
     };
     const unknown = [];
+    // 'flags' enters the snapshot through copySavedFlags() above, the way
+    // Sfo_flag() writes struct flag alone.
     for (const key of Object.keys(state)) {
-        if (key === 'context')
+        if (key === 'context' || key === 'flags')
             continue;
         if (isPersistentStateKey(key)) {
             copyStateKey(snapshot, state, key);
