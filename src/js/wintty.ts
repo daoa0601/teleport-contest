@@ -550,12 +550,16 @@ export function expandTabs(line: string): string {
 }
 
 
-// Part of C wintty.c:process_text_window(): a recalled mixed top line
-// replays its glyph through g_putch()/putchar(), which the recorder's
-// shadow buffer never receives (nomux_putch rejects control and high-bit
-// bytes, and the g_putch mirror lands one column right where the
-// description's padding spaces overwrite it), so in a text window each
-// recorded glyph byte costs one blank column and the shift markers none.
+// Part of C win/tty/wintty.c:tty_putstr() and process_text_window(): a
+// stored mixed top line keeps each glyph as one high-bit character while
+// putstr() compresses and measures the row (compress_str at :2263, maxcol
+// at :2458), and only the process_text_window() replay loses the glyph
+// cell: putchar()/g_putch() output never reaches the recorder's shadow
+// buffer (nomux_putch rejects control and high-bit bytes as signed chars,
+// and the g_putch mirror lands one column right under the description's
+// padding spaces). The display's setCell() drops the high-bit glyph the
+// same way, leaving the cleared blank while the glyph still consumes its
+// column.
 export function mixedGlyphColumns(text: string): string {
     let out = '';
     let dec = false;
@@ -568,7 +572,7 @@ export function mixedGlyphColumns(text: string): string {
             dec = false;
             continue;
         }
-        out += dec ? ' ' : ch;
+        out += dec ? String.fromCharCode(ch.charCodeAt(0) | 0x80) : ch;
     }
     return out;
 }

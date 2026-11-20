@@ -4,6 +4,7 @@ import test from 'node:test';
 import type { Engine } from '../js/jsmain.js';
 import { runSegment } from '../js/jsmain.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { flushPendingTopline, ttyDoprevMessage } from '../js/topl.js';
 import { pline } from '../js/pline.js';
 import { rhack } from '../js/cmd.js';
@@ -93,6 +94,92 @@ void test('recall renders a mixed farlook line without its glyph', async () => {
         `only blanks precede the description in the recall row, got ${JSON.stringify(wallRow.trimEnd())}`);
     input.feed(' ');
     await recall;
+});
+
+// C wintty.c:tty_putstr() runs compress_str() on the stored line with its
+// high-bit glyph byte still a single ordinary character (wintty.c:2263);
+// only process_text_window()'s putchar/g_putch replay loses the glyph cell
+// (wintty.c:1850-1881). A long mixed line therefore compresses to
+// "glyph, one space, description" and keeps one blank glyph column, instead
+// of collapsing the glyph-and-padding run into stripped spaces.
+void test('a long mixed farlook line keeps its glyph column through compression', async () => {
+    await freshObjectRoom({ iflags: { prevmsg_window: 'r' }, flags: { tips: false } });
+    requirePlayingGame(game);
+    // A stored look line the way do_screen_description leaves it in the
+    // recall ring: glyph, eight padding spaces, then a long description
+    // that pushes the line past the terminal width.
+    game._toplines = '\x0eq\x0f        a wall with a deliberately long '
+        + 'inscription that pushes this look line past eighty columns';
+    rememberToplines();
+    const input = resetInputState();
+
+    await pline('The echo fades.');
+    const recall = ttyDoprevMessage();
+    await input.waitUntilBlocked();
+    let rows: string[] = [];
+    for (let round = 0; round < 5; round++) {
+        rows = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join(''));
+        if ((rows[0] ?? '').includes('Message History')) break;
+        input.feed(' ');
+        await input.waitUntilBlocked();
+    }
+    const headingColumn = (rows[0] ?? '').indexOf('Message History');
+    const recallRow = rows.find(row => row.includes('deliberately'));
+    assert.ok(recallRow, `recall lists the long mixed line, saw: ${rows.slice(0, 12).join(' | ')}`);
+    assert.ok(headingColumn >= 0, 'the recall window heading is visible');
+    const description = recallRow.indexOf('a wall');
+    assert.ok(description > headingColumn,
+        `the description starts inside the window row, got ${JSON.stringify(recallRow.trimEnd())}`);
+    assert.equal(recallRow.charAt(description - 1), ' ',
+        'compress_str leaves exactly one space between the glyph column and the text');
+    assert.equal(recallRow.slice(headingColumn, description - 1).trim(), '',
+        'the glyph column and its padding stay blank before the compressed text');
+    input.feed(' ');
+    await recall;
+});
+
+// C files.c:1270 restore_saved_game() runs validate() (version.c) on the
+// opened save before sys/unix/unixmain.c prints the restoring banner, so a
+// save that fails validation never plines it; the game falls through to a
+// fresh character whose messages page without dismissing any banner.
+void test('an unreadable save starts a new game without the restoring banner', async () => {
+    const storage = memoryStorage();
+    const nethackrc = 'OPTIONS=name:Watcher,role:Archeologist,race:human,'
+        + 'gender:female,align:lawful,!legacy,!tutorial,pettype:none,msg_window:reversed';
+    await runSegment({
+        seed: 456,
+        datetime: '20010314110000',
+        nethackrc,
+        moves: '',
+        storage,
+    });
+    assert.ok(await saveGame(storage), 'the first segment writes a save file');
+    const key = 'teleport-save:watcher';
+    const snapshot = decodeSavedGraph(storage.getItem(key) ?? '');
+    assert.ok(isSavedRecord(snapshot), 'the written save decodes as a record');
+    snapshot.version = 30;
+    storage.setItem(key, encodeSavedGraph(snapshot));
+
+    const second = await runSegment({
+        seed: 456,
+        datetime: '20010314110000',
+        nethackrc,
+        moves: '',
+        storage,
+    });
+    const greeting = screenRows(second)[0] ?? '';
+    assert.match(greeting, /welcome to NetHack!/,
+        `the rejected save falls through to a new game, got ${JSON.stringify(greeting)}`);
+    assert.doesNotMatch(greeting, /Restoring save file/,
+        'no banner page waits for a key before the new game starts');
+
+    second.inputGate.feed('\x10');
+    await second.runUntilInputNeeded();
+    const rows = screenRows(second);
+    assert.ok(!rows.some(row => row.includes('Restoring save file')),
+        `recall lists no banner for an unreadable save, saw: ${rows.slice(0, 10).join(' | ')}`);
+    second.inputGate.feed(' ');
+    await second.runUntilInputNeeded();
 });
 
 
