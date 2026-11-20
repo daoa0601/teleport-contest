@@ -3,7 +3,7 @@
 import { CMDQ_KEY, COLNO, CQ_CANNED, CQ_REPEAT, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_EXPLORE, GLOC_INTERESTING, GLOC_MONS, GLOC_OBJS, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, CMDQ_DIR, } from './const.js';
 import { Invocation_lev } from './dungeon.js';
 import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from './topl.js';
-import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, back_to_glyph, TemporaryMapEffect, usesDecSymbols } from './display.js';
+import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, back_to_glyph, TemporaryMapEffect } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { cmdq_add_key, cmdq_clear, cmdq_pop, readcharPoskey } from './cmd.js';
@@ -36,28 +36,26 @@ const DEFAULT_GETPOS_FEATURE_SYMBOLS = new Set([
     '#', '`', '<', '>', '_', '|', '\\', '{', '}', '.', ' ',
     '^', '"', '~', '-', '/', '*', '!', ')', '(', '0', '@', '$',
 ]);
-// DECgraphics changes the active showsyms for eligible cmap entries (dat
-// symbols DECgraphics, loaded by symbols.c:load_symset() into primary_syms
-// and copied into showsyms by switch_symbols()/assign_graphics()).  C
-// accepts both each entry's defsym and its active showsym.  These are the
-// additional input bytes introduced by the DEC set. The high bit belongs to
-// showsyms: an ordinary letter such as 's' is not the bottom-edge glyph.
-const DEC_GETPOS_FEATURE_SYMBOLS = new Set([
-    '\xe7', '\xf9', '\xfa', '\xfb', '\xe0', '\xfe',
-    '\xf8', '\xf1', '\xef', '\xf3', '\xfc',
-]);
 // Part of C getpos.c:getpos(): whether the key can match a dungeon
-// feature (the matching[] loop finding k > 0).  The active showsyms come
-// from the shown symbol set: on Rogue levels assign_graphics(ROGUESET)
-// installed the rogue table, so a DEC byte from a primary DECgraphics
-// choice is not a feature key there (getpos.c:1052-1061 reads
-// gs.showsyms[], not the primary symset).
-export function isGetposFeatureSymbol(ch, state = game) {
+// feature (the matching[] loop finding k > 0).  getpos() reads its keys
+// through readchar_poskey(), whose readchar_core() returns the input as a
+// plain char (cmd.c:5271 "return (char) sym"), so on the reference builds'
+// signed char every Meta key (byte 0x80..0xff) reaches getpos()'s int c
+// with a negative value.  defsyms[sidx].sym and gs.showsyms[sidx] are
+// uchar (sym.h:52-54; global.h:108 "typedef uchar nhsym"), so the
+// comparisons at getpos.c:1052-1060 test that negative c against 0..255
+// only: no Meta key can ever name a feature, even though DECgraphics
+// displays those bytes on the map (dat symbols start: DECgraphics assigns
+// 0xf3 to S_sw_bc/S_expl_bc, 0xf8 to S_vbeam, 0xe7 to S_tree, ...).
+// The active-showsyms half of the C test is still modeled by
+// matchingGetposSymbols(): see the comment there.
+export function isGetposFeatureSymbol(ch) {
     if (typeof ch !== 'string' || ch.length !== 1)
         return false;
-    if (DEFAULT_GETPOS_FEATURE_SYMBOLS.has(ch))
-        return true;
-    return usesDecSymbols(state) && DEC_GETPOS_FEATURE_SYMBOLS.has(ch);
+    const code = ch.codePointAt(0);
+    if (code === undefined || code >= 0x80)
+        return false;
+    return DEFAULT_GETPOS_FEATURE_SYMBOLS.has(ch);
 }
 // C getpos.c:gather_locs_interesting(): one target-kind test over the
 // displayed glyph — monsters (minus long worm tails and warning signs),
@@ -156,25 +154,24 @@ export async function showGetposInstructions(state = game) {
         throw new Error('Map selection requires a getpos.help binding');
     await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
 }
-// C uses cmap identities, not the terminal character of a remembered glyph.
-// In particular, DEC's pi altar must still match the default '_' key.
-const DEC_FEATURE_SYMBOLS = new Map([
-    [CmapSymbol.bars, '\xfc'], [CmapSymbol.tree, '\xe7'],
-    [CmapSymbol.upladder, '\xf9'], [CmapSymbol.dnladder, '\xfa'],
-    [CmapSymbol.brupladder, '\xf9'], [CmapSymbol.brdnladder, '\xfa'],
-    [CmapSymbol.altar, '\xfb'], [CmapSymbol.pool, '\xe0'],
-    [CmapSymbol.ice, '\xfe'], [CmapSymbol.lava, '\xe0'],
-    [CmapSymbol.lavawall, '\xe0'], [CmapSymbol.vodbridge, '\xfe'],
-    [CmapSymbol.hodbridge, '\xfe'], [CmapSymbol.water, '\xe0'],
-    [74, '\xf8'], [75, '\xf1'],
-]);
-const EFFECT_FEATURE_SYMBOLS = ['|', '-', '\\', '/', '*', '!', ')', '(', '0', '#', '@', '*', '#', '$'];
 // Part of C getpos.c:getpos(): the matching[MAXPCHARS] build — defsyms and
 // active showsyms, '^' matching every trap, and the room-engraving '`'
-// matching corridor engravings.
-function matchingGetposSymbols(key, state) {
+// matching corridor engravings.  The glyph scan below compares cmap
+// identities (glyph_to_cmap), never terminal characters: a DECgraphics
+// altar found through the default '_' key is the same S_altar entry.
+// Like isGetposFeatureSymbol() above, this receives the typed key as a
+// signed char, so a Meta key matches nothing here in C (negative c vs
+// uchar symbols, getpos.c:1052-1060).  Among the ported symbol sets the
+// active-showsyms half of the C comparison never adds an ASCII key:
+// DECgraphics moves every eligible entry to a high byte (which a Meta key
+// cannot reach), and the default and Rogue sets keep every eligible entry
+// at its defsym.
+const EFFECT_FEATURE_SYMBOLS = ['|', '-', '\\', '/', '*', '!', ')', '(', '0', '#', '@', '*', '#', '$'];
+function matchingGetposSymbols(key) {
     const matching = new Set();
-    const dec = usesDecSymbols(state);
+    const code = key.codePointAt(0);
+    if (code === undefined || code >= 0x80)
+        return matching;
     for (let index = CmapSymbol.bars; index <= CmapSymbol.goodpos; index++) {
         if (index === CmapSymbol.room || index === CmapSymbol.darkroom
             || index === CmapSymbol.corr || index === CmapSymbol.litcorr)
@@ -184,8 +181,7 @@ function matchingGetposSymbols(key, state) {
             ? index === CmapSymbol.arrowTrap + WEB - 1 ? '"'
                 : index === CmapSymbol.arrowTrap + VIBRATING_SQUARE - 1 ? '~' : '^'
             : EFFECT_FEATURE_SYMBOLS[index - 74]);
-        const activeSymbol = dec ? DEC_FEATURE_SYMBOLS.get(index) ?? defaultSymbol : defaultSymbol;
-        if (key === defaultSymbol || key === activeSymbol || key === '^' && trap
+        if (key === defaultSymbol || key === '^' && trap
             || key === '`' && (index === CmapSymbol.engroom || index === CmapSymbol.engrcorr))
             matching.add(index);
     }
@@ -227,7 +223,7 @@ function getposFeatureMatches(x, y, key, matching, state) {
 // Part of C getpos.c:getpos(): the two-pass feature scan — from just past
 // the cursor to the bottom-right of the map, then wrapping around.
 export function nextGetposFeature(cursor, symbol, state = game) {
-    const matching = matchingGetposSymbols(symbol, state);
+    const matching = matchingGetposSymbols(symbol);
     for (let pass = 0; pass <= 1; pass++) {
         const lowY = pass === 0 ? cursor.y : 0;
         const highY = pass === 0 ? ROWNO - 1 : cursor.y;
@@ -248,7 +244,7 @@ export function nextGetposFeature(cursor, symbol, state = game) {
 export function getposFeatureMissMessage(ch, state = game) {
     const code = ch.codePointAt(0);
     const visible = code === undefined ? '' : visibleCommandKey(code);
-    if (isGetposFeatureSymbol(ch, state))
+    if (isGetposFeatureSymbol(ch))
         return `Can't find dungeon feature '${ch}'.`;
     const directions = [0, 6, 2, 4].map(direction => `'${visibleCommandKey(state.commandBindings.keyForDirection(direction))}'`).join(', ');
     const pick = visibleCommandKey(state.commandBindings.specialKey('getpos.pick') ?? 0);
