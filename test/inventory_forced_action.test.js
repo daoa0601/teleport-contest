@@ -67,4 +67,30 @@ void test('applying royal jelly titles the forced target menu with the full acti
     assert.equal(egg.spe, 2);
     assert.equal(game.context.move, 1);
 });
+// C invent.c:getobj(): under force_invmenu the yn prompt is replaced by
+// putmsghistory(qbuf, FALSE), which archives the bare query — without the
+// "[lets or ?*]" suffix — into the message ring before the menu opens:
+//
+//     } else if (iflags.force_invmenu) {
+//         ...
+//         if (!msggiven)
+//             putmsghistory(qbuf, FALSE);
+//         msggiven = TRUE;
+//
+// The ring entry is observable through ^P's single-message recall.
+void test('a forced inventory menu recalls its bare query from message history', async () => {
+    freshPlayableRoom({ flags: { force_invmenu: true, verbose: true } });
+    const dart = await addInventoryObject(DART);
+    const input = resetInputState();
+    input.feed('\x1b');
+    await rhack('Q'.charCodeAt(0));
+    await rhack(16);
+    await rhack(16);
+    // The first ^P recalls "Never mind." again, the second walks one ring
+    // entry back to the query that preceded the forced menu.
+    const topline = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trim() ?? '';
+    assert.equal(topline, 'What do you want to ready?', 'the bare query precedes the forced menu in the recall ring');
+    assert.equal(dart.where, 'inventory');
+    assert.equal(game.context.move, 0);
+});
 //# sourceMappingURL=inventory_forced_action.test.js.map
