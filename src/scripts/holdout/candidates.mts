@@ -34,8 +34,9 @@ function characterAt(index: number): Character {
 
 /** 'fixed' keeps the long-standing option line; 'public' draws each option
  *  independently at the rate the public sessions use it, so the legacy intro,
- *  the tutorial question, color, message-window order and the rest appear. */
-export type OptionMix = 'fixed' | 'public';
+ *  the tutorial question, color, message-window order and the rest appear;
+ *  'wide' adds option families the public sessions never set. */
+export type OptionMix = 'fixed' | 'public' | 'wide';
 
 function chance(percent: number): boolean { return randomInt(100) < percent; }
 
@@ -56,6 +57,34 @@ function publicOptions(debug: boolean): string {
     }
     if (!debug && chance(25)) options.push('disclose:yi ya yv yg yc yo');
     return options.join(',');
+}
+
+// Each entry is drawn independently; a value list picks one setting.
+const WIDE_OPTIONS: readonly (readonly [string | readonly string[], number])[] = [
+    [['number_pad:1', 'number_pad:2', 'number_pad:-1'], 8], [['menustyle:traditional', 'menustyle:combination', 'menustyle:partial'], 15],
+    [['msg_window:single', 'msg_window:combination', 'msg_window:full'], 12], [['runmode:crawl', 'runmode:teleport', 'runmode:run'], 12],
+    [['sortloot:full', 'sortloot:loot', 'sortloot:none'], 15], ['hilite_pet', 15], ['hilite_pile', 12], ['showscore', 12],
+    ['!autoquiver', 8], ['autoquiver', 8], ['rest_on_space', 8], ['!sparkle', 10], ['standout', 8], ['!safe_pet', 6], ['!confirm', 6],
+    ['autodig', 8], ['!autoopen', 8], [['fruit:kumquat', 'fruit:slime mold', 'fruit:lembas'], 10], ['packorder:")[%?+!=/(*`0_', 6],
+    [['pickup_types:$?!/="+', 'pickup_types:$', 'pickup_types:all'], 12], [['pickup_burden:unencumbered', 'pickup_burden:overloaded'], 8],
+    [['paranoid_confirmation:pray', 'paranoid_confirmation:attack quit', 'paranoid_confirmation:wand-break eat'], 10],
+    [['sortpack', '!sortpack'], 8], ['!implicit_uncursed', 8], [['menu_headings:bold', 'menu_headings:underline'], 8],
+    ['showrace', 8], ['force_invmenu', 6], ['goldX', 6], ['lootabc', 8], ['hitpointbar', 10], ['!travel', 6], ['!mention_walls', 4],
+];
+
+// One setting per option family: a repeated option is a configuration
+// error, so a wide draw replaces the public setting of the same option.
+function optionFamily(setting: string): string { return setting.replace(/^!/, '').replace(/:.*$/, ''); }
+
+function wideOptions(debug: boolean): string {
+    const options = new Map(publicOptions(debug).split(',').filter(Boolean).map(setting => [optionFamily(setting), setting]));
+    for (const [choice, percent] of WIDE_OPTIONS) {
+        if (!chance(percent)) continue;
+        const setting = typeof choice === 'string' ? choice : itemAt(choice, randomInt(choice.length));
+        options.delete(optionFamily(setting));
+        options.set(optionFamily(setting), setting);
+    }
+    return [...options.values()].join(',');
 }
 
 function publicDisplayOptions(): string {
@@ -98,7 +127,7 @@ export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly
             spec.character = character;
         }
         session = makeRecipe(recipe, { seed, datetime: date.datetime, character, name: 'Holdout' });
-        if (optionMix === 'public') {
+        if (optionMix !== 'fixed') {
             // Recipes script their own keys and check their own messages, so
             // only display options join them: no intro, prompt or message changes.
             const display = publicDisplayOptions();
@@ -113,7 +142,8 @@ export function makeCandidate(index: number, seeds: Set<number>, kinds: readonly
         spec.targetKeys = randomInt(ranges[0], ranges[1] + 1);
         const variants = ['!autopickup,runmode:teleport', 'autopickup,runmode:walk',
             '!autopickup,runmode:run', 'autopickup,showexp', '!autopickup,showexp'];
-        spec.options = optionMix === 'public' ? publicOptions(kind === 'deep' || kind === 'deepwide')
+        spec.options = optionMix === 'wide' ? wideOptions(kind === 'deep' || kind === 'deepwide')
+            : optionMix === 'public' ? publicOptions(kind === 'deep' || kind === 'deepwide')
             : `!legacy,!tutorial,!news,symset:DECgraphics,time,${itemAt(variants, Math.floor(index / 10) % variants.length)}`;
         const rc = `OPTIONS=name:Holdout,role:${character.role},race:${character.race},gender:${character.gender},align:${character.align}${spec.options ? `,${spec.options}` : ''}\n`;
         // 'deep' plays the narrow explore policy at a debug-mode depth;

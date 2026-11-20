@@ -59,7 +59,7 @@ function options(argv: readonly string[]): GeneratorOptions | null {
         else if (flag === '--kinds') opts.kinds = value.split(',').map(parseKind);
         else if (flag === '--recipes') opts.recipes = selectRecipes(value);
         else if (flag === '--options') {
-            if (value !== 'fixed' && value !== 'public') throw new Error('--options must be fixed or public');
+            if (value !== 'fixed' && value !== 'public' && value !== 'wide') throw new Error('--options must be fixed, public or wide');
             opts.optionMix = value;
         }
         else throw new Error(`unknown option ${flag}`);
@@ -163,7 +163,7 @@ async function record(input: string, output: string, install: string): Promise<v
 async function main(): Promise<void> {
     const opts = options(process.argv.slice(2));
     if (!opts) {
-        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide,deepwide] [--recipes NAME,...] [--options fixed|public] [--long] [--meta] [--chain] [--max-attempts N]');
+        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide,deepwide] [--recipes NAME,...] [--options fixed|public|wide] [--long] [--meta] [--chain] [--max-attempts N]');
         return;
     }
     const lock = await reserveOutput(opts);
