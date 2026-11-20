@@ -72,13 +72,19 @@ const WIDE_OPTIONS: readonly (readonly [string | readonly string[], number])[] =
     ['showrace', 8], ['force_invmenu', 6], ['goldX', 6], ['lootabc', 8], ['hitpointbar', 10], ['!travel', 6], ['!mention_walls', 4],
 ];
 
+// One setting per option family: a repeated option is a configuration
+// error, so a wide draw replaces the public setting of the same option.
+function optionFamily(setting: string): string { return setting.replace(/^!/, '').replace(/:.*$/, ''); }
+
 function wideOptions(debug: boolean): string {
-    const options = publicOptions(debug).split(',').filter(Boolean);
+    const options = new Map(publicOptions(debug).split(',').filter(Boolean).map(setting => [optionFamily(setting), setting]));
     for (const [choice, percent] of WIDE_OPTIONS) {
         if (!chance(percent)) continue;
-        options.push(typeof choice === 'string' ? choice : itemAt(choice, randomInt(choice.length)));
+        const setting = typeof choice === 'string' ? choice : itemAt(choice, randomInt(choice.length));
+        options.delete(optionFamily(setting));
+        options.set(optionFamily(setting), setting);
     }
-    return options.join(',');
+    return [...options.values()].join(',');
 }
 
 function publicDisplayOptions(): string {
