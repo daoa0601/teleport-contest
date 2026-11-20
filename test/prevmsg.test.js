@@ -139,7 +139,7 @@ void test('a dismissed full history window leaves the covered status columns bla
         await pline(`History entry number ${String(index + 2).padStart(2, '0')}`.padEnd(44, '.'));
         await markSeen(input);
     }
-    const editor = getLine('What do you want to call this thing?', () => true);
+    const editor = getLine('What do you want to call this thing?');
     try {
         await input.waitUntilBlocked();
         const [statusLine1, statusLine2] = [rowText(22), rowText(23)];
@@ -178,7 +178,7 @@ void test('the moveloop repaints the wrecked status before a queued annotate', a
     input.feed('\x1b');
     await moveloop_core();
     await fileFullRecallRing(input);
-    const editor = getLine('What do you want to call this thing?', () => true);
+    const editor = getLine('What do you want to call this thing?');
     await input.waitUntilBlocked();
     const statusLine1 = rowText(22);
     input.feed(16);
@@ -217,7 +217,7 @@ void test('a taller terminal anchors the wrecked status window at row 22', async
     game.nhDisplay = new GameDisplay(new Terminal(null, { rows: 30, cols: 80 }));
     const input = resetInputState();
     await fileFullRecallRing(input);
-    const editor = getLine('What do you want to call this thing?', () => true);
+    const editor = getLine('What do you want to call this thing?');
     try {
         await input.waitUntilBlocked();
         const [statusLine1, statusLine2] = [rowText(22), rowText(23)];
