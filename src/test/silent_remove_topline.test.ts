@@ -13,10 +13,12 @@ function topRow(engine: Engine): string {
 // C do_wear.c:off_msg() is silent without flags.verbose, so removing a
 // zero-delay jacket prints nothing. A letter typed at the getobj() query
 // leaves that query painted; choosing from the '?' menu does not, because
-// tty cleared the message window to display the menu.
+// tty cleared the message window to display the menu. An item action
+// queues the letter, so getobj() returns it before painting the query.
 for (const [how, keys, expected] of [
     ['typed at the query', ['R', 'J'], /^What do you want to remove\? \[\*\]/],
     ['chosen from the menu', ['R', '?', 'J'], /^$/],
+    ['taken off from the item-action menu', ['*', 'J', 'T'], /^$/],
 ] as const) {
     void test(`a silent jacket removal ${how} leaves the expected top line`, async () => {
         const engine = await runSegment({
